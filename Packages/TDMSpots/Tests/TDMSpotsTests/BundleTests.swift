@@ -155,10 +155,13 @@ struct BundleDecoderTests {
     func cityIdMismatchIsRefused() throws {
         let json = try Fixture.data(named: "us-nyc-sample.json")
 
-        #expect {
+        do {
             try BundleDecoder().decodeCity(json: json, expectedCityId: "jp-tokyo")
-        } throws: { error in
-            error as? BundleError == .cityIdMismatch(expected: "jp-tokyo", found: "us-nyc")
+            Issue.record("Expected a city ID mismatch")
+        } catch let error as BundleError {
+            #expect(error == .cityIdMismatch(expected: "jp-tokyo", found: "us-nyc"))
+        } catch {
+            Issue.record("Expected a city ID mismatch, got \(error)")
         }
     }
 
@@ -171,11 +174,18 @@ struct BundleDecoderTests {
                 .utf8
         )
 
-        #expect {
+        do {
             try BundleDecoder().decodeCity(json: bumped)
-        } throws: { error in
-            guard case let BundleError.unsupportedSchemaVersion(_, found, supported) = error else { return false }
-            return found == 2 && supported == 1
+            Issue.record("Expected an unsupported schema version")
+        } catch let error as BundleError {
+            guard case let .unsupportedSchemaVersion(_, found, supported) = error else {
+                Issue.record("Expected an unsupported schema version, got \(error)")
+                return
+            }
+            #expect(found == 2)
+            #expect(supported == 1)
+        } catch {
+            Issue.record("Expected an unsupported schema version, got \(error)")
         }
     }
 
