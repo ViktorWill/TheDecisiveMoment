@@ -1,9 +1,9 @@
 // swift-tools-version: 6.0
 import PackageDescription
 
-// Deliberately no `platforms:` — this package builds and tests on Linux.
 let package = Package(
     name: "TDMSpots",
+    platforms: [.iOS(.v18)],
     products: [
         .library(name: "TDMSpots", targets: ["TDMSpots"])
     ],
