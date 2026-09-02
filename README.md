@@ -22,8 +22,9 @@ city. Modelled in v1, backed by a server in a later phase.
 
 ## Status
 
-Design complete, implementation not started. This repository currently contains the full
-specification and a staged set of prompts for GitHub Copilot to build against.
+Design complete. The scaffold (M0) is in place: the module graph exists as six packages under
+`Packages/`, a `spotforge` stub under `Tools/`, and an app shell with three empty tabs. The
+features themselves are not implemented yet.
 
 Start here:
 
