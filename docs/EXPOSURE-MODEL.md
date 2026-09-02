@@ -149,8 +149,9 @@ light than the pavement does — which is precisely why golden hour is worth sho
 | 5° | 11.60 | +3.00 | **14.60** |
 | 2° | 10.08 | +3.00 | **13.08** |
 
-> **Independent check.** The right-hand column sits between 14.6 and 15.3 for every sun elevation
-> from 5° to 90°. That is the whole content of Sunny 16: one setting works on a front-lit subject
+> **Independent check.** The right-hand column sits between 14.6 and 15.3 at every tabulated
+> elevation, and within 14.46 … 15.33 for every sun elevation from 5° to 90° — the shallow minimum
+> at 63.4° is what the extra hundredths buy. That is the whole content of Sunny 16: one setting works on a front-lit subject
 > all day long. The model reproduces that from first principles rather than being fitted to it, and
 > the zenith row lands on 14.64 — the exact Sunny 16 value from §3. This is the strongest single
 > check in the document.
