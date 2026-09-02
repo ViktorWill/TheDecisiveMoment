@@ -167,6 +167,40 @@ public struct Lens: Sendable, Hashable, Codable, Identifiable {
             && !distanceMarksMetres.isEmpty && distanceMarksMetres.allSatisfy { $0 > 0 }
             && minimumFocusMetres > 0
     }
+
+    // JSON has no infinity, and the ∞ mark is engraved on every one of these
+    // lenses, so it travels as a flag beside the finite marks rather than as a
+    // sentinel number a future reader would have to guess at.
+    private enum CodingKeys: String, CodingKey {
+        case id, name, focalLengthMillimetres, apertures, distanceMarksMetres
+        case hasInfinityMark, minimumFocusMetres
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        focalLengthMillimetres = try container.decode(Double.self, forKey: .focalLengthMillimetres)
+        apertures = try container.decode([Double].self, forKey: .apertures)
+        minimumFocusMetres = try container.decode(Double.self, forKey: .minimumFocusMetres)
+
+        var marks = try container.decode([Double].self, forKey: .distanceMarksMetres)
+        if try container.decodeIfPresent(Bool.self, forKey: .hasInfinityMark) ?? false {
+            marks.append(.infinity)
+        }
+        distanceMarksMetres = marks
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encode(focalLengthMillimetres, forKey: .focalLengthMillimetres)
+        try container.encode(apertures, forKey: .apertures)
+        try container.encode(distanceMarksMetres.filter(\.isFinite), forKey: .distanceMarksMetres)
+        try container.encode(distanceMarksMetres.contains { !$0.isFinite }, forKey: .hasInfinityMark)
+        try container.encode(minimumFocusMetres, forKey: .minimumFocusMetres)
+    }
 }
 
 /// A body, a lens and how this photographer works — set once, changed rarely.
