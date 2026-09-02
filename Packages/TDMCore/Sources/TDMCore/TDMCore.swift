@@ -1,7 +1,8 @@
 /// Namespace for package-level metadata.
 ///
 /// The value types (`Spot`, `City`, `GearProfile`, …) described in
-/// `docs/ARCHITECTURE.md` land here in M2.
+/// `docs/ARCHITECTURE.md` live here: `Sendable`, `Codable`, no framework
+/// imports, and no logic beyond validation and derived properties.
 public enum TDMCore {
     /// Version of the bundle schema this build reads and writes.
     ///

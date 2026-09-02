@@ -71,6 +71,13 @@ lower.
 }
 ```
 
+`scoreFloor` is an optional extra field on this object, written only when the size cap forced one —
+see "Size budget" below. Its absence means nothing was trimmed.
+
+Bundles are written with sorted keys and pretty printing, `generatedAt` and `updatedAt` as ISO 8601
+instants in UTC. That is not cosmetic: it makes a regenerated city a reviewable diff, and it makes
+the file a byte-for-byte function of its contents, which is what the published `sha256` is over.
+
 ## Spot
 
 ```json
@@ -114,11 +121,11 @@ lower.
 | `name` | string | Display name. Falls back to a kind-derived label if no source supplies one. |
 | `lat`, `lon` | double | WGS 84. |
 | `kind` | enum | See below. |
-| `sources` | `[enum]` | `osm` · `wikidata` · `commons` · `curated`. Union after dedupe. |
+| `sources` | `[enum]` | `osm` · `wikidata` · `commons` · `curated`. Union after dedupe. A fifth value, `local`, exists in the model for the user's own pins and never appears in a bundle. |
 | `score` | double | `0…1`, normalised **within the city**, so a Berlin 0.8 and a Tokyo 0.8 mean the same thing relative to their own city. |
-| `scoreFactors` | array | Why the score is what it is. Rendered in the UI as plain text — never show a bare number. |
+| `scoreFactors` | array | Why the score is what it is, and they sum to `score` — see [SPOTFORGE.md §8](SPOTFORGE.md). Rendered in the UI as plain text — never show a bare number. |
 | `tags` | `[string]` | Free-form, lowercase. Used for filtering and search. |
-| `bestHours` | `[int]` | Local hours 0–23. Curated or inferred; omitted when unknown. |
+| `bestHours` | `[int]` | Local hours 0–23. Curated or inferred; omitted when unknown, rather than an empty list, which would read as "never any good". |
 | `streetBearing` | double? | Degrees from north of the dominant street axis. Combined with solar azimuth to work out which side is lit. |
 | `openness` | enum | `open` · `canyon` · `covered`. **Maps directly onto the scene modifier in [EXPOSURE-MODEL.md §4c](EXPOSURE-MODEL.md).** |
 | `note` | string? | Prose. Curated spots have real ones; generated spots usually have none. |
@@ -169,6 +176,8 @@ why a known spot is missing.
 
 ## Example fixture
 
-A complete two-spot bundle is committed at `Packages/TDMSpots/Tests/Fixtures/us-nyc-sample.json`
-and decoded by the test suite. It is the schema's executable definition — if this document and that
+A complete two-spot bundle is committed at `Packages/TDMSpots/Tests/Fixtures/us-nyc-sample.json`,
+with its gzipped form beside it at `us-nyc-sample.json.gz`, and both are decoded by the test suite —
+the JSON round-trips byte-identically through decode and encode, and the archive exercises the
+decompress-verify-decode path end to end. It is the schema's executable definition — if this document and that
 fixture disagree, the fixture wins and this document is the bug.
