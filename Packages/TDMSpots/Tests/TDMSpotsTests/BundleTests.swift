@@ -124,14 +124,20 @@ struct BundleDecoderTests {
         var entry = Fixture.sampleIndexEntry(bytes: compressed.count)
         entry.sha256 = String(repeating: "0", count: 64)
 
-        #expect {
-            try BundleDecoder().decodeCity(compressed: compressed, entry: entry)
-        } throws: { error in
-            guard case let BundleError.checksumMismatch(cityId, expected, actual) = error else { return false }
-            return cityId == "us-nyc"
-                && expected == entry.sha256
-                && actual == Fixture.sha256OfSampleJSON
-                && "\(error)".contains("us-nyc")
+        do {
+            _ = try BundleDecoder().decodeCity(compressed: compressed, entry: entry)
+            Issue.record("Expected a checksum mismatch")
+        } catch let error as BundleError {
+            guard case let .checksumMismatch(cityId, expected, actual) = error else {
+                Issue.record("Expected a checksum mismatch, got \(error)")
+                return
+            }
+            #expect(cityId == "us-nyc")
+            #expect(expected == entry.sha256)
+            #expect(actual == Fixture.sha256OfSampleJSON)
+            #expect(error.description.contains("us-nyc"))
+        } catch {
+            Issue.record("Expected a checksum mismatch, got \(error)")
         }
     }
 
