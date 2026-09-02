@@ -1,0 +1,144 @@
+{
+  "attribution" : {
+    "commons" : "Wikimedia Commons — per-file licence in photo entries",
+    "osm" : "© OpenStreetMap contributors, ODbL 1.0",
+    "wikidata" : "Wikidata, CC0 1.0"
+  },
+  "bbox" : {
+    "maxLat" : 40.9176,
+    "maxLon" : -73.7004,
+    "minLat" : 40.4774,
+    "minLon" : -74.2591
+  },
+  "bundleVersion" : 3,
+  "cityId" : "us-nyc",
+  "country" : "US",
+  "generatedAt" : "2026-09-01T04:12:00Z",
+  "generator" : "spotforge 0.1.0",
+  "name" : "New York City",
+  "schemaVersion" : 1,
+  "spots" : [
+    {
+      "bestHours" : [
+        8,
+        9,
+        17,
+        18
+      ],
+      "curated" : true,
+      "id" : "curated:us-nyc/fifth-42nd",
+      "kind" : "intersection",
+      "lat" : 40.7535,
+      "lon" : -73.9813,
+      "name" : "Fifth Avenue & 42nd Street",
+      "note" : "Winogrand worked this stretch for years. The crosstown blocks let light through twice a day; the avenue itself is in shadow most of the time. Stand on the northeast corner and shoot back into the crowd coming off the light.",
+      "openness" : "canyon",
+      "photos" : [
+        {
+          "author" : "A. N. Other",
+          "license" : "CC BY 4.0",
+          "pageURL" : "https://commons.wikimedia.org/wiki/File:Fifth_Avenue_and_42nd_Street.jpg",
+          "thumbURL" : "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Fifth_Avenue_and_42nd_Street.jpg/440px-Fifth_Avenue_and_42nd_Street.jpg"
+        }
+      ],
+      "refs" : {
+        "osm" : "node/42421731"
+      },
+      "score" : 0.94,
+      "scoreFactors" : [
+        {
+          "contribution" : 0.29,
+          "detail" : "58 geotagged photos within 150 m",
+          "kind" : "photoDensity"
+        },
+        {
+          "contribution" : 0,
+          "detail" : "not in Wikidata",
+          "kind" : "notability"
+        },
+        {
+          "contribution" : 0.14,
+          "detail" : "intersection",
+          "kind" : "featurePrior"
+        },
+        {
+          "contribution" : 0.51,
+          "detail" : "curated: NYC canon",
+          "kind" : "curation"
+        }
+      ],
+      "sources" : [
+        "curated",
+        "osm"
+      ],
+      "streetBearing" : 15,
+      "tags" : [
+        "canyon-light",
+        "commuters",
+        "crowds",
+        "midtown"
+      ]
+    },
+    {
+      "bestHours" : [
+        7,
+        8,
+        16,
+        17,
+        18,
+        19
+      ],
+      "curated" : false,
+      "id" : "osm:node/357555716",
+      "kind" : "plaza",
+      "lat" : 40.73096,
+      "lon" : -73.99725,
+      "name" : "Washington Square Arch",
+      "note" : "Arch frames northward up Fifth Avenue. Late afternoon light rakes across the east face; the chess tables in the southwest corner run all day.",
+      "openness" : "open",
+      "photos" : [
+        {
+          "author" : "Jane Example",
+          "license" : "CC BY-SA 4.0",
+          "pageURL" : "https://commons.wikimedia.org/wiki/File:Washington_Square_Arch.jpg",
+          "thumbURL" : "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/Washington_Square_Arch.jpg/440px-Washington_Square_Arch.jpg"
+        }
+      ],
+      "refs" : {
+        "osm" : "node/357555716",
+        "wikidata" : "Q1163609"
+      },
+      "score" : 0.77,
+      "scoreFactors" : [
+        {
+          "contribution" : 0.42,
+          "detail" : "137 geotagged photos within 150 m",
+          "kind" : "photoDensity"
+        },
+        {
+          "contribution" : 0.2,
+          "detail" : "Wikidata: Q1163609, 34 language editions",
+          "kind" : "notability"
+        },
+        {
+          "contribution" : 0.15,
+          "detail" : "plaza",
+          "kind" : "featurePrior"
+        }
+      ],
+      "sources" : [
+        "osm",
+        "wikidata",
+        "commons"
+      ],
+      "streetBearing" : 15,
+      "tags" : [
+        "arch",
+        "chess",
+        "crowds",
+        "performers",
+        "students"
+      ]
+    }
+  ]
+}

@@ -215,12 +215,48 @@ Two candidates are the same place when **both** hold:
 - normalised name similarity > 0.82 (Jaro-Winkler on casefolded, diacritic-stripped, suffix-stripped
   names), **or** one of them has no name.
 
-On merge: keep the highest-priority `id` (`curated` > `wikidata` > `osm` > `commons`), union the
-`sources` and `tags`, prefer a curated `name` and `note`, take the mean coordinate weighted toward
-the curated or OSM position, and keep the maximum of each score factor.
+On merge: keep the highest-priority `id` (`local` > `curated` > `wikidata` > `osm` > `commons`),
+union the `sources` and `tags`, prefer a curated `name` and `note`, take the mean coordinate
+weighted toward the curated or OSM position, and keep the maximum of each score factor.
 
 Merging is order-dependent if done naively. Do it as single-link clustering over the candidate set,
 then reduce each cluster once — that way the result does not depend on source order.
+
+### Name normalisation
+
+Before comparing, names are casefolded, diacritic- and width-folded, stripped of everything that is
+not a letter or a digit, and then stripped of trailing **generic words**, repeatedly:
+
+`square` · `sq` · `plaza` · `place` · `park` · `gardens` · `garden` · `market` · `marketplace` ·
+`station` · `bridge` · `steps` · `stairs` · `street` · `st` · `avenue` · `ave` · `road` · `rd` ·
+`lane` · `boulevard` · `blvd` · `the`
+
+They name the *kind* of place, which the `kind` field already carries, so keeping them only
+manufactures agreement. "Washington Square Park" and "Washington Square" both reduce to
+`washington`. A leading `the` goes too. The last token is never stripped, so a name that is nothing
+but a generic word survives as itself.
+
+### Reducing a cluster
+
+Every choice below is a total order over the members — sorted by source priority, then by `id` — so
+the reduction is a function of the *set*, not of the order the sources returned.
+
+| Field | Rule |
+|---|---|
+| `id`, `kind` | Highest-priority member. A curated `kind` wins; `other` loses to any specific kind. |
+| `sources`, `tags` | Union. `tags` sorted, so a rebuild does not diff on ordering. |
+| `name`, `note` | Curated first, then the highest-priority member that has one at all. |
+| `lat`, `lon` | Weighted mean. Weights: `local` and `curated` 3, `osm` 2, `wikidata` and `commons` 1 — a curated position is where a person stood, a Commons point is wherever the camera was, which may be a street away. |
+| `openness` | Curated wins. Otherwise the **most open** reading of the members: a wrong `canyon` costs the user 3.5 stops. |
+| `streetBearing` | Curated first, else the highest-priority member's. Bearings are circular and do not average — a mean of 350° and 10° points across the street. |
+| `bestHours` | Union, sorted. `null` when no member has any. |
+| `refs` | Union; the highest-priority member wins a key it defines. |
+| `photos` | Union, deduplicated by `pageURL`, highest-priority member's first. |
+| `scoreFactors` | The maximum contribution per factor kind. |
+| `curated` | True when any member is. |
+
+`score` and `scoreFactors` are recomputed by the scoring pass anyway; keeping the maxima here means
+a merged set is still meaningfully ranked if it is inspected between the two stages.
 
 ## 8. Scoring
 
@@ -247,6 +283,46 @@ photography spot; the photo-density term will already have over-rewarded it, and
 
 Every term writes a `scoreFactor` with human-readable `detail`. The UI shows those, never the number
 alone — "137 geotagged photos nearby · marketplace · curated" tells you something; "0.87" does not.
+
+### The two things "normalised" has to pin down
+
+- **`p95_count`** is the 95th percentile by *nearest rank*: sort the city's counts ascending and take
+  element `ceil(0.95 · n) − 1`. No interpolation, so the reference is always a count a real spot
+  actually has. Below about twenty spots this is simply the maximum, which is fine — a city that
+  small has no tail to be robust against.
+- **`score = raw / max(raw)` across the city**, clamped to `0…1`. Dividing rather than min-maxing
+  keeps zero meaning "nothing recommends this place"; the best spot in every city is 1.0, which is
+  what "normalised within the city" is for.
+
+The same factor is applied to each term, so the published `scoreFactors` are the terms' shares
+*after* normalisation and **sum to `score`**. That is what lets the detail sheet show a breakdown
+that does not contradict the number next to it. Contributions and scores are rounded to six
+decimals so a regenerated bundle does not diff on floating-point noise.
+
+### Worked example
+
+Four candidates, of which one is curated with `score_boost: 0.25`. Photo counts 58, 137, 42 and 300,
+so `p95_count = 300`. Derived by running `SpotScorer` over these inputs — the same numbers are
+asserted in `Packages/TDMSpots/Tests/TDMSpotsTests/SpotScorerTests.swift`, so this table and the
+code cannot drift apart.
+
+| Spot | kind | photos | sitelinks | boost | photoDensity | notability | featurePrior | curation | **score** |
+|---|---|---|---|---|---|---|---|---|---|
+| `curated:us-nyc/fifth-42nd` | intersection | 58 | — | 0.25 | 0.427150 | 0.000000 | 0.186001 | 0.332144 | **0.945295** |
+| `osm:node/357555716` | plaza | 137 | 34 | — | 0.516164 | 0.255874 | 0.225858 | — | **0.997896** |
+| `osm:way/12345` | market | 42 | — | — | 0.394012 | 0.000000 | 0.239144 | — | **0.633156** |
+| `osm:node/999` | landmark | 300 | 60 | — | 0.597860 | 0.295854 | 0.106286 | — | **1.000000** |
+
+Reading the first row: `photoDensityNorm = log1p(58)/log1p(300) = 0.714467`, times the 0.45 weight
+gives `0.321510`; `featurePrior = 0.7` for an intersection, times 0.20 gives `0.14`; the curation
+boost of `0.25` enters at weight 1.00. Raw total `0.711510`. The city maximum is the landmark's
+`0.752686`, and `0.711510 / 0.752686 = 0.945295`, which is also what the row's four published
+factors sum to.
+
+The landmark still comes out on top here, and that is the honest behaviour of the model: the prior
+narrows a seven-fold photo-count advantage, it does not reverse one. What pulls a working street
+corner above a monument is a curated entry, which is exactly the trade the curated file exists to
+make.
 
 ## 9. Scheduling
 

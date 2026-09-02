@@ -12,6 +12,14 @@ let package = Package(
     ],
     targets: [
         .target(name: "TDMSpots", dependencies: [.product(name: "TDMCore", package: "TDMCore")]),
-        .testTarget(name: "TDMSpotsTests", dependencies: ["TDMSpots"])
+        // The fixture bundle lives beside the tests rather than inside them:
+        // it is the schema's executable definition, referenced from
+        // `docs/DATA-BUNDLES.md`, not an implementation detail of one suite.
+        .testTarget(
+            name: "TDMSpotsTests",
+            dependencies: ["TDMSpots"],
+            path: "Tests",
+            resources: [.copy("Fixtures")]
+        )
     ]
 )
