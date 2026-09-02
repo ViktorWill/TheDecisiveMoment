@@ -30,6 +30,7 @@ Start here:
 
 | Document | What it covers |
 |---|---|
+| [docs/SETUP.md](docs/SETUP.md) | What you need on your Mac and iPhone to build, run and test it |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Module graph, data flow, and the reasoning behind every major decision |
 | [docs/EXPOSURE-MODEL.md](docs/EXPOSURE-MODEL.md) | The light maths, with verified numeric test vectors |
 | [docs/DATA-BUNDLES.md](docs/DATA-BUNDLES.md) | The offline spot-bundle format |
@@ -40,7 +41,9 @@ Start here:
 
 ## Building
 
-Requires a Mac with Xcode 16+ and [XcodeGen](https://github.com/yonaskolb/XcodeGen).
+Requires a Mac with Xcode 16+ and [XcodeGen](https://github.com/yonaskolb/XcodeGen), plus a paid
+Apple Developer Program membership from milestone M4 onwards — WeatherKit requires it. Full
+requirements in [docs/SETUP.md](docs/SETUP.md).
 
 ```sh
 brew install xcodegen
