@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pure-packages:
+    name: swift test (Linux)
+    runs-on: ubuntu-latest
+    container: swift:6.0
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [TDMCore, TDMLight, TDMSpots]
+    steps:
+      - uses: actions/checkout@v4
+      - name: swift test
+        run: swift test --package-path Packages/${{ matrix.package }}
+
+  app:
+    name: xcodegen + build app
+    runs-on: macos-15
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        run: xcodegen generate
+      - name: Build
+        run: |
+          xcodebuild build \
+            -project TheDecisiveMoment.xcodeproj \
+            -scheme TheDecisiveMoment \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO
