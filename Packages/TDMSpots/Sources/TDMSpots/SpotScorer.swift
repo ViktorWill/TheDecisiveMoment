@@ -93,10 +93,30 @@ public enum SpotScorer {
             let factors = rawFactors.map {
                 ScoreFactor(kind: $0.kind, contribution: round6($0.contribution * scale), detail: $0.detail)
             }
-            spot.scoreFactors = factors
-            spot.score = round6(min(1, max(0, factors.map(\.contribution).reduce(0, +))))
+            let (score, reconciled) = reconcile(factors)
+            spot.scoreFactors = reconciled
+            spot.score = score
             return spot
         }
+    }
+
+    /// Rounding each factor independently can leave the published breakdown a
+    /// microscopic amount away from the published score, and clamping can move
+    /// the score further still. The residual is folded into the largest factor
+    /// so `scoreFactors` always sums to `score` exactly.
+    private static func reconcile(_ factors: [ScoreFactor]) -> (score: Double, factors: [ScoreFactor]) {
+        let total = round6(factors.map(\.contribution).reduce(0, +))
+        let score = round6(min(1, max(0, total)))
+        guard score != total, let index = largestContributionIndex(in: factors) else {
+            return (score, factors)
+        }
+        var adjusted = factors
+        adjusted[index].contribution = round6(adjusted[index].contribution + (score - total))
+        return (score, adjusted)
+    }
+
+    private static func largestContributionIndex(in factors: [ScoreFactor]) -> Int? {
+        factors.indices.max { factors[$0].contribution < factors[$1].contribution }
     }
 
     /// The 95th percentile by nearest rank: sort ascending, take element
@@ -136,9 +156,7 @@ public enum SpotScorer {
             ScoreFactor(
                 kind: .photoDensity,
                 contribution: photoDensityWeight * density,
-                detail: input.photoCount > 0
-                    ? "\(input.photoCount) geotagged photos within \(Int(input.photoRadiusMetres.rounded())) m"
-                    : "no geotagged photos nearby"
+                detail: photoDensityDetail(for: input)
             )
         )
 
@@ -163,17 +181,30 @@ public enum SpotScorer {
             )
         )
 
-        if input.spot.curated || input.curationBoost > 0 {
+        let boost = input.curationBoost.isFinite ? min(1, max(0, input.curationBoost)) : 0
+        if input.spot.curated || boost > 0 {
             factors.append(
                 ScoreFactor(
                     kind: .curation,
-                    contribution: curationWeight * max(0, input.curationBoost),
+                    contribution: curationWeight * boost,
                     detail: input.curationNote.map { "curated: \($0)" } ?? "curated"
                 )
             )
         }
 
         return factors
+    }
+
+    /// The radius arrives from the pipeline as metres. A non-finite or absurd
+    /// one would trap on conversion to `Int`, and a detail string is not worth
+    /// crashing an import over, so it is dropped from the sentence instead.
+    private static func photoDensityDetail(for input: SpotScoringInput) -> String {
+        guard input.photoCount > 0 else { return "no geotagged photos nearby" }
+        let metres = input.photoRadiusMetres.rounded()
+        guard metres.isFinite, metres > 0, metres < Double(Int.max) else {
+            return "\(input.photoCount) geotagged photos nearby"
+        }
+        return "\(input.photoCount) geotagged photos within \(Int(metres)) m"
     }
 
     /// Six decimals: enough to be exact for a `0…1` score, few enough that a

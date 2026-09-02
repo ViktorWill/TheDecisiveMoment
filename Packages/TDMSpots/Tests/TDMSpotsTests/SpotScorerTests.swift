@@ -70,9 +70,12 @@ struct SpotScorerTests {
 
     @Test("The published factors sum to the published score")
     func factorsSumToScore() {
+        // At the six decimals the bundle publishes, not merely within some
+        // tolerance: the scorer folds the rounding residual back into the
+        // largest factor so the breakdown cannot contradict the badge.
         for spot in SpotScorer.score(Self.workedExample()) {
             let total = spot.scoreFactors.map(\.contribution).reduce(0, +)
-            #expect(abs(total - spot.score) < 1e-6, "\(spot.id)")
+            #expect((total * 1_000_000).rounded() / 1_000_000 == spot.score, "\(spot.id)")
         }
     }
 
@@ -160,5 +163,21 @@ struct SpotScorerTests {
         #expect(scored.count == 1)
         #expect(scored[0].score == 1)  // it is the best spot in its city, such as it is
         #expect(!scored[0].score.isNaN)
+    }
+
+    /// Pipeline arithmetic can produce a non-finite radius or boost; neither is
+    /// worth trapping on during an import.
+    @Test("Non-finite pipeline values do not trap or leak into the score")
+    func toleratesNonFiniteInput() throws {
+        var inputs = Self.workedExample()
+        inputs[0].photoRadiusMetres = .infinity
+        inputs[0].curationBoost = .nan
+
+        let scored = SpotScorer.score(inputs)
+        let spot = try #require(scored.first { $0.id == "curated:us-nyc/fifth-42nd" })
+
+        #expect(spot.score.isFinite)
+        #expect(spot.scoreFactors.allSatisfy { $0.contribution.isFinite })
+        #expect(spot.scoreFactors.contains { $0.detail == "58 geotagged photos nearby" })
     }
 }

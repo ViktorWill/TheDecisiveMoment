@@ -19,10 +19,19 @@ public enum GzipError: Error, Equatable, Sendable {
     case checksumMismatch
     /// The stored size does not match the inflated byte count modulo 2³².
     case sizeMismatch
+    /// The member inflates to more than the caller allowed. A few kilobytes of
+    /// DEFLATE can expand to gigabytes, and a city bundle is a static file from
+    /// a CDN that anyone on the path could have substituted, so the ceiling is
+    /// enforced while inflating rather than discovered afterwards.
+    case decompressedSizeLimitExceeded(limit: Int)
 }
 
 public enum Gzip {
-    public static func decompress(_ data: Data) throws -> Data {
+    /// Generous next to the 500 KB-per-city size budget, small enough that a
+    /// hostile file cannot exhaust a phone.
+    public static let defaultDecompressedSizeLimit = 16 * 1024 * 1024
+
+    public static func decompress(_ data: Data, maximumDecompressedBytes: Int = defaultDecompressedSizeLimit) throws -> Data {
         let bytes = [UInt8](data)
         guard bytes.count >= 2 else { throw GzipError.truncated }
         guard bytes[0] == 0x1f, bytes[1] == 0x8b else { throw GzipError.notGzip }
@@ -55,7 +64,7 @@ public enum Gzip {
         let trailerStart = bytes.count - 8
         guard index <= trailerStart else { throw GzipError.truncated }
 
-        let inflated = try Deflate.inflate(Array(bytes[index..<trailerStart]))
+        let inflated = try Deflate.inflate(Array(bytes[index..<trailerStart]), limit: maximumDecompressedBytes)
         let storedCRC = try littleEndianUInt32(bytes, at: trailerStart)
         let storedSize = try littleEndianUInt32(bytes, at: trailerStart + 4)
         guard CRC32.checksum(inflated) == storedCRC else { throw GzipError.checksumMismatch }
@@ -87,7 +96,7 @@ public enum Gzip {
 }
 
 private enum Deflate {
-    static func inflate(_ bytes: [UInt8]) throws -> [UInt8] {
+    static func inflate(_ bytes: [UInt8], limit: Int) throws -> [UInt8] {
         var reader = BitReader(bytes)
         var output: [UInt8] = []
         var isFinalBlock = false
@@ -96,13 +105,13 @@ private enum Deflate {
             isFinalBlock = try reader.readBits(1) == 1
             switch try reader.readBits(2) {
             case 0:
-                try inflateStoredBlock(&reader, into: &output)
+                try inflateStoredBlock(&reader, into: &output, limit: limit)
             case 1:
                 let fixed = fixedDecoders
-                try inflateCompressedBlock(&reader, into: &output, literalLength: fixed.literalLength, distance: fixed.distance)
+                try inflateCompressedBlock(&reader, into: &output, literalLength: fixed.literalLength, distance: fixed.distance, limit: limit)
             case 2:
                 let dynamic = try dynamicDecoders(&reader)
-                try inflateCompressedBlock(&reader, into: &output, literalLength: dynamic.literalLength, distance: dynamic.distance)
+                try inflateCompressedBlock(&reader, into: &output, literalLength: dynamic.literalLength, distance: dynamic.distance, limit: limit)
             default:
                 throw GzipError.invalidDeflateStream(reason: "reserved block type")
             }
@@ -111,12 +120,15 @@ private enum Deflate {
         return output
     }
 
-    private static func inflateStoredBlock(_ reader: inout BitReader, into output: inout [UInt8]) throws {
+    private static func inflateStoredBlock(_ reader: inout BitReader, into output: inout [UInt8], limit: Int) throws {
         reader.alignToByte()
         let length = try reader.readAlignedUInt16()
         let complement = try reader.readAlignedUInt16()
         guard length == ~complement else {
             throw GzipError.invalidDeflateStream(reason: "stored block length check failed")
+        }
+        guard output.count + Int(length) <= limit else {
+            throw GzipError.decompressedSizeLimitExceeded(limit: limit)
         }
         output.append(contentsOf: try reader.readAlignedBytes(count: Int(length)))
     }
@@ -125,12 +137,16 @@ private enum Deflate {
         _ reader: inout BitReader,
         into output: inout [UInt8],
         literalLength: HuffmanDecoder,
-        distance: HuffmanDecoder?
+        distance: HuffmanDecoder?,
+        limit: Int
     ) throws {
         while true {
             let symbol = try literalLength.decode(&reader)
             switch symbol {
             case 0...255:
+                guard output.count < limit else {
+                    throw GzipError.decompressedSizeLimitExceeded(limit: limit)
+                }
                 output.append(UInt8(symbol))
             case 256:
                 return
@@ -147,6 +163,9 @@ private enum Deflate {
                 let offset = distanceBases[distanceSymbol] + (try reader.readBits(distanceExtras[distanceSymbol]))
                 guard offset > 0, offset <= output.count else {
                     throw GzipError.invalidDeflateStream(reason: "copy distance is outside the output window")
+                }
+                guard output.count + length <= limit else {
+                    throw GzipError.decompressedSizeLimitExceeded(limit: limit)
                 }
                 for _ in 0..<length {
                     output.append(output[output.count - offset])
@@ -171,6 +190,11 @@ private enum Deflate {
         let literalLengthCount = try reader.readBits(5) + 257
         let distanceCount = try reader.readBits(5) + 1
         let codeLengthCount = try reader.readBits(4) + 4
+        // RFC 1951 §3.2.7 defines 286 literal/length and 30 distance codes;
+        // the encodings above can express more, and those values are reserved.
+        guard literalLengthCount <= 286, distanceCount <= 30 else {
+            throw GzipError.invalidDeflateStream(reason: "reserved dynamic table size")
+        }
 
         let order = [16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15]
         var codeLengthLengths = Array(repeating: 0, count: 19)
@@ -299,6 +323,24 @@ private struct HuffmanDecoder {
         var counts = Array(repeating: 0, count: maxBits + 1)
         for length in lengths where length > 0 {
             counts[length] += 1
+        }
+
+        // Kraft: a canonical Huffman table must use its code space exactly.
+        // An over-subscribed table decodes ambiguously and an incomplete one
+        // leaves bit patterns undefined, so both are rejected here rather than
+        // surfacing later as a plausible-looking wrong byte. The single
+        // exception RFC 1951 allows is a one-code distance table.
+        var remainingCodeSpace = 1
+        for bits in 1...maxBits {
+            remainingCodeSpace <<= 1
+            remainingCodeSpace -= counts[bits]
+            guard remainingCodeSpace >= 0 else {
+                throw GzipError.invalidDeflateStream(reason: "over-subscribed Huffman table")
+            }
+        }
+        let usedSymbols = counts[1...].reduce(0, +)
+        guard remainingCodeSpace == 0 || usedSymbols == 1 else {
+            throw GzipError.invalidDeflateStream(reason: "incomplete Huffman table")
         }
 
         var nextCode = Array(repeating: 0, count: maxBits + 1)

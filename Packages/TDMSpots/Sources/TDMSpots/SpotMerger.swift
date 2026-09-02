@@ -65,7 +65,10 @@ public enum SpotMerger {
     public static func merge(_ candidates: [Spot], rules: MergeRules = .standard) -> [Spot] {
         guard candidates.count > 1 else { return candidates }
 
-        let ordered = candidates.sorted { $0.id < $1.id }
+        // Ids are meant to be unique, but a source that returns the same
+        // record twice must not change the outcome either, so the ordering
+        // falls back to the contents that the reduction actually reads.
+        let ordered = candidates.sorted { isOrderedBefore($0, $1) }
         var clusters = DisjointSet(count: ordered.count)
         for i in ordered.indices {
             for j in (i + 1)..<ordered.count where isSamePlace(ordered[i], ordered[j], rules: rules) {
@@ -78,7 +81,7 @@ public enum SpotMerger {
             grouped[clusters.find(index), default: []].append(spot)
         }
 
-        return grouped.values.map(reduce).sorted { $0.id < $1.id }
+        return grouped.values.map(reduce).sorted { isOrderedBefore($0, $1) }
     }
 
     /// Both halves of the §7 rule: close enough, and either agreeing on the name
@@ -102,7 +105,7 @@ public enum SpotMerger {
             let lhsPriority = priority(of: lhs)
             let rhsPriority = priority(of: rhs)
             if lhsPriority != rhsPriority { return lhsPriority > rhsPriority }
-            return lhs.id < rhs.id
+            return isOrderedBefore(lhs, rhs)
         }
         guard var merged = members.first else {
             preconditionFailure("a cluster is never empty")
@@ -181,6 +184,18 @@ public enum SpotMerger {
         merged.score = members.map(\.score).max() ?? merged.score
 
         return merged
+    }
+
+    /// A total order over candidates: id first, then the fields the reduction
+    /// reads, so two records sharing an id still sort deterministically.
+    static func isOrderedBefore(_ lhs: Spot, _ rhs: Spot) -> Bool {
+        if lhs.id != rhs.id { return lhs.id < rhs.id }
+        if lhs.name != rhs.name { return lhs.name < rhs.name }
+        if lhs.lat != rhs.lat { return lhs.lat < rhs.lat }
+        if lhs.lon != rhs.lon { return lhs.lon < rhs.lon }
+        if lhs.curated != rhs.curated { return lhs.curated }
+        if lhs.score != rhs.score { return lhs.score > rhs.score }
+        return String(describing: lhs.refs) < String(describing: rhs.refs)
     }
 
     private static func priority(of spot: Spot) -> Int {

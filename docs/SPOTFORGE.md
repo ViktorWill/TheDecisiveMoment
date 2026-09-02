@@ -238,7 +238,8 @@ but a generic word survives as itself.
 
 ### Reducing a cluster
 
-Every choice below is a total order over the members — sorted by source priority, then by `id` — so
+Every choice below is a total order over the members — sorted by source priority, then by `id`, and
+where two records share an `id` by name, latitude, longitude and the remaining reduced fields — so
 the reduction is a function of the *set*, not of the order the sources returned.
 
 | Field | Rule |
@@ -297,7 +298,9 @@ alone — "137 geotagged photos nearby · marketplace · curated" tells you some
 The same factor is applied to each term, so the published `scoreFactors` are the terms' shares
 *after* normalisation and **sum to `score`**. That is what lets the detail sheet show a breakdown
 that does not contradict the number next to it. Contributions and scores are rounded to six
-decimals so a regenerated bundle does not diff on floating-point noise.
+decimals so a regenerated bundle does not diff on floating-point noise, and the rounding residual —
+including anything the `0…1` clamp removes — is folded into the largest factor so the identity
+survives the rounding.
 
 ### Worked example
 

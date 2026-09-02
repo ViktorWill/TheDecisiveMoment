@@ -120,6 +120,24 @@ struct SpotMergerTests {
         #expect(SpotMerger.merge(shuffled) == SpotMerger.merge(MergeSample.all))
     }
 
+    /// Ids are supposed to be unique, but a source that emits the same id for
+    /// two different records must still not make the output depend on arrival
+    /// order, so the ordering falls through to the contents.
+    @Test("Candidates sharing an id still merge order-independently", arguments: 0..<20)
+    func duplicateIdsAreOrderIndependent(seed: Int) {
+        let twin = MergeSample.spot(
+            id: MergeSample.elsewhere.id,
+            name: "Astor Place Kiosk",
+            lat: 40.75500,
+            lon: -73.99500,
+            sources: [.osm]
+        )
+        var generator = SeededGenerator(seed: UInt64(seed))
+        let inputs = MergeSample.all + [twin]
+
+        #expect(SpotMerger.merge(inputs.shuffled(using: &generator)) == SpotMerger.merge(inputs))
+    }
+
     @Test("A cluster collapses to one spot and leaves distant places alone")
     func clusterCollapses() {
         let merged = SpotMerger.merge(MergeSample.all)
