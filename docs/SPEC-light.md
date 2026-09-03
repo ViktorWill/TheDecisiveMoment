@@ -52,9 +52,79 @@ Seed lenses at 21, 24, 28, 35, 50, 75 and 90 mm, with the marks for each. Gettin
 more than it sounds — the whole output is "set the barrel to *this engraved mark*", and a mark the
 lens does not have makes the advice unusable.
 
-Film mode changes the interaction meaningfully: ISO is locked for the whole roll, so the solver has
-one fewer degree of freedom and the app should show the roll speed as a fixed fact rather than a
-picker. Add a *"loaded film"* field so this is set once when the roll goes in.
+## Two modes, and they are genuinely different
+
+The body's `medium` decides which of these the screen is. This is not a cosmetic switch — the two
+answer different questions, and the maths behind them is in
+[EXPOSURE-MODEL.md §7a–7d](EXPOSURE-MODEL.md).
+
+### Analog — the roll is a constraint you live with
+
+ISO is a fact about the film you loaded, not a control. It is set once when the roll goes in, and it
+is the reason the app is useful: with two degrees of freedom instead of three, whole scenes are
+simply out of reach, and knowing that before you raise the camera is worth more than any exposure
+suggestion.
+
+- **Loaded film** is a picker over real stocks, not a bare number. It carries the box speed, the
+  medium (B&W neg, colour neg, slide) and therefore the latitude and bias.
+- **Rated at** is a separate push/pull control — `HP5 400 @ 1600 (+2)`. Set per roll, shown
+  everywhere the ISO appears, with the cost stated ("noticeably coarse grain, blocked shadows").
+- ISO renders as **context, not a control** — dimmer than aperture and shutter, because it is not a
+  decision you are making right now.
+- **The recommendation may be "you can't".** Handled below.
+
+Seed film stocks:
+
+| Stock | Box | Medium | Notes shown |
+|---|---|---|---|
+| Ilford HP5 Plus | 400 | B&W neg | Pushes to 1600 cleanly — the street default |
+| Kodak Tri-X 400 | 400 | B&W neg | Pushes to 1600; more contrast than HP5 |
+| Ilford FP4 Plus | 125 | B&W neg | Fine grain, needs light |
+| Ilford Delta 3200 | 3200 | B&W neg | Genuinely ISO 1000–1600; rate accordingly |
+| Kodak Portra 400 | 400 | Colour neg | Rated conservatively; +1 is common practice |
+| Kodak Gold 200 | 200 | Colour neg | Daylight |
+| Kodak Ektar 100 | 100 | Colour neg | Bright sun; too slow indoors |
+| Fujifilm Provia 100F | 100 | Slide | No latitude. Meter carefully |
+
+The medium column is what sets the solver's tolerance, so it has to be right — a candidate that is
+fine on HP5 is a discard on Provia.
+
+### Digital — ISO is the third dial
+
+The solver picks it, up to a **ceiling** the user sets: the point past which they do not want the
+file. Ceiling defaults to ISO 6400 and is a plain slider, not a menu.
+
+- ISO renders at **full weight**, alongside aperture and shutter. It is an answer, not context.
+- The primary line reads as a change when it is one: *"raise to ISO 1600"* rather than restating a
+  value the camera is already on.
+- Round up to the body's next real step, never down.
+- When the ceiling is not enough, use the same shortfall language as analog rather than silently
+  exceeding it.
+
+## When nothing works
+
+The analog solver can return an empty set, and this is a feature. At EV100 5.0 on a dim street, an
+HP5 400 roll has **no** handheld solution on an M6.
+
+The screen must not show an empty list or a spinner. It shows the shortfall and the levers:
+
+```
+        Not on this roll
+
+  HP5 400 is 0.9 stops short here.
+
+  · Push to 1600 (+2)     f/2 · 1/125
+  · Drop to 1/30          accept some blur
+  · Wait 20 min           the street lights come up
+```
+
+Each lever is tappable and re-solves. The stops-short figure is computed, not hedged. If the gap
+exceeds two stops, say plainly that this is the wrong roll for this light — that is the honest
+answer and the one a photographer can act on tomorrow.
+
+The mirror case is a roll that is too *fast*: in bright sun an ISO 1600 film overexposes by 1.1
+stops even at f/16 · 1/1000. On HP5 that is inside latitude and the app should offer it with a
+note; on slide film it is a discard, and the lever is an ND filter.
 
 ## Output
 

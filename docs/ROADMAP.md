@@ -67,6 +67,19 @@ This is the first milestone that produces something you can use in the field.
 
 ---
 
+### M4a — Analog and digital modes
+
+Adds the dimension M4 does not have. `TDMCore` and `TDMLight` learn the difference between a loaded
+roll and a digital sensor: asymmetric film latitude, exposure bias by medium, push and pull, a
+no-solution result that explains itself, and ISO as a solved variable on digital. The Light screen
+gains the two modes on top.
+
+**Done when:** the eight vectors in [PROMPT-COPILOT.md](../PROMPT-COPILOT.md) M4a pass — in
+particular HP5 400 admitting exactly two settings in bright sun, admitting none on a dim street, and
+an M10 answering that same street with ISO 1600.
+
+---
+
 ### M5 — Map screen
 
 The screen from [SPEC-map.md](SPEC-map.md), bundle download and verification, offline cache, filters,

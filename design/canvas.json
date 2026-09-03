@@ -1,16 +1,20 @@
 {
   "artboards": [
-    { "file": "Main.dc.html",       "x": 0,    "y": 0,    "w": 393, "h": 852, "title": "Light — the answer" },
-    { "file": "SunPanel.dc.html",   "x": 493,  "y": 0,    "w": 393, "h": 852, "title": "Light — planning" },
-    { "file": "Gear.dc.html",       "x": 986,  "y": 0,    "w": 393, "h": 852, "title": "Gear" },
-    { "file": "Map.dc.html",        "x": 1479, "y": 0,    "w": 393, "h": 852, "title": "Map" },
-    { "file": "SpotDetail.dc.html", "x": 1972, "y": 0,    "w": 393, "h": 852, "title": "Spot detail" },
-    { "file": "Tokens.dc.html",     "x": 0,    "y": 1000, "w": 780, "h": 1020, "title": "Design system" }
+    { "file": "Main.dc.html",       "x": 0,    "y": 0,    "w": 393, "h": 852, "title": "Light — analog" },
+    { "file": "Digital.dc.html",    "x": 493,  "y": 0,    "w": 393, "h": 852, "title": "Light — digital" },
+    { "file": "NoSolution.dc.html", "x": 986,  "y": 0,    "w": 393, "h": 852, "title": "Light — not on this roll" },
+    { "file": "SunPanel.dc.html",   "x": 1479, "y": 0,    "w": 393, "h": 852, "title": "Light — planning" },
+    { "file": "Gear.dc.html",       "x": 1972, "y": 0,    "w": 393, "h": 852, "title": "Gear — film and push" },
+    { "file": "Map.dc.html",        "x": 0,    "y": 1060, "w": 393, "h": 852, "title": "Map" },
+    { "file": "SpotDetail.dc.html", "x": 493,  "y": 1060, "w": 393, "h": 852, "title": "Spot detail" },
+    { "file": "Tokens.dc.html",     "x": 986,  "y": 1060, "w": 780, "h": 1020, "title": "Design system" }
   ],
   "annotations": [
-    { "id": "brief", "x": 0, "y": -150, "w": 460, "text": "The Decisive Moment — Instrument direction.\nNear-black ground, hairline rules, IBM Plex Mono figures, one amber accent.\nStatic mockups for milestones M4 and M5." },
-    { "id": "barrel-note", "x": 0, "y": 880, "w": 393, "text": "The distance scale uses real Leica mark spacing — positions are linear in 1/distance, which is why the marks bunch toward infinity. Band = sharp range, index = chosen mark." },
-    { "id": "alts-note", "x": 493, "y": 880, "w": 393, "text": "Only three settings exist here: the M6 tops out at 1/1000, so at EV 16.05 the ladder gives exactly f/8, f/11 and f/16. The alternatives row is complete, not truncated." }
+    { "id": "brief", "x": 0, "y": -190, "w": 520, "text": "The Decisive Moment — Instrument direction.\nNear-black ground, hairline rules, IBM Plex Mono figures, one amber accent.\nTop row: the Light tab in both modes. Bottom row: Map, spot detail, design system." },
+    { "id": "analog-note", "x": 0, "y": 880, "w": 393, "text": "ANALOG. ISO is dimmed — a fact about the loaded roll, not a decision. \"3 of 3\" is literal: at EV 16.05 an M6 topping out at 1/1000 admits exactly three settings." },
+    { "id": "digital-note", "x": 493, "y": 880, "w": 393, "text": "DIGITAL. Same street, same lens. ISO is at full weight and phrased as a change — \"raise to 1600\" — because it is the answer. 1562 exact, rounded UP to the next real step." },
+    { "id": "none-note", "x": 986, "y": 880, "w": 393, "text": "NO SOLUTION is a designed screen, not an empty list. HP5 400 genuinely cannot expose EV 5.0 hand-held on an M6. The shortfall is computed; each lever re-solves." },
+    { "id": "barrel-note", "x": 1479, "y": 880, "w": 393, "text": "The distance scale on the analog screen is spaced linearly in 1/distance, the way a Leica barrel is engraved — which is why the marks bunch toward infinity." }
   ],
   "launch": { "view": "canvas" }
 }
