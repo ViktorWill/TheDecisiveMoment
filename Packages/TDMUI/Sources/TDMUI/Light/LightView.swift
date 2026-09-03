@@ -14,13 +14,19 @@ public struct LightView: View {
     @State private var showsMeter = false
     @State private var showsBodyPicker = false
 
+    /// A spot handed over by the Map tab. The screen answers for it — its
+    /// coordinate, its street, its sky — until the user steps back to here.
+    private let handoff: SpotHandoff?
+
     public init(
         weatherService: WeatherService,
-        gearStore: GearStore? = nil
+        gearStore: GearStore? = nil,
+        handoff: SpotHandoff? = nil
     ) {
         _viewModel = State(
             wrappedValue: LightViewModel(weatherService: weatherService, gearStore: gearStore)
         )
+        self.handoff = handoff
     }
 
     public var body: some View {
@@ -147,6 +153,19 @@ public struct LightView: View {
                             )
                         }
 
+                        if let spotName = viewModel.spotName {
+                            HStack(spacing: 8) {
+                                Image(systemName: "mappin.and.ellipse")
+                                    .font(.system(size: 12))
+                                Text("Answering for \(spotName)")
+                                    .font(.system(size: 12, design: .rounded))
+                                Spacer(minLength: 8)
+                                Button("Use my location") { viewModel.clearSpot() }
+                                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            }
+                            .foregroundStyle(LightTheme.accent)
+                        }
+
                         if viewModel.location.isUsingFallback {
                             Text("Using a default location — the sun figures are for Times Square until there is a fix.")
                                 .font(.system(size: 12, design: .rounded))
@@ -197,6 +216,10 @@ public struct LightView: View {
         }
         .preferredColorScheme(.dark)
         .task { await viewModel.start() }
+        .task(id: handoff) {
+            guard let handoff else { return }
+            viewModel.apply(handoff)
+        }
     }
 }
 
