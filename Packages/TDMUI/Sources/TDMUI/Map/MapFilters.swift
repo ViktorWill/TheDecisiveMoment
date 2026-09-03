@@ -63,7 +63,10 @@ struct MapFilters: Codable, Hashable, Sendable {
 struct MapFilterStore: Sendable {
     static let key = "map.filters.v1"
 
-    var defaults: UserDefaults = .standard
+    // `UserDefaults` is thread-safe by documented contract but predates
+    // `Sendable`; `nonisolated(unsafe)` records that the runtime guarantee,
+    // not a missing check, is what makes this safe.
+    nonisolated(unsafe) var defaults: UserDefaults = .standard
 
     func load() -> MapFilters {
         guard let data = defaults.data(forKey: Self.key),
