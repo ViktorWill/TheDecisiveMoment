@@ -32,6 +32,7 @@ targets:
     deploymentTarget: "18.0"
     sources:
       - path: App/Sources
+      - path: App/Resources
     dependencies:
       - package: TDMUI
     settings:
@@ -43,10 +44,12 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIUserInterfaceStyle: Dark
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         # Truthful because the live meter adds no capture output to the
         # session: it reads ISO, exposure duration and aperture only.
         INFOPLIST_KEY_NSCameraUsageDescription: "Used to read the light level for the exposure advisor. No photos are taken or stored."
-        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Used to work out the sun's position and the local weather for the light advice, and to show spots near you."
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Used to show spots near you and to compute the sun's position. A coarse coordinate also goes to Apple's weather service for the cloud cover the light advice needs."
         INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
         TARGETED_DEVICE_FAMILY: "1"
         CODE_SIGN_STYLE: Automatic

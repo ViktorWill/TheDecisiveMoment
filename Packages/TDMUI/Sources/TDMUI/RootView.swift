@@ -1,4 +1,5 @@
 import SwiftUI
+import TDMCore
 import TDMPersistence
 import TDMSpots
 import TDMWeather
@@ -9,6 +10,7 @@ public struct RootView: View {
     private let gearStore: GearStore?
     private let spotStore: any SpotStore
     private let bundles: BundleService?
+    private let community: any CommunityBackend
 
     /// One provider for both tabs: two `CLLocationManager`s would ask for the
     /// same fix twice and cost the battery for it.
@@ -16,6 +18,8 @@ public struct RootView: View {
     @State private var selectedTab = Tab.map
     /// The spot the Map handed to the Light tab, if any.
     @State private var handoff: SpotHandoff?
+    /// Shown once, before anything asks for a permission.
+    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
 
     enum Tab: Hashable {
         case map
@@ -31,19 +35,36 @@ public struct RootView: View {
     ///     previews working without SwiftData.
     ///   - bundles: `nil` leaves the map offline-only — it still draws whatever
     ///     is stored.
+    ///   - community: Where shooting plans live. The in-memory default keeps
+    ///     previews working, and is what a store that will not open falls back
+    ///     to: losing a plan on quit beats refusing to draw the tab.
     public init(
         weatherService: WeatherService,
         gearStore: GearStore? = nil,
         spotStore: any SpotStore = InMemorySpotStore(),
-        bundles: BundleService? = nil
+        bundles: BundleService? = nil,
+        community: any CommunityBackend = InMemoryCommunityBackend()
     ) {
         self.weatherService = weatherService
         self.gearStore = gearStore
         self.spotStore = spotStore
         self.bundles = bundles
+        self.community = community
     }
 
     public var body: some View {
+        // Not a cover over the tabs: a tab underneath would run its `task` and
+        // put a location prompt on screen behind the explanation of what the
+        // app is.
+        if hasSeenOnboarding {
+            tabs
+        } else {
+            OnboardingView { hasSeenOnboarding = true }
+                .preferredColorScheme(.dark)
+        }
+    }
+
+    private var tabs: some View {
         TabView(selection: $selectedTab) {
             MapView(
                 store: spotStore,
@@ -62,9 +83,15 @@ public struct RootView: View {
                 .tabItem { Label("Light", systemImage: "sun.max") }
                 .tag(Tab.light)
 
-            CommunityPlaceholderView()
-                .tabItem { Label("Community", systemImage: "person.2") }
-                .tag(Tab.community)
+            CommunityView(
+                model: CommunityViewModel(
+                    backend: community,
+                    store: spotStore,
+                    location: location
+                )
+            )
+            .tabItem { Label("Community", systemImage: "person.2") }
+            .tag(Tab.community)
         }
         // The app is used at dusk and at night; a white screen ruins night
         // vision and exposure judgement.

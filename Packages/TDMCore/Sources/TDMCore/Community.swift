@@ -41,6 +41,10 @@ public struct Photographer: Sendable, Hashable, Codable, Identifiable {
     public var isValid: Bool {
         !displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
+
+    /// What a profile is called before anyone has been asked. v1 has no
+    /// account, so the local photographer is seeded rather than signed in.
+    public static let defaultDisplayName = "You"
 }
 
 /// A plan to go out and shoot.

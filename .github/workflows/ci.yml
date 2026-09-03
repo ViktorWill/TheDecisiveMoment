@@ -40,7 +40,6 @@ jobs:
   app:
     name: xcodegen + build app
     runs-on: macos-15
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - name: Install XcodeGen

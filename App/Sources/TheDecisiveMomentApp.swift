@@ -1,4 +1,5 @@
 import SwiftUI
+import TDMCore
 import TDMPersistence
 import TDMSpots
 import TDMUI
@@ -17,6 +18,9 @@ struct TheDecisiveMomentApp: App {
     /// open falls back to memory, which costs the user this session's pins
     /// rather than the whole map.
     @State private var spots: SpotServices = Self.makeSpotServices()
+    /// Shooting plans. A store that will not open falls back to memory: losing
+    /// a plan on quit is bad, refusing to draw the tab is worse.
+    private let community: any CommunityBackend = Self.makeCommunityBackend()
 
     private static func makeGearStore() -> GearStore? {
         guard let container = try? GearStore.makeContainer() else { return nil }
@@ -42,13 +46,21 @@ struct TheDecisiveMomentApp: App {
         return SpotServices(store: SwiftDataSpotStore.make(container: container))
     }
 
+    private static func makeCommunityBackend() -> any CommunityBackend {
+        guard let container = try? LocalCommunityBackend.makeContainer() else {
+            return InMemoryCommunityBackend()
+        }
+        return LocalCommunityBackend.make(container: container)
+    }
+
     var body: some Scene {
         WindowGroup {
             RootView(
                 weatherService: weatherService,
                 gearStore: gearStore,
                 spotStore: spots.store,
-                bundles: spots.bundles
+                bundles: spots.bundles,
+                community: community
             )
         }
     }
