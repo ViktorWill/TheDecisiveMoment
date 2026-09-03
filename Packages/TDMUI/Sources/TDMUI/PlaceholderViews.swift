@@ -7,13 +7,6 @@ struct MapPlaceholderView: View {
     }
 }
 
-/// Placeholder for the light advisor — see `docs/SPEC-light.md`.
-struct LightPlaceholderView: View {
-    var body: some View {
-        PlaceholderView(title: "Light", detail: "What to set, and where to put the zone focus.")
-    }
-}
-
 /// Placeholder for the community section — see `docs/SPEC-community.md`.
 struct CommunityPlaceholderView: View {
     var body: some View {

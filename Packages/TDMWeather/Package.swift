@@ -18,6 +18,7 @@ let package = Package(
                 .product(name: "TDMCore", package: "TDMCore"),
                 .product(name: "TDMLight", package: "TDMLight")
             ]
-        )
+        ),
+        .testTarget(name: "TDMWeatherTests", dependencies: ["TDMWeather"])
     ]
 )

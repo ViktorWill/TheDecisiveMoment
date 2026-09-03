@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import TDMCore
 @testable import TDMLight
 
 @Suite("Exposure solver — EXPOSURE-MODEL §7")
@@ -203,5 +204,50 @@ struct ExposureSolverTests {
             iso: solution.primary.iso
         )
         #expect(abs(measured - (14.05 + solution.primary.errorEV)) < 1e-9)
+    }
+}
+
+@Suite("Stored gear adapters")
+struct StoredGearAdapterTests {
+    @Test("A stored film body arrives at the solver with its roll speed intact")
+    func adaptsFilmBody() {
+        let stored = CameraBody(
+            name: "Leica M6",
+            shutterSpeeds: [1.0 / 250, 1, 1.0 / 1_000],
+            iso: .fixed(400),
+            hasMeter: true,
+            loadedFilm: "Tri-X"
+        )
+        let profile = CameraBodyProfile(stored)
+
+        #expect(profile.name == "Leica M6")
+        #expect(profile.iso == .fixed(400))
+        #expect(profile.shutterSpeeds == [1.0 / 1_000, 1.0 / 250, 1])
+    }
+
+    @Test("A stored lens keeps every engraved mark, ∞ included")
+    func adaptsLens() {
+        let stored = Lens(
+            name: "Elmarit-M 90mm f/2.8",
+            focalLengthMillimetres: 90,
+            apertures: [2.8, 4, 5.6],
+            distanceMarksMetres: [3.0, 1.0, .infinity, 1.5],
+            minimumFocusMetres: 1.0
+        )
+        let profile = LensProfile(stored)
+
+        #expect(profile.focalLengthMillimetres == 90)
+        #expect(profile.sortedDistanceMarks.filter(\.isFinite) == [1.0, 1.5, 3.0])
+        #expect(profile.distanceMarksMetres.contains { !$0.isFinite })
+    }
+
+    @Test("The stored strategy round-trips, carrying the motion it needs")
+    func adaptsStrategy() {
+        #expect(ExposureStrategy(.zoneFocus) == .zoneFocus)
+        #expect(ExposureStrategy(.freezeMotion, motion: .running) == .freezeMotion(.running))
+        #expect(ExposureStrategy(.freezeMotion).stored == StoredExposureStrategy.freezeMotion)
+        for stored in StoredExposureStrategy.allCases {
+            #expect(ExposureStrategy(stored).stored == stored)
+        }
     }
 }
