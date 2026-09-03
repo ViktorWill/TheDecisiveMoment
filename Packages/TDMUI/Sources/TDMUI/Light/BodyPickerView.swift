@@ -84,7 +84,7 @@ private struct BodyRow: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
                 ForEach(BodyPhrasing.badges(camera), id: \.text) { badge in
-                    BadgeView(badge: badge, isSelected: isSelected)
+                    BadgeView(badge: badge)
                 }
 
                 if isSelected {
@@ -190,9 +190,20 @@ private struct CroppedFormatDetail: View {
 
 private struct BadgeView: View {
     let badge: BodyPhrasing.Badge
-    let isSelected: Bool
 
     var body: some View {
+        // The quiet badge is a note rather than a badge in the mockup: plain
+        // grey text, its own case, no border.
+        if badge.style == .quiet {
+            Text(badge.text)
+                .font(.system(size: 9, design: .rounded))
+                .foregroundStyle(LightTheme.tertiaryText)
+        } else {
+            label
+        }
+    }
+
+    private var label: some View {
         Text(badge.text.uppercased())
             .font(.system(size: 9, weight: .semibold, design: .rounded))
             .kerning(0.54)
@@ -222,7 +233,7 @@ private struct BadgeView: View {
 enum BodyPhrasing {
     struct Badge: Equatable {
         enum Kind: Equatable { case aperturePriority, noMeter, croppedFormat, quiet }
-        enum Style: Equatable { case filled, outlined }
+        enum Style: Equatable { case filled, outlined, quiet }
         let text: String
         let kind: Kind
         var style: Style = .outlined
@@ -243,7 +254,7 @@ enum BodyPhrasing {
         // sensor has, and that is the difference between an answer and a
         // shortfall, §7d.
         if let sensor = body.iso.sensorRange, sensor.maximum <= 2_500 {
-            badges.append(Badge(text: "low ceiling", kind: .quiet))
+            badges.append(Badge(text: "low ceiling", kind: .quiet, style: .quiet))
         }
         return badges
     }

@@ -94,7 +94,7 @@ struct NoSolutionView: View {
         case .strategyConstraintsUnsatisfiable:
             return "Nothing on the dial satisfies it here."
         case .strategyUnavailableOnBody:
-            return "This body will not pick the shutter itself.
+            return "This body will not pick the shutter itself."
         case .noSettingWithinTolerance:
             return shortfall.sense == .needsMoreLight
                 ? "Nothing on the dial reaches it hand-held."
