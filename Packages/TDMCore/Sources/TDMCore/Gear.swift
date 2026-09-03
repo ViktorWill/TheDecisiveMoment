@@ -56,6 +56,12 @@ public enum ISOMode: Sendable, Hashable, Codable {
         return nil
     }
 
+    /// The sensor's own limits, ignoring the photographer's ISO ceiling.
+    public var sensorRange: (minimum: Int, maximum: Int)? {
+        if case let .range(minimum, maximum, _) = self { return (minimum, maximum) }
+        return nil
+    }
+
     /// What the light lands on, which sets the tolerance and the bias, §7a.
     public var medium: Medium {
         switch self {

@@ -90,6 +90,8 @@ struct FilmTests {
         #expect(sensor.medium == .digital)
         #expect(sensor.solvableValues == [100, 200, 400, 800, 1_600])
         #expect(sensor.ceiling == 1_600)
+        #expect(sensor.sensorRange?.minimum == 100)
+        #expect(sensor.sensorRange?.maximum == 6_400)
         #expect(sensor.loadedRoll == nil)
     }
 
