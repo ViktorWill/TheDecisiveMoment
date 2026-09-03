@@ -34,5 +34,5 @@ public struct RootView: View {
 }
 
 #Preview {
-    RootView(weatherService: WeatherService(provider: StubWeatherProvider.brightAfternoon))
+    RootView(weatherService: WeatherService(provider: StubWeatherProvider()))
 }

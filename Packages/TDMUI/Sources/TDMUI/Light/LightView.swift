@@ -134,7 +134,7 @@ public struct LightView: View {
 
 #Preview {
     LightView(
-        weatherService: WeatherService(provider: StubWeatherProvider.brightAfternoon),
+        weatherService: WeatherService(provider: StubWeatherProvider()),
         gearStore: nil
     )
 }
