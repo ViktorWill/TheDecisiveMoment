@@ -42,19 +42,24 @@ public struct Pipeline: Sendable {
     public let commons: CommonsSource?
     public let runner: RequestRunner?
     public var options: PipelineOptions
+    /// Unconditional progress lines, to stderr by default — issue #17: a
+    /// multi-hour run and a genuine hang were indistinguishable without this.
+    public var progress: @Sendable (String) -> Void
 
     public init(
         city: CityDefinition,
         sources: [any SpotSource],
         commons: CommonsSource? = nil,
         runner: RequestRunner? = nil,
-        options: PipelineOptions = PipelineOptions()
+        options: PipelineOptions = PipelineOptions(),
+        progress: @escaping @Sendable (String) -> Void = { _ in }
     ) {
         self.city = city
         self.sources = sources
         self.commons = commons
         self.runner = runner
         self.options = options
+        self.progress = progress
     }
 
     public struct Output: Sendable {
@@ -66,13 +71,24 @@ public struct Pipeline: Sendable {
         var report = BuildReport(cityId: city.id)
 
         // 1 fetch, 2 normalise
+        let fetchStarted = Date()
         var candidates: [Spot] = []
         var signals: [String: RawSpot] = [:]
         for source in sources {
             var tally = BuildReport.SourceTally(source: source.sourceKind, candidates: 0, failure: nil)
             for district in city.queryBoxes {
+                let label = city.districts.count > 1 ? "\(source.sourceKind.rawValue) · \(district.name)" : source.sourceKind.rawValue
+                progress("\(label): fetching")
                 do {
-                    for raw in try await source.fetch(bbox: district.bbox) {
+                    // Commons reports its own sweep progress — a lattice
+                    // sweep can be hundreds of requests, one source among
+                    // several fetched per district.
+                    let raws: [RawSpot] = if source.sourceKind == .commons, let commons {
+                        try await commons.fetch(bbox: district.bbox, label: label, progress: progress)
+                    } else {
+                        try await source.fetch(bbox: district.bbox)
+                    }
+                    for raw in raws {
                         var raw = raw
                         if city.districts.count > 1, !raw.tags.contains(district.name.lowercased()) {
                             raw.tags.append(district.name.lowercased())
@@ -81,36 +97,51 @@ public struct Pipeline: Sendable {
                         candidates.append(raw.normalised)
                         tally.candidates += 1
                     }
+                    progress("\(label): \(raws.count) candidates")
                 } catch {
                     tally.failure = String(describing: error)
+                    progress("\(label): failed — \(error)")
                 }
             }
             report.sources.append(tally)
         }
         report.candidateCount = candidates.count
+        report.recordStage("fetch", since: fetchStarted)
 
         // 3 merge
+        progress("merge: \(candidates.count) candidates")
+        let mergeStarted = Date()
         let merged = SpotMerger.merge(candidates, rules: options.mergeRules)
         report.mergedCount = merged.count
+        report.recordStage("merge", since: mergeStarted)
 
         // 4 score
+        progress("score: \(merged.count) spots")
+        let scoreStarted = Date()
         let grid = await commons?.densityGrid() ?? PhotoDensityGrid(referenceLatitude: city.center.latitude)
         report.photoCells = grid.counts.count
         report.photoTotal = grid.totalPhotos
         let scored = SpotScorer.score(merged.map { scoringInput(for: $0, grid: grid, signals: signals) })
+        report.recordStage("score", since: scoreStarted)
 
         // 5 trim
+        progress("trim")
+        let trimStarted = Date()
         let (kept, floor) = trim(scored)
         report.droppedBySizeCap = scored.count - kept.count
         report.scoreFloor = floor
+        report.recordStage("trim", since: trimStarted)
 
         // 6 write — the caller does the writing; the pipeline hands over the
         // city that will be written, photos and all.
+        if options.fetchesPhotos { progress("photos: up to \(min(kept.count, options.photoSpotLimit)) spots") }
+        let photosStarted = Date()
         var spots = kept
         if options.fetchesPhotos, let commons {
             spots = await attachPhotos(to: spots, using: commons)
         }
         report.spotCount = spots.count
+        report.recordStage("photos", since: photosStarted)
 
         var built = City(
             cityId: city.id,

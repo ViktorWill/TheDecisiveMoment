@@ -209,6 +209,11 @@ people photograph that no other source names — with the id `commons:cell/{lat}
 A bbox large enough to need more than 20 000 samples fails the build rather than running for a day
 against a volunteer service; that is what districts are for.
 
+Commons `geosearch` is a separate service from Overpass with its own limits, so the sweep does not
+have to inherit Overpass's one-at-a-time rule: `RequestRunner` gives the `commons` namespace a small
+concurrency (a few requests in flight, still on a conservative interval) while Overpass and Wikidata
+stay strictly serial. See §9.
+
 For the top-scoring spots, fetch representative images with `prop=imageinfo` and
 `iiprop=url|extmetadata` to get `thumbURL`, `pageURL`, author and licence. **Store the licence.** A
 photo without attribution does not go in the bundle.
@@ -266,6 +271,13 @@ weighted toward the curated or OSM position, and keep the maximum of each score 
 
 Merging is order-dependent if done naively. Do it as single-link clustering over the candidate set,
 then reduce each cluster once — that way the result does not depend on source order.
+
+Comparing every candidate against every other is quadratic and does not scale past a few boroughs of
+OSM features. Candidates are bucketed into a grid of cells sized at 60 m (the larger of the two
+distance thresholds above) and only compared within the 3×3 block of cells around each one, so the
+tighter 25 m intersection case is still caught. A candidate near a cell edge is still compared
+against its neighbours in the adjacent cells, which is what keeps the result independent of input
+order even with bucketing.
 
 ### Name normalisation
 
@@ -379,7 +391,18 @@ regenerates all cities, and opens a PR. Data refreshes therefore arrive as a **r
 you can see that a spot vanished because someone retagged it in OSM, rather than discovering it in
 the field.
 
-The workflow must not run on every push. These are volunteer-run APIs.
+The workflow must not run on every push. These are volunteer-run APIs. It builds and validates with
+`-c release`; a five-borough `us-nyc` run in debug mode is slow enough to risk the Actions 6-hour cap.
+
+`RequestRunner` enforces politeness per source rather than with one shared queue: Overpass and
+Wikidata each get a strictly serial `HostPolicy` (one request at a time, a minimum interval between
+them), matching their usage policies exactly. Commons `geosearch` gets its own `HostPolicy` with a
+small concurrency, since it is a different service with different limits — see §4.
+
+`spotforge` prints progress to stderr as it runs, unconditionally: which source and district is
+being swept, a periodic counter (including how many responses were served from cache), each pipeline
+stage as it starts, and per-stage elapsed time in the final `--report`. A build that is merely slow
+and one that has hung are otherwise indistinguishable from the outside.
 
 ---
 

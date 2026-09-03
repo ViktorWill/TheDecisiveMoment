@@ -1,4 +1,5 @@
 import Foundation
+import Synchronization
 import Testing
 import TDMCore
 import TDMSpots
@@ -112,6 +113,34 @@ struct PipelineTests {
         #expect(report.emptySources == [.curated])
         #expect(report.warnings.contains { $0.contains("curated") })
         #expect(report.summary.contains("curated"))
+    }
+
+    /// Issue #17: nothing printed between "Build complete" and the final
+    /// report, so a multi-hour run and a genuine hang were indistinguishable.
+    /// This checks that every stage the issue names actually announces itself.
+    @Test("Every stage announces itself, and the report times each one")
+    func announcesEveryStage() async throws {
+        let lines = Mutex<[String]>([])
+        let pipeline = try makePipeline(options: PipelineOptions(fetchesPhotos: false))
+        let output = await Pipeline(
+            city: pipeline.city,
+            sources: pipeline.sources,
+            commons: pipeline.commons,
+            runner: pipeline.runner,
+            options: pipeline.options,
+            progress: { line in lines.withLock { $0.append(line) } }
+        ).run(bundleVersion: 1)
+
+        let seen = lines.withLock { $0 }
+        #expect(seen.contains { $0.contains("merge:") })
+        #expect(seen.contains { $0.hasPrefix("score") })
+        #expect(seen.contains { $0.hasPrefix("trim") })
+        #expect(seen.contains { $0.contains("osm") && $0.contains("fetching") })
+        #expect(seen.contains { $0.contains("commons") && $0.contains("sweeping") })
+
+        let stageNames = Set(output.report.stageDurations.map(\.stage))
+        #expect(stageNames == ["fetch", "merge", "score", "trim", "photos"])
+        #expect(output.report.stageDurations.allSatisfy { $0.seconds >= 0 })
     }
 
     @Test("A source that throws is reported as failed, and the build goes on")

@@ -227,6 +227,53 @@ struct SpotMergerTests {
         #expect(SpotName.similarity("Washington Square Park", "Washington Sq.") > 0.82)
         #expect(SpotName.similarity("Astor Place", "Washington Square") < 0.82)
     }
+
+    /// `SpotMerger.merge` buckets candidates into a grid rather than comparing
+    /// every candidate against every other (issue #17). This checks the grid
+    /// against a brute-force all-pairs reference over a few hundred scattered
+    /// candidates — enough to exercise cell-boundary neighbours in both
+    /// dimensions — so the fast path cannot quietly drop a merge the slow path
+    /// would have made.
+    @Test("Grid-bucketed merge matches an all-pairs reference over a scattered set", arguments: 0..<5)
+    func gridMatchesBruteForceReference(seed: Int) {
+        var generator = SeededGenerator(seed: UInt64(seed) &+ 1000)
+        let candidates = (0..<400).map { index in
+            // Scattered across roughly a 2 km square, so many candidates land
+            // near a 60 m cell boundary purely by chance.
+            let lat = 40.7300 + Double.random(in: -0.009...0.009, using: &generator)
+            let lon = -73.9900 + Double.random(in: -0.009...0.009, using: &generator)
+            return MergeSample.spot(
+                id: "osm:scatter/\(index)",
+                name: "",
+                lat: lat,
+                lon: lon,
+                sources: [.osm]
+            )
+        }
+
+        let merged = SpotMerger.merge(candidates)
+        let reference = bruteForceMerge(candidates)
+        #expect(merged == reference)
+    }
+
+    /// The pre-grid implementation: single-link clustering over every pair,
+    /// with no spatial bucketing at all. Kept only as a reference to check the
+    /// grid-based `SpotMerger.merge` against.
+    private func bruteForceMerge(_ candidates: [Spot]) -> [Spot] {
+        guard candidates.count > 1 else { return candidates }
+        let ordered = candidates.sorted { SpotMerger.isOrderedBefore($0, $1) }
+        var clusters = DisjointSet(count: ordered.count)
+        for i in ordered.indices {
+            for j in (i + 1)..<ordered.count where SpotMerger.isSamePlace(ordered[i], ordered[j]) {
+                clusters.union(i, j)
+            }
+        }
+        var grouped: [Int: [Spot]] = [:]
+        for (index, spot) in ordered.enumerated() {
+            grouped[clusters.find(index), default: []].append(spot)
+        }
+        return grouped.values.map(SpotMerger.reduce).sorted { SpotMerger.isOrderedBefore($0, $1) }
+    }
 }
 
 /// Deterministic shuffles, so a failing seed can be reproduced.

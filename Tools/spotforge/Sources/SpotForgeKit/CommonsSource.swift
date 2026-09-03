@@ -55,19 +55,38 @@ public actor CommonsSource: SpotSource {
     }
 
     public func fetch(bbox: BoundingBox) async throws -> [RawSpot] {
+        try await fetch(bbox: bbox, label: sourceKind.rawValue, progress: nil)
+    }
+
+    /// Same sweep, with progress lines a caller can print: the point count up
+    /// front, and a running counter — including cache hits, since a re-run
+    /// after an interrupt replays the cache and writes nothing, and a still
+    /// counter is then correct rather than a hang (issue #17).
+    public func fetch(bbox: BoundingBox, label: String, progress: (@Sendable (String) -> Void)?) async throws -> [RawSpot] {
         var grid = self.grid ?? PhotoDensityGrid(cellMetres: cellMetres, referenceLatitude: bbox.center.latitude)
         let points = grid.samplePoints(in: bbox, spacingMetres: Self.sampleSpacingMetres)
         guard points.count <= maximumSamples else {
             throw CommonsError.tooManySamples(points.count, limit: maximumSamples)
         }
+        progress?("\(label): sweeping \(points.count) points")
 
-        for point in points {
+        // Enough updates to show life on a long sweep without a line per
+        // point: ~20 lines whether the sweep is 100 points or 10,000.
+        let progressStride = max(1, points.count / 20)
+        var cachedCount = 0
+        for (index, point) in points.enumerated() {
             let request = HTTPRequest(url: Self.geosearchURL(endpoint: endpoint, at: point))
+            let cacheHitsBefore = await runner.cacheHitCount
             let data = try await runner.send(request, cacheNamespace: "commons")
+            if await runner.cacheHitCount > cacheHitsBefore { cachedCount += 1 }
             let response = try JSONDecoder().decode(GeosearchResponse.self, from: data)
             sampleCount += 1
             for file in response.query?.geosearch ?? [] where seenPageIds.insert(file.pageid).inserted {
                 grid.add(Coordinate(latitude: file.lat, longitude: file.lon))
+            }
+            let done = index + 1
+            if done % progressStride == 0 || done == points.count {
+                progress?("\(label): \(done)/\(points.count) (\(cachedCount) cached)")
             }
         }
         self.grid = grid

@@ -32,18 +32,21 @@ jobs:
       - name: Build bundles
         # --strict turns a source that answered with nothing into a failed run:
         # a bundle silently missing every Wikidata landmark is worse than no
-        # new bundle at all.
+        # new bundle at all. `-c release` matters here specifically: the merge
+        # pass and the Commons sweep both run over the full five-borough
+        # candidate set, and a debug build is not fast enough to fit the
+        # Actions 6-hour job cap (issue #17).
         run: |
           if [ -n "${{ github.event.inputs.city }}" ]; then
             scope="--city ${{ github.event.inputs.city }}"
           else
             scope="--all"
           fi
-          swift run --package-path Tools/spotforge spotforge build \
+          swift run -c release --package-path Tools/spotforge spotforge build \
             $scope --out bundles/v1 --report --strict
 
       - name: Validate bundles
-        run: swift run --package-path Tools/spotforge spotforge validate bundles/v1
+        run: swift run -c release --package-path Tools/spotforge spotforge validate bundles/v1
 
       - uses: actions/upload-artifact@v4
         with:

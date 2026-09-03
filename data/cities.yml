@@ -5,43 +5,25 @@
 # a city as one undifferentiated blob.
 #
 # ---------------------------------------------------------------------------
-# TEMPORARILY SCOPED TO MANHATTAN.
+# All five boroughs — restored after issue #17.
 #
-# All five boroughs were declared here, and the first real run showed why that
-# does not work yet:
-#
-#   - The Commons sweep samples a 500 m lattice per district. Five boroughs is
-#     ~7,200 sample points, and the shared RequestRunner serialises every source
-#     at one request at a time. Measured rate was ~30 requests/minute, so the
-#     sweep alone took about four hours.
-#   - SpotMerger.merge is O(n^2) with no spatial index. With five boroughs of
-#     OSM features the candidate set runs to the hundreds of thousands, and the
-#     merge was still burning 99.8% of a core an hour after the sweep finished.
-#
-# Manhattan alone is ~770 samples and a far smaller candidate set, which is
-# enough to prove the pipeline end to end and produce a bundle worth testing
-# against. Restore the other four boroughs once the batching, spatial-index and
-# progress-output work lands, and let the monthly workflow do the long run on a
-# runner rather than on someone's laptop.
-#
-# To restore: put the four commented districts back and widen `bbox` to the
-# full-city extent noted beside it.
+# This was temporarily scoped to Manhattan alone: the first real run showed
+# that SpotMerger.merge was O(n²) with no spatial index, and that the shared
+# RequestRunner serialised Commons behind Overpass's one-at-a-time policy.
+# Both are fixed now — merge buckets candidates into a grid instead of
+# comparing every candidate against every other, and Commons gets its own,
+# more permissive concurrency — so the full city fits inside the monthly
+# workflow's time budget again.
 # ---------------------------------------------------------------------------
 
 - id: us-nyc
   name: New York City
   country: US
   center: { lat: 40.7736, lon: -73.9712 }
-  # Manhattan's extent, not the whole city: the bbox is what the app uses to
-  # decide whether it has data for where you are standing, so claiming all five
-  # boroughs while shipping one would tell the map it covers Brooklyn when it
-  # does not.
-  # Full-city extent, for when the other districts come back:
-  #   bbox: { minLat: 40.4774, minLon: -74.2591, maxLat: 40.9176, maxLon: -73.7004 }
-  bbox:   { minLat: 40.6980, minLon: -74.0200, maxLat: 40.8800, maxLon: -73.9070 }
+  bbox: { minLat: 40.4774, minLon: -74.2591, maxLat: 40.9176, maxLon: -73.7004 }
   districts:
     - { name: Manhattan,     bbox: { minLat: 40.6980, minLon: -74.0200, maxLat: 40.8800, maxLon: -73.9070 } }
-    # - { name: Brooklyn,      bbox: { minLat: 40.5700, minLon: -74.0420, maxLat: 40.7395, maxLon: -73.8330 } }
-    # - { name: Queens,        bbox: { minLat: 40.5400, minLon: -73.9630, maxLat: 40.8010, maxLon: -73.7004 } }
-    # - { name: The Bronx,     bbox: { minLat: 40.7855, minLon: -73.9340, maxLat: 40.9176, maxLon: -73.7654 } }
-    # - { name: Staten Island, bbox: { minLat: 40.4774, minLon: -74.2591, maxLat: 40.6514, maxLon: -74.0345 } }
+    - { name: Brooklyn,      bbox: { minLat: 40.5700, minLon: -74.0420, maxLat: 40.7395, maxLon: -73.8330 } }
+    - { name: Queens,        bbox: { minLat: 40.5400, minLon: -73.9630, maxLat: 40.8010, maxLon: -73.7004 } }
+    - { name: The Bronx,     bbox: { minLat: 40.7855, minLon: -73.9340, maxLat: 40.9176, maxLon: -73.7654 } }
+    - { name: Staten Island, bbox: { minLat: 40.4774, minLon: -74.2591, maxLat: 40.6514, maxLon: -74.0345 } }
