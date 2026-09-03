@@ -17,7 +17,9 @@ SCHEME="The Decisive Moment (Free)"
 ENTITLEMENTS="App/TheDecisiveMoment-Free.entitlements"
 
 echo "==> The Free entitlements file asks for nothing"
-if grep -q "com.apple.developer.weatherkit" "$ENTITLEMENTS"; then
+# Strip XML comments first: the file documents the weatherkit key by name in
+# prose, and a raw grep over the whole file would trip on that comment.
+if perl -0777 -pe 's/<!--.*?-->//gs' "$ENTITLEMENTS" | grep -q "com.apple.developer.weatherkit"; then
     echo "FAIL: $ENTITLEMENTS declares WeatherKit; a free Apple ID cannot sign that." >&2
     exit 1
 fi
