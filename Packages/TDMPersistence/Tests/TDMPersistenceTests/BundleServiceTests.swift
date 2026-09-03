@@ -295,8 +295,79 @@ struct BundleServiceTests {
         #expect(transport.requestCount(for: "us-nyc.json.gz") == 0)
     }
 
-    @Test("A dropped pin survives a bundle refresh")
-    func pinsSurviveARefresh() async throws {
+    @Test("A stored city at the index version asks for nothing at all")
+    func aCurrentStoredCityNeedsNoDownload() async throws {
+        let city = Self.city(bundleVersion: 3)
+        let encoded = try Self.encoded(city)
+        let index = Self.index(for: city, sha256: encoded.sha256, bytes: encoded.gzip.count)
+        let store = InMemorySpotStore()
+        try await store.replaceSpots(for: "us-nyc", with: city)
+        let (service, transport) = Self.service(store: store, responses: [
+            "index.json": .success(try BundleCoding.encoder().encode(index)),
+            "us-nyc.json.gz": .success(encoded.gzip)
+        ])
+        let entry = try #require(try await service.index().entry(for: "us-nyc"))
+
+        #expect(await service.needsDownload(entry: entry) == false)
+        #expect(try await service.refresh(entry: entry) == .alreadyCurrent(cityId: "us-nyc", bundleVersion: 3))
+        #expect(transport.requestCount(for: "us-nyc.json.gz") == 0)
+    }
+
+    @Test("A bumped bundleVersion is offered, and imported only when asked for")
+    func aBumpedBundleVersionIsOffered() async throws {
+        let store = InMemorySpotStore()
+        try await store.replaceSpots(for: "us-nyc", with: Self.city(bundleVersion: 3))
+
+        let next = Self.city(bundleVersion: 4, spots: [
+            Spot(
+                id: "osm:node/1", name: "Bethesda Terrace", lat: 40.7740, lon: -73.9709,
+                kind: .plaza, sources: [.osm], score: 0.71
+            ),
+            Spot(
+                id: "osm:node/2", name: "Fifth Avenue", lat: 40.7735, lon: -73.9660,
+                kind: .street, sources: [.osm], score: 0.62
+            )
+        ])
+        let encoded = try Self.encoded(next)
+        let index = Self.index(for: next, sha256: encoded.sha256, bytes: encoded.gzip.count)
+        let (service, transport) = Self.service(store: store, responses: [
+            "index.json": .success(try BundleCoding.encoder().encode(index)),
+            "us-nyc.json.gz": .success(encoded.gzip)
+        ])
+        let entry = try #require(try await service.index().entry(for: "us-nyc"))
+
+        // Asking is free: the check itself never reaches for the bundle.
+        #expect(await service.needsDownload(entry: entry) == true)
+        #expect(transport.requestCount(for: "us-nyc.json.gz") == 0)
+
+        let outcome = try await service.refresh(entry: entry)
+
+        #expect(outcome == .imported(cityId: "us-nyc", bundleVersion: 4, spotCount: 2))
+        #expect(await store.storedBundleVersion(cityId: "us-nyc") == 4)
+        #expect(await store.storedCity(cityId: "us-nyc")?.spotCount == 2)
+    }
+
+    @Test("With no network, the update check is silent and the stored bundle stands")
+    func offlineTheCheckNeitherDownloadsNorFails() async throws {
+        let city = Self.city(bundleVersion: 3)
+        let encoded = try Self.encoded(city)
+        let index = Self.index(for: city, sha256: encoded.sha256, bytes: encoded.gzip.count)
+        let store = InMemorySpotStore(clock: { Self.generatedAt })
+        await store.store(index)
+        try await store.replaceSpots(for: "us-nyc", with: city)
+        let (service, transport) = Self.service(
+            store: store,
+            responses: ["index.json": .failure(Offline())],
+            now: Self.generatedAt.addingTimeInterval(86_400)
+        )
+        let entry = try #require(try await service.index().entry(for: "us-nyc"))
+
+        #expect(await service.needsDownload(entry: entry) == false)
+        #expect(transport.requestCount(for: "us-nyc.json.gz") == 0)
+        #expect(await store.storedCity(cityId: "us-nyc")?.bundleVersion == 3)
+    }
+
+    @Test("A dropped pin survives a bundle refresh")    func pinsSurviveARefresh() async throws {
         let store = InMemorySpotStore()
         let pin = LocalPin.make(
             id: "local:abc",

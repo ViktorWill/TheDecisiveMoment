@@ -40,12 +40,13 @@ struct CityPickerView: View {
 
     private func row(_ entry: CityIndexEntry) -> some View {
         let isStored = model.storedCityIds.contains(entry.cityId)
+        let isStale = model.updatableCityIds.contains(entry.cityId)
         return HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(entry.name)
                     .font(MapTheme.rowTitleFont)
                     .foregroundStyle(MapTheme.primaryText)
-                Text(detail(entry, isStored: isStored))
+                Text(detail(entry, isStored: isStored, isStale: isStale))
                     .font(MapTheme.rowDetailFont)
                     .foregroundStyle(MapTheme.tertiaryText)
             }
@@ -53,7 +54,21 @@ struct CityPickerView: View {
             Text(SpotProse.distance(metres: model.coordinate.distance(to: entry.center)))
                 .font(MapTheme.rowDistanceFont)
                 .foregroundStyle(MapTheme.secondaryText)
-            if isStored {
+            if isStored, isStale {
+                Button {
+                    Task { await model.download(entry) }
+                } label: {
+                    Text("Update")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(MapTheme.background)
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 6)
+                        .background(MapTheme.accent, in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .disabled(model.isDownloading)
+                .accessibilityLabel("Update \(entry.name)")
+            } else if isStored {
                 Button {
                     Task { await model.select(entry) }
                 } label: {
@@ -91,9 +106,13 @@ struct CityPickerView: View {
         }
     }
 
-    private func detail(_ entry: CityIndexEntry, isStored: Bool) -> String {
+    private func detail(_ entry: CityIndexEntry, isStored: Bool, isStale: Bool) -> String {
         let size = MapViewModel.byteCount(entry.bytes)
-        let state = isStored ? "on this device" : "not downloaded"
+        let state = switch (isStored, isStale) {
+        case (false, _): "not downloaded"
+        case (true, true): "update available"
+        case (true, false): "on this device"
+        }
         return "\(entry.spotCount) spots · \(size) · \(state)"
     }
 }
