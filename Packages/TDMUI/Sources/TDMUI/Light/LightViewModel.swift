@@ -423,7 +423,7 @@ public final class LightViewModel {
             calibrationOffsetEV: calibrationEV(at: date) + profile.calibrationOffsetEV,
             body: CameraBodyProfile(profile.body),
             lens: LensProfile(profile.lens),
-            strategy: TDMLight.ExposureStrategy(profile.strategy, motion: motion),
+            strategy: ExposureStrategy(profile.strategy, motion: motion),
             steadiness: steadiness,
             handheldFloorSeconds: acceptedFloorSeconds,
             subjectDistanceMetres: chosenMarkMetres
