@@ -1,0 +1,24 @@
+{
+  "cities" : [
+    {
+      "bbox" : {
+        "maxLat" : 40.9176,
+        "maxLon" : -73.7004,
+        "minLat" : 40.4774,
+        "minLon" : -74.2591
+      },
+      "bundleVersion" : 1,
+      "bytes" : 527412,
+      "cityId" : "us-nyc",
+      "country" : "US",
+      "lat" : 40.697500000000005,
+      "lon" : -73.97975,
+      "name" : "New York City",
+      "sha256" : "626710905930bf51a2750e74d373d67921e85e3e5b5a5a0404040e552f0447b6",
+      "spotCount" : 7132,
+      "updatedAt" : "2026-09-03T18:39:58Z"
+    }
+  ],
+  "generatedAt" : "2026-09-03T18:39:58Z",
+  "schemaVersion" : 1
+}
