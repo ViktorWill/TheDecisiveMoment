@@ -60,7 +60,7 @@ struct MapFilters: Codable, Hashable, Sendable {
 
 /// Where the filters live between launches. `UserDefaults` rather than SwiftData:
 /// this is a preference, not data, and losing it costs a tap.
-struct MapFilterStore: Sendable {
+struct MapFilterStore {
     static let key = "map.filters.v1"
 
     // `UserDefaults` is thread-safe by documented contract but predates

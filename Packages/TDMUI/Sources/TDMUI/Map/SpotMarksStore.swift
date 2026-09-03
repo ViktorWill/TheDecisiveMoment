@@ -9,7 +9,7 @@ import TDMSpots
 /// "Spot detail"). It is a preference-sized amount of data about *the user*
 /// rather than about the city, so it lives in `UserDefaults` and is never
 /// touched by an import.
-struct SpotMarksStore: Sendable {
+struct SpotMarksStore {
     static let savedKey = "map.saved.v1"
     static let visitedKey = "map.visited.v1"
     static let notesKey = "map.notes.v1"
