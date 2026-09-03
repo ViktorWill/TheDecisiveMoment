@@ -15,6 +15,18 @@ public protocol WeatherProvider: Sendable {
     /// May return fewer hours than asked for; the caller widens its uncertainty
     /// for the hours it did not get rather than inventing them.
     func hourly(at coordinate: Coordinate, from start: Date, through end: Date) async throws -> [WeatherObservation]
+
+    /// Whether the hours `hourly(at:from:through:)` returns are a forecast.
+    ///
+    /// `false` for a provider that holds one observation across the window —
+    /// the hours ahead are then an extrapolation, and ``WeatherService`` reports
+    /// them as stale so σ widens per `docs/EXPOSURE-MODEL.md` §9.
+    var providesForecast: Bool { get }
+}
+
+public extension WeatherProvider {
+    /// A provider forecasts unless it says otherwise.
+    var providesForecast: Bool { true }
 }
 
 /// Why a weather fetch failed.

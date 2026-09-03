@@ -41,9 +41,11 @@ Start here:
 
 ## Building
 
-Requires a Mac with Xcode 16+ and [XcodeGen](https://github.com/yonaskolb/XcodeGen), plus a paid
-Apple Developer Program membership from milestone M4 onwards — WeatherKit requires it. Full
-requirements in [docs/SETUP.md](docs/SETUP.md).
+Requires a Mac with Xcode 16+ and [XcodeGen](https://github.com/yonaskolb/XcodeGen). A free Apple ID
+is enough to run it on your own phone: build the `The Decisive Moment (Free)` scheme, which carries
+no WeatherKit entitlement and takes the sky from a five-segment control instead of a forecast. The
+paid Apple Developer Program membership buys WeatherKit, builds that last longer than 7 days, and
+TestFlight. Full requirements, and the free-tier caveats, in [docs/SETUP.md](docs/SETUP.md).
 
 ```sh
 brew install xcodegen

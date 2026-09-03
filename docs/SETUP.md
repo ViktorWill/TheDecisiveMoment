@@ -11,12 +11,21 @@ friction on the first `⌘B` regardless of how clean the generated code looks.
 | Mac with Apple silicon, ~60 GB free | yes | from M0 |
 | Xcode 26 (or 16+) | yes | from M0 |
 | Homebrew + XcodeGen | yes | from M0 |
-| **Apple Developer Program, $99/yr** | **yes** | **from M4 — WeatherKit needs it** |
+| **An Apple ID** | **yes** | **from M4 — a free one is enough** |
+| Apple Developer Program, $99/yr | only for WeatherKit, TestFlight and the App Store | M4 onwards |
 | iPhone running iOS 18 or later | yes | from M4 |
 | TestFlight app | only to hand builds to others | M6 |
 
-The paid account is the one hard gate, and it does not bite until M4. Milestones M0–M3 are pure
-Swift and need no Apple account at all.
+There are two ways to get this onto a phone, and neither of them is blocked by the other:
+
+- **Free Apple ID** — build the **`The Decisive Moment (Free)`** scheme. It carries no WeatherKit
+  entitlement, so automatic signing accepts it, and the sky comes from a five-segment control on the
+  Light screen instead of a forecast. Everything else — map, spots, exposure model, sun position,
+  live meter, offline bundles — is unchanged.
+- **Paid membership, $99/yr** — build the default **`TheDecisiveMoment`** scheme. WeatherKit leads,
+  and the sky control is still there as an override off the cloud figure.
+
+Milestones M0–M3 are pure Swift and need no Apple account at all.
 
 ---
 
@@ -85,24 +94,55 @@ find out whether the agents got the exposure maths right.
 
 ## The Apple Developer account
 
-**You need the paid Apple Developer Program membership, $99/yr.** Not optional, for one specific
-reason: **WeatherKit requires it.** There is no free tier — membership includes 500,000 API calls
-per month, which is far beyond what one person plus a few testers will use.
+Either tier gets the app onto your own phone. The difference is WeatherKit, how long the build
+lasts, and whether anyone else can have it.
 
-What each tier gets you:
-
-| | Free Apple ID | Paid membership |
+| | Free Apple ID | Paid membership, $99/yr |
 |---|---|---|
 | Build and run on your own iPhone | yes, but the build **expires after 7 days** | yes, 1 year |
 | Apps installed at once | 3 | unlimited |
-| WeatherKit | **no** | yes |
+| WeatherKit | **no** | yes, 500,000 calls/month |
 | TestFlight | no | yes |
 | App Store | no | yes |
 
-So the practical sequence is: do M0–M3 with no account, sign up before M4, and you will not hit the
-limit at an awkward moment.
+### The free path
 
-### Enabling WeatherKit (once, before M4)
+```sh
+xcodegen generate
+open TheDecisiveMoment.xcodeproj
+# scheme: The Decisive Moment (Free) → your iPhone → Run
+```
+
+Xcode → Signing & Capabilities → Team → *Add an Account…* and sign in with any Apple ID. The `Free`
+configuration points `CODE_SIGN_ENTITLEMENTS` at `App/TheDecisiveMoment-Free.entitlements`, which
+asks for nothing, and defines `TDM_NO_WEATHERKIT`, which compiles `WeatherKitProvider` out
+altogether. Do not add the WeatherKit capability to that configuration: automatic signing refuses an
+entitlement a free Apple ID cannot be granted, and it refuses the *whole* build, not just the
+feature.
+
+You will also need a bundle identifier nobody else has registered. `com.viktorwill.thedecisivemoment`
+is taken; change `PRODUCT_BUNDLE_IDENTIFIER` in `project.yml` to something of your own and re-run
+`xcodegen generate`.
+
+Three things to know before you rely on it, because none of them are worked around and all of them
+will bite:
+
+1. **The build expires after 7 days.** On the eighth day it refuses to launch — *"…could not be
+   verified"* — and the only fix is to plug into the Mac and hit Run again. Nothing on the phone can
+   renew it, and there is no warning beforehand.
+2. **Three sideloaded apps at a time.** A free Apple ID can have three of its own builds installed
+   across all devices. A fourth requires deleting one.
+3. **No TestFlight, and no App Store.** Handing the app to someone else needs the paid membership.
+   There is no free route to another person's phone.
+
+And the app's own difference, from `docs/SPEC-light.md`: there is no forecast, so the sky is a
+five-segment control — Clear, Light haze, Hazy sun, Cloudy bright, Overcast — sitting where the
+weather readout goes. Those map to exactly the cloud-cover rows the model already uses
+(EXPOSURE-MODEL §4b), so the answer is as good as the sky you report. The 12-hour scrubber still
+works: sun position is computed on device, the reported cover is held across the window, and the
+uncertainty widens for the hours ahead rather than the feature disappearing.
+
+### The paid path, and enabling WeatherKit (once, before M4)
 
 1. [developer.apple.com](https://developer.apple.com) → Certificates, Identifiers & Profiles →
    Identifiers → register the App ID `com.viktorwill.thedecisivemoment`.
@@ -162,6 +202,7 @@ simulator.
 | Bundle download, decode, map rendering | yes | yes |
 | Location | yes, simulated | yes |
 | WeatherKit | yes, with entitlement + network | yes |
+| The manual sky control (Free build) | yes | yes |
 | **Live meter (camera exposure readout)** | **no — no camera** | yes |
 | **Compass heading** (street bearing on new pins) | **no** | yes |
 | Offline behaviour in airplane mode | approximately | yes — this is the real test |
@@ -179,7 +220,7 @@ no connection, and the only honest test of that is a phone in airplane mode on a
 | **M1** light maths | nothing else | `swift test --package-path Packages/TDMLight` — the four vectors in EXPOSURE-MODEL.md pass |
 | **M2** models, bundles | nothing else | `swift test` on TDMCore and TDMSpots |
 | **M3** spotforge | network | `swift run spotforge build --city us-nyc --out bundles/v1`, then open the JSON and look at it |
-| **M4** Light screen | **paid account**, WeatherKit enabled, iPhone | take it outside and compare against your meter |
+| **M4** Light screen | an Apple ID and an iPhone; a paid account only if you want WeatherKit | take it outside and compare against your meter |
 | **M5** Map screen | same | airplane mode, relaunch, spots still there |
 | **M6** TestFlight | App Store Connect record | someone else installs it |
 

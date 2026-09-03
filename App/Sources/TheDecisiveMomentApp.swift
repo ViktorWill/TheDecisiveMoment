@@ -10,7 +10,27 @@ import TDMWeather
 struct TheDecisiveMomentApp: App {
     /// One cache for the whole app. Fifteen minutes, and a clear-sky fallback
     /// when the network is not there — the screen never blocks on it.
-    @State private var weatherService = WeatherService(provider: WeatherKitProvider())
+    @State private var weatherService: WeatherService
+    /// The Free configuration's only provider, and the one the sky control
+    /// writes to. `nil` where WeatherKit leads and the control is an override.
+    ///
+    /// A free Apple ID cannot carry the WeatherKit entitlement, so that build
+    /// takes the sky from the photographer rather than making a call that is
+    /// guaranteed to come back `.notAuthorised` — `docs/SPEC-light.md`, "Sky,
+    /// when there is no WeatherKit".
+    private let manualSky: ManualWeatherProvider?
+
+    init() {
+        #if TDM_NO_WEATHERKIT
+        let provider = ManualWeatherProvider()
+        manualSky = provider
+        _weatherService = State(initialValue: WeatherService(provider: provider))
+        #else
+        manualSky = nil
+        _weatherService = State(initialValue: WeatherService(provider: WeatherKitProvider()))
+        #endif
+    }
+
     /// A store that will not open must not cost the user the screen: the view
     /// model falls back to the shipped catalogue in memory when this is `nil`.
     @State private var gearStore: GearStore? = Self.makeGearStore()
@@ -60,6 +80,7 @@ struct TheDecisiveMomentApp: App {
                 gearStore: gearStore,
                 spotStore: spots.store,
                 bundles: spots.bundles,
+                manualSky: manualSky,
                 community: community
             )
         }

@@ -79,18 +79,24 @@ extension ExposurePhrasing {
     public static func spokenConditions(
         sunElevationDegrees: Double,
         cloudCover: Double?,
-        isStale: Bool = false
+        isStale: Bool = false,
+        isReported: Bool = false
     ) -> String {
         let elevation = spokenNumber(abs(sunElevationDegrees), decimals: 1)
         let horizon = sunElevationDegrees < 0 ? "below" : "above"
-        var parts = ["sun \(elevation) degrees \(horizon) the horizon"]
-        if let cloudCover {
-            let percent = spokenNumber((cloudCover * 100).rounded(), decimals: 0)
-            parts.append(isStale ? "\(percent) percent cloud, stale" : "\(percent) percent cloud")
-        } else {
-            parts.append("no weather, clear sky assumed")
-        }
+        let parts = [
+            "sun \(elevation) degrees \(horizon) the horizon",
+            spokenCloud(cover: cloudCover, isStale: isStale, isReported: isReported)
+        ]
         return parts.joined(separator: ", ")
+    }
+
+    /// The cloud figure, said rather than engraved.
+    public static func spokenCloud(cover: Double?, isStale: Bool = false, isReported: Bool = false) -> String {
+        guard let cover else { return "no weather, clear sky assumed" }
+        let percent = spokenNumber((cover * 100).rounded(), decimals: 0)
+        if isReported { return "\(percent) percent cloud, reported by you" }
+        return isStale ? "\(percent) percent cloud, stale" : "\(percent) percent cloud"
     }
 
     private static func distanceDecimals(for metres: Double) -> Int {

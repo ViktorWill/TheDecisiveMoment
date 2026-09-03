@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  The Free configuration's entitlements: deliberately empty.
+
+  A free Apple ID cannot be granted com.apple.developer.weatherkit, and
+  automatic signing refuses an entitlement it cannot grant, so this file asks
+  for nothing. Everything else the app uses — MapKit, CoreLocation, AVCapture,
+  SwiftData — needs no entitlement at all.
+
+  The paid build keeps TheDecisiveMoment.entitlements, which XcodeGen writes
+  from project.yml. Do not add keys here.
+-->
+<plist version="1.0">
+<dict/>
+</plist>

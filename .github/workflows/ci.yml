@@ -53,3 +53,7 @@ jobs:
             -scheme TheDecisiveMoment \
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO
+      # The Free configuration is what a free Apple ID can sign, and the only
+      # way to know it stayed that way is to build it and read the binary.
+      - name: Build the Free configuration and assert it links no WeatherKit
+        run: Scripts/assert-no-weatherkit.sh

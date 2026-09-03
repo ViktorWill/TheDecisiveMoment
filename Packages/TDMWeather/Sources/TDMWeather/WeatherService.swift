@@ -90,7 +90,12 @@ public actor WeatherService {
             guard let match = forecast.observation(for: hour, tolerance: Self.hourlyMatchTolerance) else {
                 return WeatherReading.clearSkyFallback(at: hour, failure: failure)
             }
-            return WeatherReading(date: hour, observation: match, freshness: freshness, failure: failure)
+            return WeatherReading(
+                date: hour,
+                observation: match,
+                freshness: Self.freshness(freshness, forHour: hour, now: now, forecasts: provider.providesForecast),
+                failure: failure
+            )
         }
     }
 
@@ -137,6 +142,22 @@ public actor WeatherService {
 
     static func providerError(_ error: any Error) -> WeatherProviderError {
         (error as? WeatherProviderError) ?? .underlying(String(describing: error))
+    }
+
+    /// What an hour of the window is worth.
+    ///
+    /// A provider that does not forecast is holding one observation across the
+    /// window: it describes now, so the hours ahead of now are an extrapolation
+    /// and are reported stale, which is the §9 widening. The hour the user is
+    /// standing in keeps the observation's own freshness.
+    static func freshness(
+        _ freshness: WeatherFreshness,
+        forHour hour: Date,
+        now: Date,
+        forecasts: Bool
+    ) -> WeatherFreshness {
+        guard !forecasts, hour > now, freshness == .fresh else { return freshness }
+        return .stale
     }
 
     /// The hours from `start` through `end`, each snapped to the top of its hour.

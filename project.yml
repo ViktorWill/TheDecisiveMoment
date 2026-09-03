@@ -5,6 +5,13 @@ options:
     iOS: "18.0"
   createIntermediateGroups: true
 
+# `Free` is a debug build that carries no WeatherKit entitlement, so it signs
+# with a free Apple ID. `docs/SPEC-light.md`, "Sky, when there is no WeatherKit".
+configs:
+  Debug: debug
+  Release: release
+  Free: debug
+
 packages:
   TDMCore:
     path: Packages/TDMCore
@@ -24,6 +31,11 @@ settings:
     SWIFT_VERSION: "6.0"
     SWIFT_STRICT_CONCURRENCY: complete
     ENABLE_USER_SCRIPT_SANDBOXING: YES
+  configs:
+    # Set at the project level as well as on the target: the local packages are
+    # built as part of the project, and this is the level they inherit from.
+    Free:
+      SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) DEBUG TDM_NO_WEATHERKIT"
 
 targets:
   TheDecisiveMoment:
@@ -33,6 +45,10 @@ targets:
     sources:
       - path: App/Sources
       - path: App/Resources
+      # Not compiled: it is what CODE_SIGN_ENTITLEMENTS points at in the Free
+      # configuration, and it is worth being able to open in the navigator.
+      - path: App/TheDecisiveMoment-Free.entitlements
+        buildPhase: none
     dependencies:
       - package: TDMUI
     settings:
@@ -54,6 +70,14 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         CODE_SIGN_STYLE: Automatic
         SWIFT_EMIT_LOC_STRINGS: YES
+      configs:
+        # A free Apple ID cannot be granted WeatherKit, and automatic signing
+        # refuses an entitlement it cannot grant — so this configuration points
+        # at an entitlements file that does not ask for one, and compiles the
+        # provider out rather than making a call guaranteed to fail.
+        Free:
+          CODE_SIGN_ENTITLEMENTS: App/TheDecisiveMoment-Free.entitlements
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) DEBUG TDM_NO_WEATHERKIT"
     entitlements:
       path: App/TheDecisiveMoment.entitlements
       properties:
@@ -68,3 +92,17 @@ schemes:
       config: Debug
     archive:
       config: Release
+  "The Decisive Moment (Free)":
+    build:
+      targets:
+        TheDecisiveMoment: all
+    run:
+      config: Free
+    test:
+      config: Free
+    profile:
+      config: Free
+    analyze:
+      config: Free
+    archive:
+      config: Free
