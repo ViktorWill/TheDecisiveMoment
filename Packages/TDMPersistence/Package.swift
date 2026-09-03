@@ -18,6 +18,7 @@ let package = Package(
                 .product(name: "TDMCore", package: "TDMCore"),
                 .product(name: "TDMSpots", package: "TDMSpots")
             ]
-        )
+        ),
+        .testTarget(name: "TDMPersistenceTests", dependencies: ["TDMPersistence"])
     ]
 )

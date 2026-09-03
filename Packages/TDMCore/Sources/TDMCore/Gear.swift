@@ -82,6 +82,14 @@ public enum ExposureStrategy: String, Sendable, Codable, CaseIterable, Hashable 
     case availableLight
 }
 
+/// `ExposureStrategy` under a name that does not collide.
+///
+/// `TDMCore` names both this module and an enum inside it, so qualifying this
+/// type by module is ambiguous wherever `TDMLight`'s solver-facing enum of the
+/// same name is also in scope. Use this alias there, as `SpotSourceKind` is used
+/// for `SpotSource`.
+public typealias StoredExposureStrategy = ExposureStrategy
+
 /// A body, as the app stores it.
 public struct CameraBody: Sendable, Hashable, Codable, Identifiable {
     public var id: UUID
