@@ -165,21 +165,18 @@ private struct UnsolvableView: View {
         switch error {
         case .noSettingWithinTolerance:
             "The light is outside this body and lens. Open up, change film, or accept a slower shutter."
-        case let .strategyConstraintsUnsatisfiable(strategy):
-            "Nothing satisfies \(Self.name(of: strategy)) here. Try another strategy."
+        case .strategyConstraintsUnsatisfiable(.zoneFocus):
+            "Nothing satisfies zone focus here. Try another strategy."
+        case .strategyConstraintsUnsatisfiable(.freezeMotion):
+            "Nothing satisfies freeze motion here. Try another strategy."
+        case .strategyConstraintsUnsatisfiable(.subjectIsolation):
+            "Nothing satisfies isolate subject here. Try another strategy."
+        case .strategyConstraintsUnsatisfiable(.availableLight):
+            "Nothing satisfies available light here. Try another strategy."
         case .emptyGearProfile:
             "This gear profile has no shutter speeds, apertures or ISO to work with."
         case nil:
             "Pick a gear profile to get a setting."
-        }
-    }
-
-    private static func name(of strategy: ExposureStrategy) -> String {
-        switch strategy {
-        case .zoneFocus: "zone focus"
-        case .freezeMotion: "freeze motion"
-        case .subjectIsolation: "isolate subject"
-        case .availableLight: "available light"
         }
     }
 }
