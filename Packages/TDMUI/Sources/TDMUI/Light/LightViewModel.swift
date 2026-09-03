@@ -188,8 +188,16 @@ public final class LightViewModel {
         case let .lowerFloor(shutter, _):
             acceptedFloorSeconds = shutter
         case let .differentRoll(isoSpeed):
-            guard let roll = loadedRoll else { return }
-            setLoadedRoll(LoadedRoll(stock: roll.stock, ratedAt: isoSpeed))
+            // A different *roll*, not the same stock rated harder: past two
+            // stops the push is not the answer, so this loads the catalogue
+            // stock of the same medium nearest the speed that would work, at
+            // its own box speed.
+            guard let roll = loadedRoll,
+                  let stock = FilmStock.catalogue
+                      .filter({ $0.medium == roll.medium && $0.id != roll.stock.id })
+                      .min(by: { abs($0.boxSpeed - isoSpeed) < abs($1.boxSpeed - isoSpeed) })
+            else { return }
+            setLoadedRoll(LoadedRoll(stock: stock))
         case let .raiseCeiling(iso):
             setISOCeiling(iso)
         case .neutralDensity:

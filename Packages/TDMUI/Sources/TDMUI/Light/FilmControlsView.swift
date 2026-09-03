@@ -105,7 +105,7 @@ struct FilmBlockView: View {
                     .foregroundStyle(LightTheme.tertiaryText)
                 ChipPicker(
                     values: FilmStock.catalogue,
-                    title: \.shortName,
+                    title: { $0.shortName },
                     selection: Binding(
                         get: { roll.stock },
                         // A new stock starts at its own box speed: carrying a

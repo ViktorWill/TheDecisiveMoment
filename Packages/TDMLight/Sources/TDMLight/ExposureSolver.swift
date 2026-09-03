@@ -357,14 +357,15 @@ public enum ExposureSolver {
         // thirds of a stop more light than the meter asks for.
         let wholeStops = max(1, Int(abs(closest.aimErrorEV).rounded(.up)))
 
-        if needsMoreLight, let roll = request.body.loadedRoll {
+        // Bounded before it is shifted: a scene ten stops under an ISO 25 roll
+        // would otherwise ask for a rating no arithmetic can hold.
+        if needsMoreLight, let roll = request.body.loadedRoll,
+           wholeStops <= LoadedRoll.pushRange.upperBound {
             let pushed = LoadedRoll(stock: roll.stock, ratedAt: roll.ratedAt << wholeStops)
             if pushed.pushStops <= Double(LoadedRoll.pushRange.upperBound) + 0.01 {
                 levers.append(.rate(roll: pushed, setting: bestSetting(request, iso: .fixed(pushed))))
             }
         }
-
-        levers.append(contentsOf: ceilingLevers(request))
 
         if needsMoreLight, let floorLever = slowerFloorLever(request) {
             levers.append(floorLever)
@@ -380,6 +381,10 @@ public enum ExposureSolver {
             let wanted = Double(roll.ratedAt) * pow(2, needsMoreLight ? abs(closest.aimErrorEV) : -abs(closest.aimErrorEV))
             levers.append(.differentRoll(isoSpeed: standardFilmSpeed(atLeast: wanted, faster: needsMoreLight)))
         }
+
+        // Last, because on a sensor it is the only one that ever applies and the
+        // order is the one `docs/SPEC-light.md` "When nothing works" states.
+        levers.append(contentsOf: ceilingLevers(request))
 
         return levers
     }
