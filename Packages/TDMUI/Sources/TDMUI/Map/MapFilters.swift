@@ -66,7 +66,7 @@ struct MapFilterStore {
     // `UserDefaults` is thread-safe by documented contract but predates
     // `Sendable`; `nonisolated(unsafe)` records that the runtime guarantee,
     // not a missing check, is what makes this safe.
-    nonisolated(unsafe) var defaults: UserDefaults = .standard
+    nonisolated(unsafe) let defaults: UserDefaults = .standard
 
     func load() -> MapFilters {
         guard let data = defaults.data(forKey: Self.key),

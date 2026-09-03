@@ -17,7 +17,7 @@ struct SpotMarksStore {
     // `UserDefaults` is thread-safe by documented contract but predates
     // `Sendable`; `nonisolated(unsafe)` records that the runtime guarantee,
     // not a missing check, is what makes this safe.
-    nonisolated(unsafe) var defaults: UserDefaults = .standard
+    nonisolated(unsafe) let defaults: UserDefaults = .standard
 
     func isSaved(_ id: String) -> Bool { ids(Self.savedKey).contains(id) }
     func isVisited(_ id: String) -> Bool { ids(Self.visitedKey).contains(id) }
