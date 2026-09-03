@@ -1,4 +1,5 @@
 import Foundation
+import Synchronization
 import TDMSpots
 
 #if canImport(FoundationNetworking)
@@ -58,46 +59,97 @@ public protocol Transport: Sendable {
 /// `URLSession`, with the policies the volunteer-run services ask for applied
 /// by the caller above rather than here.
 public struct URLSessionTransport: Transport {
+    /// `URLRequest.timeoutInterval`: resets on every byte received, so a
+    /// server that dribbles data slowly never trips it.
     public var timeout: TimeInterval
+    /// A wall-clock ceiling on top of `timeout`, because inactivity alone is
+    /// not a deadline: a request that stays "active" — a byte every few
+    /// seconds — can otherwise run forever and stall the whole build.
+    public var deadline: TimeInterval
 
-    public init(timeout: TimeInterval = 240) {
+    public init(timeout: TimeInterval = 240, deadline: TimeInterval = 300) {
         self.timeout = timeout
+        self.deadline = deadline
     }
 
     public func send(_ request: HTTPRequest) async throws -> Data {
-        var urlRequest = URLRequest(url: request.url, timeoutInterval: timeout)
-        urlRequest.httpMethod = request.method
-        urlRequest.httpBody = request.body
+        var mutableRequest = URLRequest(url: request.url, timeoutInterval: timeout)
+        mutableRequest.httpMethod = request.method
+        mutableRequest.httpBody = request.body
         for (name, value) in request.headers {
-            urlRequest.setValue(value, forHTTPHeaderField: name)
+            mutableRequest.setValue(value, forHTTPHeaderField: name)
         }
+        let urlRequest = mutableRequest
 
-        // `dataTask` rather than the async `data(for:)`: the callback form is
-        // the one corelibs-foundation has had for longest, and this tool has to
-        // run on the Linux runner that regenerates the bundles.
-        return try await withCheckedThrowingContinuation { continuation in
-            let task = URLSession.shared.dataTask(with: urlRequest) { data, response, error in
-                if let error {
-                    continuation.resume(
-                        throwing: HTTPError.transport(url: request.url, underlying: error.localizedDescription)
-                    )
-                    return
-                }
-                let data = data ?? Data()
-                if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
-                    continuation.resume(
-                        throwing: HTTPError.status(
-                            code: http.statusCode,
-                            url: request.url,
-                            body: String(decoding: data, as: UTF8.self)
-                        )
-                    )
-                    return
-                }
-                continuation.resume(returning: data)
+        return try await withThrowingTaskGroup(of: Data.self) { group in
+            group.addTask { try await Self.perform(urlRequest, url: request.url) }
+            group.addTask {
+                try await Task.sleep(nanoseconds: UInt64(deadline * 1_000_000_000))
+                throw HTTPError.transport(
+                    url: request.url,
+                    underlying: "exceeded the \(Int(deadline))s request deadline"
+                )
             }
-            task.resume()
+            defer { group.cancelAll() }
+            // Whichever finishes first — the response, or the deadline —
+            // decides the outcome; `cancelAll` above stops the loser, which
+            // for the network task also cancels the in-flight `URLSessionTask`.
+            guard let result = try await group.next() else {
+                throw HTTPError.transport(url: request.url, underlying: "no result")
+            }
+            return result
         }
+    }
+
+    /// `dataTask` rather than the async `data(for:)`: the callback form is
+    /// the one corelibs-foundation has had for longest, and this tool has to
+    /// run on the Linux runner that regenerates the bundles.
+    private static func perform(_ urlRequest: URLRequest, url: URL) async throws -> Data {
+        let box = CancellableTaskBox()
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
+                let task = URLSession.shared.dataTask(with: urlRequest) { data, response, error in
+                    if let error {
+                        continuation.resume(
+                            throwing: HTTPError.transport(url: url, underlying: error.localizedDescription)
+                        )
+                        return
+                    }
+                    let data = data ?? Data()
+                    if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+                        continuation.resume(
+                            throwing: HTTPError.status(
+                                code: http.statusCode,
+                                url: url,
+                                body: String(decoding: data, as: UTF8.self)
+                            )
+                        )
+                        return
+                    }
+                    continuation.resume(returning: data)
+                }
+                box.set(task)
+                task.resume()
+            }
+        } onCancel: {
+            box.cancel()
+        }
+    }
+}
+
+/// Holds the in-flight `URLSessionTask` just long enough for the deadline
+/// timer to be able to cancel it from another task. `Mutex` rather than
+/// `@unchecked Sendable`: the box crosses into `onCancel`, which can run on a
+/// different thread than the one that created the task.
+private final class CancellableTaskBox: Sendable {
+    private let task = Mutex<URLSessionTask?>(nil)
+
+    func set(_ value: URLSessionTask) {
+        task.withLock { $0 = value }
+    }
+
+    func cancel() {
+        task.withLock { $0?.cancel() }
     }
 }
 
@@ -140,20 +192,48 @@ public struct RecordedTransport: Transport {
 
 /// Rate limiting, caching and identification, in one place.
 ///
-/// Overpass, WDQS and Commons are volunteer-run and their policies are explicit:
-/// one request in flight at a time, a `User-Agent` that says who you are and how
-/// to reach you, and a cache so a re-run of a failed build does not re-ask. The
-/// actor is what enforces the first of those — every source shares one, so the
-/// serialisation is across the whole build, not per source.
+/// Overpass and WDQS are volunteer-run and their policies are explicit: one
+/// request in flight at a time. Commons' `geosearch` is a different service
+/// with no such restriction, so it gets its own, more permissive policy —
+/// `docs/SPOTFORGE.md` §9 and issue #17. Every namespace still gets a
+/// `User-Agent` that says who you are and how to reach you, and a cache so a
+/// re-run of a failed build does not re-ask.
 public actor RequestRunner {
     public static let defaultUserAgent =
         "spotforge/\(SpotForge.version) (The Decisive Moment; https://github.com/ViktorWill/TheDecisiveMoment; contact via GitHub issues)"
 
+    /// How polite to be with one namespace: at most `concurrency` requests in
+    /// flight at once, each namespace-wide gap between finishes at least
+    /// `minimumInterval`.
+    public struct HostPolicy: Sendable {
+        public var concurrency: Int
+        public var minimumInterval: TimeInterval
+
+        public init(concurrency: Int = 1, minimumInterval: TimeInterval = 1) {
+            self.concurrency = max(1, concurrency)
+            self.minimumInterval = minimumInterval
+        }
+    }
+
+    /// A small overlap for Commons — a different service from Overpass, with
+    /// no "one at a time" policy — cuts the sweep by most of its length
+    /// without hammering anyone. Overpass and WDQS keep the serial default.
+    public static let politeCommonsPolicy = HostPolicy(concurrency: 3, minimumInterval: 1)
+
+    /// Per-namespace concurrency slots and the last time each namespace
+    /// finished a request, for the interval check below.
+    private final class NamespaceState {
+        var activeCount = 0
+        var lastFinished: Date?
+        var waiters: [CheckedContinuation<Void, Never>] = []
+    }
+
     private let transport: any Transport
     private let cacheDirectory: URL?
     private let userAgent: String
-    private let minimumInterval: TimeInterval
-    private var lastRequestFinished: Date?
+    private let defaultPolicy: HostPolicy
+    private let namespacePolicies: [String: HostPolicy]
+    private var namespaceStates: [String: NamespaceState] = [:]
 
     public private(set) var requestCount = 0
     public private(set) var cacheHitCount = 0
@@ -162,12 +242,18 @@ public actor RequestRunner {
         transport: any Transport,
         cacheDirectory: URL? = URL(fileURLWithPath: ".cache"),
         userAgent: String = RequestRunner.defaultUserAgent,
-        minimumInterval: TimeInterval = 1
+        minimumInterval: TimeInterval = 1,
+        namespacePolicies: [String: HostPolicy] = [:]
     ) {
         self.transport = transport
         self.cacheDirectory = cacheDirectory
         self.userAgent = userAgent
-        self.minimumInterval = minimumInterval
+        self.defaultPolicy = HostPolicy(concurrency: 1, minimumInterval: minimumInterval)
+        self.namespacePolicies = namespacePolicies
+    }
+
+    private func policy(for namespace: String) -> HostPolicy {
+        namespacePolicies[namespace] ?? defaultPolicy
     }
 
     public func send(_ request: HTTPRequest, cacheNamespace: String) async throws -> Data {
@@ -177,20 +263,58 @@ public actor RequestRunner {
             return cached
         }
 
-        if let last = lastRequestFinished {
-            let elapsed = Date().timeIntervalSince(last)
-            if elapsed < minimumInterval {
-                try await Task.sleep(nanoseconds: UInt64((minimumInterval - elapsed) * 1_000_000_000))
+        let policy = policy(for: cacheNamespace)
+        await acquireSlot(namespace: cacheNamespace, concurrency: policy.concurrency)
+        do {
+            if let last = namespaceStates[cacheNamespace]?.lastFinished {
+                let elapsed = Date().timeIntervalSince(last)
+                if elapsed < policy.minimumInterval {
+                    try await Task.sleep(nanoseconds: UInt64((policy.minimumInterval - elapsed) * 1_000_000_000))
+                }
             }
-        }
 
-        var identified = request
-        identified.headers["User-Agent"] = userAgent
-        defer { lastRequestFinished = Date() }
-        let data = try await transport.send(identified)
-        requestCount += 1
-        store(data, namespace: cacheNamespace, key: key)
-        return data
+            var identified = request
+            identified.headers["User-Agent"] = userAgent
+            let data = try await transport.send(identified)
+            requestCount += 1
+            store(data, namespace: cacheNamespace, key: key)
+            finishSlot(namespace: cacheNamespace)
+            return data
+        } catch {
+            finishSlot(namespace: cacheNamespace)
+            throw error
+        }
+    }
+
+    /// Blocks until fewer than `concurrency` requests are already active for
+    /// this namespace. A namespace with `concurrency: 1` is therefore exactly
+    /// as serial as the runner used to be for everyone.
+    private func acquireSlot(namespace: String, concurrency: Int) async {
+        let state = namespaceStates[namespace] ?? {
+            let state = NamespaceState()
+            namespaceStates[namespace] = state
+            return state
+        }()
+        if state.activeCount < concurrency {
+            state.activeCount += 1
+            return
+        }
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            state.waiters.append(continuation)
+        }
+    }
+
+    /// Releases this namespace's slot, handing it straight to the oldest
+    /// waiter if there is one, and records the finish time the interval check
+    /// above reads.
+    private func finishSlot(namespace: String) {
+        guard let state = namespaceStates[namespace] else { return }
+        state.lastFinished = Date()
+        if !state.waiters.isEmpty {
+            state.waiters.removeFirst().resume()
+        } else {
+            state.activeCount -= 1
+        }
     }
 
     private func cacheURL(namespace: String, key: String) -> URL? {

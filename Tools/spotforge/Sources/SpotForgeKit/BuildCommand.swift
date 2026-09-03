@@ -81,7 +81,13 @@ public struct BuildCommand: Sendable {
                 cacheDirectory: request.fixturesDirectory == nil
                     ? request.cacheDirectory.map { URL(fileURLWithPath: $0) }
                     : nil,
-                minimumInterval: request.fixturesDirectory == nil ? 1 : 0
+                minimumInterval: request.fixturesDirectory == nil ? 1 : 0,
+                // Overpass and WDQS stay serial at the default policy; Commons
+                // is a different service with no such restriction, so it gets
+                // its own overlap (issue #17).
+                namespacePolicies: request.fixturesDirectory == nil
+                    ? ["commons": RequestRunner.politeCommonsPolicy]
+                    : ["commons": RequestRunner.HostPolicy(concurrency: 3, minimumInterval: 0)]
             )
             let commons = CommonsSource(runner: runner)
             let pipeline = Pipeline(

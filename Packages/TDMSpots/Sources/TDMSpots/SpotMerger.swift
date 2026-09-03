@@ -70,8 +70,17 @@ public enum SpotMerger {
         // falls back to the contents that the reduction actually reads.
         let ordered = candidates.sorted { isOrderedBefore($0, $1) }
         var clusters = DisjointSet(count: ordered.count)
+
+        // A naive all-pairs sweep is O(n²), which is fine for a fixture set
+        // and ruinous for a real city — hundreds of thousands of OSM features
+        // pegs a core for hours (issue #17). `ProximityGrid` buckets every
+        // candidate at the *larger* of the two radii the rule uses, so the
+        // tighter `intersectionDistanceMetres` case is still caught, and each
+        // candidate is only compared against the 3×3 neighbourhood of cells
+        // around it rather than every other candidate.
+        let grid = ProximityGrid(coordinates: ordered.map(\.coordinate), cellMetres: rules.maxDistanceMetres)
         for i in ordered.indices {
-            for j in (i + 1)..<ordered.count where isSamePlace(ordered[i], ordered[j], rules: rules) {
+            for j in grid.neighbours(of: i) where j > i && isSamePlace(ordered[i], ordered[j], rules: rules) {
                 clusters.union(i, j)
             }
         }
@@ -202,6 +211,75 @@ public enum SpotMerger {
         let fromSources = spot.sources.map(priority).max() ?? 0
         let fromId = spot.idSource.flatMap(SpotSource.init(rawValue:)).map(priority) ?? 0
         return max(fromSources, fromId)
+    }
+}
+
+/// Buckets coordinates into a grid so nearby candidates can be found without
+/// comparing every candidate against every other one.
+///
+/// The cell size is fixed metres, so longitude cells are narrowed by
+/// `cos(latitude)` at one reference latitude for the whole set — citywide, not
+/// per candidate, which keeps two runs over the same input agreeing even
+/// though summing floating-point latitudes could differ in the last bit by
+/// input order. `coordinates` is always iterated in the caller's fixed,
+/// content-sorted order, so the reference latitude is reproducible.
+struct ProximityGrid {
+    private struct Cell: Hashable {
+        var latIndex: Int
+        var lonIndex: Int
+    }
+
+    /// Metres per degree of latitude, spherical Earth — same constant
+    /// `PhotoDensityGrid` in the spotforge tool uses for the same bucketing.
+    private static let metresPerDegreeLatitude = 111_320.0
+
+    private let cellDegreesLatitude: Double
+    private let cellDegreesLongitude: Double
+    private let cells: [Cell: [Int]]
+    private let cellOf: [Cell]
+
+    init(coordinates: [Coordinate], cellMetres: Double) {
+        let referenceLatitudeRad: Double
+        if coordinates.isEmpty {
+            referenceLatitudeRad = 0
+        } else {
+            let sum = coordinates.reduce(0.0) { $0 + $1.latitude }
+            referenceLatitudeRad = (sum / Double(coordinates.count)) * .pi / 180
+        }
+        let cellMetres = max(cellMetres, 1)
+        cellDegreesLatitude = cellMetres / Self.metresPerDegreeLatitude
+        let scale = max(0.01, cos(referenceLatitudeRad))
+        cellDegreesLongitude = cellMetres / (Self.metresPerDegreeLatitude * scale)
+
+        var cells: [Cell: [Int]] = [:]
+        var cellOf: [Cell] = []
+        cellOf.reserveCapacity(coordinates.count)
+        for (index, coordinate) in coordinates.enumerated() {
+            let cell = Cell(
+                latIndex: Int((coordinate.latitude / cellDegreesLatitude).rounded(.down)),
+                lonIndex: Int((coordinate.longitude / cellDegreesLongitude).rounded(.down))
+            )
+            cells[cell, default: []].append(index)
+            cellOf.append(cell)
+        }
+        self.cells = cells
+        self.cellOf = cellOf
+    }
+
+    /// Every candidate sharing `index`'s cell or one of its eight neighbours —
+    /// a 3×3 block whose side is three times the cell size, so two candidates
+    /// up to `cellMetres` apart are always in each other's block regardless of
+    /// where within their cells they fall.
+    func neighbours(of index: Int) -> [Int] {
+        let origin = cellOf[index]
+        var result: [Int] = []
+        for latOffset in -1...1 {
+            for lonOffset in -1...1 {
+                let cell = Cell(latIndex: origin.latIndex + latOffset, lonIndex: origin.lonIndex + lonOffset)
+                if let indices = cells[cell] { result.append(contentsOf: indices) }
+            }
+        }
+        return result
     }
 }
 
