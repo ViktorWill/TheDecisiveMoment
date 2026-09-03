@@ -10,6 +10,10 @@ import TDMLight
 struct NoSolutionView: View {
     let shortfall: ExposureShortfall
     let roll: LoadedRoll?
+    /// The body, so a sensor that has run out says so in its own terms: an M8
+    /// at ISO 2500 is short in exactly the way a roll is, and the levers it is
+    /// offered do not include pushing something that is not there.
+    let cameraBody: CameraBodyProfile?
     /// The floor the solve was run against, quoted in the "drop to" lever.
     let handheldFloorSeconds: TimeInterval
     let sigmaEV: Double
@@ -23,7 +27,7 @@ struct NoSolutionView: View {
                     .foregroundStyle(LightTheme.primaryText)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text(ExposurePhrasing.shortfallSentence(shortfall, roll: roll) + " " + detail)
+                Text(shortfallSentence + " " + detail)
                     .font(.system(size: 15, design: .rounded))
                     .foregroundStyle(LightTheme.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
@@ -67,11 +71,19 @@ struct NoSolutionView: View {
         .accessibilityElement(children: .contain)
     }
 
+    /// `Leica M8 at ISO 2500 is 2.3 stops short here.` on a sensor,
+    /// `HP5 400 is 0.9 stops short here.` on a roll.
+    private var shortfallSentence: String {
+        guard let cameraBody else { return ExposurePhrasing.shortfallSentence(shortfall, roll: roll) }
+        return ExposurePhrasing.shortfallSentence(shortfall, body: cameraBody)
+    }
+
     private var headline: String {
         switch shortfall.reason {
         case .emptyGearProfile: "No gear to work with"
         case .strategyConstraintsUnsatisfiable: "Not with this strategy"
         case .noSettingWithinTolerance: roll == nil ? "Not on this sensor" : "Not on this roll"
+        case .strategyUnavailableOnBody: "Not on this body"
         }
     }
 
@@ -81,6 +93,8 @@ struct NoSolutionView: View {
             return "This profile has no shutter speeds, apertures or ISO."
         case .strategyConstraintsUnsatisfiable:
             return "Nothing on the dial satisfies it here."
+        case .strategyUnavailableOnBody:
+            return "This body will not pick the shutter itself.
         case .noSettingWithinTolerance:
             return shortfall.sense == .needsMoreLight
                 ? "Nothing on the dial reaches it hand-held."

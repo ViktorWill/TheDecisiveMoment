@@ -22,7 +22,15 @@ struct SettingReadoutView: View {
     var body: some View {
         HStack(alignment: .top, spacing: 26) {
             column("Aperture", ExposurePhrasing.aperture(recommendation.aperture))
-            column("Shutter", ExposurePhrasing.shutter(recommendation.shutter, sigmaEV: sigmaEV))
+
+            if let compensation = recommendation.compensationEV {
+                // Aperture priority: there is no shutter to set. The body picks
+                // one, steplessly, and what the photographer sets instead is the
+                // compensation dial.
+                column("Compensation", ExposurePhrasing.compensation(compensation))
+            } else {
+                column("Shutter", ExposurePhrasing.shutter(recommendation.shutter, sigmaEV: sigmaEV))
+            }
 
             if let roll {
                 // Context, not a control: the roll is what it is until it is

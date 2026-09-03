@@ -21,14 +21,14 @@ public struct SensorFormat: Sendable, Hashable, Codable {
 
     /// 36 × 24 mm — every M in the roster except the M8.
     public static let fullFrame = SensorFormat(
-        name: "36 × 24",
+        name: "Full frame",
         widthMillimetres: 36,
         heightMillimetres: 24
     )
 
     /// APS-H, 27 × 18 mm — the M8, and only the M8.
     public static let apsH = SensorFormat(
-        name: "27 × 18 APS-H",
+        name: "APS-H",
         widthMillimetres: 27,
         heightMillimetres: 18
     )

@@ -200,6 +200,32 @@ extension ExposurePhrasing {
         return "frames like a \(number(equivalent, decimals: 0)) mm"
     }
 
+    /// `1.90 – 7.16 m`. Two decimals, unlike ``zoneSentence``: this is a
+    /// comparison between two bodies, and rounding hides the whole difference.
+    public static func zoneComparison(near: Double, far: Double) -> String {
+        guard far.isFinite else { return "\(number(near, decimals: 2)) m – ∞" }
+        return "\(number(near, decimals: 2)) – \(number(far, decimals: 2)) m"
+    }
+
+    /// `27 × 18 mm, so CoC is 0.0225 and every hyperfocal runs 1.33× longer.
+    /// Your 35 mm frames like a 47 mm.`
+    ///
+    /// Nothing here touches the exposure maths: the crop changes the frame and
+    /// the circle of confusion, and that is all it changes.
+    public static func croppedFormatSentence(
+        format: SensorFormat,
+        focalLengthMillimetres f: Double
+    ) -> String {
+        let size = "\(number(format.widthMillimetres, decimals: 0)) × \(number(format.heightMillimetres, decimals: 0)) mm"
+        let coc = number(format.circleOfConfusionMillimetres, decimals: 4)
+        let crop = number(format.cropFactor, decimals: 2)
+        var sentence = "\(size), so CoC is \(coc) and every hyperfocal runs \(crop)× longer."
+        if let framing = framing(focalLengthMillimetres: f, format: format) {
+            sentence += " Your \(number(f, decimals: 0)) mm \(framing)."
+        }
+        return sentence
+    }
+
     /// `HP5 400 is 0.9 stops short here.`
     public static func shortfallSentence(_ shortfall: ExposureShortfall, roll: LoadedRoll?) -> String {
         let subject = roll.map(loadedRoll) ?? "This gear"

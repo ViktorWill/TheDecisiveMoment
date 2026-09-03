@@ -51,6 +51,11 @@ public final class LightViewModel {
     public var chosenMarkMetres: Double? {
         didSet { if chosenMarkMetres != oldValue { recompute() } }
     }
+    /// The aperture the photographer set on the lens, for a body that picks the
+    /// shutter itself. `nil` everywhere else, where the app picks both.
+    public var chosenAperture: Double? {
+        didSet { if chosenAperture != oldValue { recompute() } }
+    }
     /// A slower shutter the photographer has accepted, seconds, taken from the
     /// "drop to 1/30" lever on the no-solution screen. `nil` is the hold rule.
     public var acceptedFloorSeconds: TimeInterval? {
@@ -60,6 +65,8 @@ public final class LightViewModel {
     // MARK: State
 
     public private(set) var profiles: [GearProfile] = []
+    /// Every body the user could put this lens on, `design/Bodies.dc.html`.
+    public private(set) var bodies: [CameraBody] = []
     public private(set) var profile: GearProfile?
     public private(set) var advice: Advice?
     /// One answer per hour for the scrubber, starting at the current hour.
@@ -153,6 +160,36 @@ public final class LightViewModel {
 
     /// Every ISO the selected sensor offers, for the ceiling slider.
     public var isoLadder: [Int] { profile?.body.iso.availableValues ?? [] }
+
+    // MARK: The body, `docs/SPEC-light.md` "The body roster"
+
+    public var body: CameraBody? { profile?.body }
+
+    /// Whether the camera meters at all. An M-A does not, and then the phone is
+    /// the only meter in the bag, `docs/EXPOSURE-MODEL.md` §8.
+    public var bodyHasMeter: Bool { body?.hasMeter ?? true }
+
+    /// The phone meter is a cross-check on a body that meters, and the meter
+    /// itself on one that does not — which is a difference in prominence, not
+    /// in the measurement.
+    public var isLiveMeterPrimary: Bool { !bodyHasMeter }
+
+    /// The strategies this body can actually be set to: aperture priority is an
+    /// M7 and nothing else.
+    public var availableStrategies: [StoredExposureStrategy] {
+        guard let body else { return StoredExposureStrategy.allCases }
+        return StoredExposureStrategy.availableStrategies(on: body)
+    }
+
+    /// "frames like a 47 mm" on the M8, `nil` on a full-frame body, where there
+    /// is nothing to say. Framing only: it reaches no exposure maths.
+    public var framingNote: String? {
+        guard let profile else { return nil }
+        return ExposurePhrasing.framing(
+            focalLengthMillimetres: profile.lens.focalLengthMillimetres,
+            format: profile.body.format
+        )
+    }
 
     /// Why there is no setting, and what would fix it, §7b.
     public var shortfall: ExposureShortfall? { advice?.shortfall }
@@ -308,17 +345,20 @@ public final class LightViewModel {
     private func loadGear() {
         guard let gearStore else {
             profiles = GearCatalogue.profiles
+            bodies = GearCatalogue.bodies
             profile = profiles.first
             return
         }
         do {
             try gearStore.seedIfEmpty()
             profiles = try gearStore.profiles()
+            bodies = try gearStore.bodies()
             profile = try gearStore.selectedProfile() ?? profiles.first
         } catch {
             // A broken store must not cost the photographer the screen: fall
             // back to the shipped catalogue, in memory, for this session.
             profiles = GearCatalogue.profiles
+            bodies = GearCatalogue.bodies
             profile = profiles.first
         }
     }
@@ -329,8 +369,20 @@ public final class LightViewModel {
         recompute()
     }
 
+    /// Puts the lens on a different body. The lens, the strategy and the scene
+    /// all stay put — the point of the picker is to compare bodies.
+    public func setBody(_ body: CameraBody) {
+        guard var updated = profile, updated.body.id != body.id else { return }
+        updated.body = body
+        // A body that cannot be put in A cannot stay in A.
+        if !updated.strategy.isAvailable(on: body) {
+            updated.strategy = .zoneFocus
+        }
+        store(updated)
+    }
+
     public func setStrategy(_ strategy: StoredExposureStrategy) {
-        guard var updated = profile else { return }
+        guard var updated = profile, strategy.isAvailable(on: updated.body) else { return }
         updated.strategy = strategy
         profile = updated
         if let index = profiles.firstIndex(where: { $0.id == updated.id }) {
@@ -426,7 +478,8 @@ public final class LightViewModel {
             strategy: .init(profile.strategy, motion: motion),
             steadiness: steadiness,
             handheldFloorSeconds: acceptedFloorSeconds,
-            subjectDistanceMetres: chosenMarkMetres
+            subjectDistanceMetres: chosenMarkMetres,
+            chosenAperture: profile.strategy == .aperturePriority ? chosenAperture : nil
         )
 
         advice = LightAdvisor.advise(request)
