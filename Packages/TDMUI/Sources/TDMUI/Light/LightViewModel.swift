@@ -56,6 +56,13 @@ public final class LightViewModel {
     public var chosenAperture: Double? {
         didSet { if chosenAperture != oldValue { recompute() } }
     }
+    /// The sky the photographer reported, `docs/SPEC-light.md` "Sky, when there
+    /// is no WeatherKit". `nil` means the forecast is in charge.
+    ///
+    /// In a build with no WeatherKit this is never `nil`: it is the only source
+    /// of cloud cover there is. In a build with one it is an override, and an
+    /// observation beats a forecast for as long as the user leaves it set.
+    public private(set) var sky: SkySegment?
     /// A slower shutter the photographer has accepted, seconds, taken from the
     /// "drop to 1/30" lever on the no-solution screen. `nil` is the hold rule.
     public var acceptedFloorSeconds: TimeInterval? {
@@ -88,6 +95,9 @@ public final class LightViewModel {
 
     private let weatherService: WeatherService
     private let gearStore: GearStore?
+    /// Present exactly when the build has no WeatherKit, in which case it is the
+    /// service's only provider and the sky control is the only weather input.
+    private let manualSky: ManualWeatherProvider?
     public let location: LocationProvider
     private let clock: @MainActor () -> Date
     private var hourlyReadings: [WeatherReading] = []
@@ -96,13 +106,35 @@ public final class LightViewModel {
     public init(
         weatherService: WeatherService,
         gearStore: GearStore?,
+        manualSky: ManualWeatherProvider? = nil,
         location: LocationProvider = LocationProvider(),
         clock: @escaping @MainActor () -> Date = { Date() }
     ) {
         self.weatherService = weatherService
         self.gearStore = gearStore
+        self.manualSky = manualSky
         self.location = location
         self.clock = clock
+        // With no forecast behind it the control is not an override, it is the
+        // input — so it starts set, at whatever the provider already holds.
+        self.sky = manualSky?.segment
+    }
+
+    /// Whether the sky must come from the user because nothing else can supply
+    /// it. The control is then permanent rather than a tapped-open override.
+    public var requiresManualSky: Bool { manualSky != nil }
+
+    /// Takes the sky from the photographer. `nil` hands it back to the
+    /// forecast, which a build with no forecast does not offer.
+    public func setSky(_ segment: SkySegment?) {
+        guard !(requiresManualSky && segment == nil) else { return }
+        sky = segment
+        if let segment { manualSky?.setSegment(segment) }
+        recompute()
+        // The service caches per coordinate, and the manual provider is what it
+        // caches: a new segment has to reach it before the readings agree with
+        // the answer on screen.
+        Task { await refreshWeather(force: true) }
     }
 
     /// Identifies a calibration offset: a scene, in daylight or under lamps.
@@ -266,6 +298,38 @@ public final class LightViewModel {
     /// last returned for now.
     public var activeWeatherReading: WeatherReading? {
         readingForCurrentHour() ?? weather
+    }
+
+    /// The segment the control is drawn on: what the user chose, or the segment
+    /// nearest whatever the forecast says, so the override opens where the
+    /// screen already is rather than jumping to `Clear`.
+    public var displayedSky: SkySegment {
+        sky ?? SkySegment.nearest(cover: activeWeatherReading?.cloudCover ?? 0)
+    }
+
+    /// Whether the cover behind the answer is stale — a forecast past its life,
+    /// or a reported sky carried into an hour ahead of now.
+    public var isStaleWeather: Bool {
+        weatherInput(at: date).freshness == .stale
+    }
+
+    /// The cover and freshness the answer is built from, once the manual sky has
+    /// had its say.
+    ///
+    /// A reported sky is an observation of *now*: fresh for the hour the user is
+    /// standing in, stale for the hours the scrubber looks ahead to, which is
+    /// the §9 widening rather than a claim about a forecast nobody has.
+    private func weatherInput(at date: Date) -> (cover: Double?, freshness: WeatherFreshness, precipitation: Precipitation) {
+        let reading = readingForCurrentHour() ?? weather
+        guard let sky else {
+            return (
+                reading?.cloudCover,
+                reading?.freshness ?? .unavailable,
+                reading?.precipitation ?? .none
+            )
+        }
+        let isNow = date <= clock()
+        return (sky.cloudCover, isNow ? .fresh : .stale, reading?.precipitation ?? .none)
     }
 
     /// The calibration in force for the current scene, in stops.
@@ -485,14 +549,14 @@ public final class LightViewModel {
             return
         }
 
-        let reading = weather
+        let input = weatherInput(at: date)
         var request = AdviceRequest(
             date: date,
             latitudeDegrees: coordinate.latitude,
             longitudeDegrees: coordinate.longitude,
-            cloudCover: readingForCurrentHour()?.cloudCover ?? reading?.cloudCover,
-            weatherFreshness: readingForCurrentHour()?.freshness ?? reading?.freshness ?? .unavailable,
-            precipitation: readingForCurrentHour()?.precipitation ?? reading?.precipitation ?? .none,
+            cloudCover: input.cover,
+            weatherFreshness: input.freshness,
+            precipitation: input.precipitation,
             scene: scene,
             subjectLighting: subjectLighting,
             nightPreset: nightPreset,
@@ -518,7 +582,13 @@ public final class LightViewModel {
             calibrationOffsetEVForHour: { [profile] date in
                 self.calibrationEV(at: date) + profile.calibrationOffsetEV
             }
-        ) { [hourlyReadings] date in
+        ) { [hourlyReadings, sky, now = clock()] date in
+            // The scrubber does not need a forecast to be worth drawing: the
+            // sun is computed on device. A reported sky is held constant across
+            // the window, and the hours ahead of now carry the wider σ of §9.
+            if let sky {
+                return (sky.cloudCover, date <= now ? .fresh : .stale, .none)
+            }
             guard let reading = hourlyReadings.min(by: {
                 abs($0.date.timeIntervalSince(date)) < abs($1.date.timeIntervalSince(date))
             }), abs(reading.date.timeIntervalSince(date)) <= 1_800 else {

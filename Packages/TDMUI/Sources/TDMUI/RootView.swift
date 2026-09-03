@@ -11,6 +11,9 @@ public struct RootView: View {
     private let spotStore: any SpotStore
     private let bundles: BundleService?
     private let community: any CommunityBackend
+    /// The sky control's provider in a build with no WeatherKit; `nil` where
+    /// WeatherKit leads.
+    private let manualSky: ManualWeatherProvider?
 
     /// One provider for both tabs: two `CLLocationManager`s would ask for the
     /// same fix twice and cost the battery for it.
@@ -35,6 +38,9 @@ public struct RootView: View {
     ///     previews working without SwiftData.
     ///   - bundles: `nil` leaves the map offline-only — it still draws whatever
     ///     is stored.
+    ///   - manualSky: The provider behind the five-segment sky control in a
+    ///     build signed with a free Apple ID, where it is the only source of
+    ///     cloud cover there is. `nil` leaves WeatherKit in charge.
     ///   - community: Where shooting plans live. The in-memory default keeps
     ///     previews working, and is what a store that will not open falls back
     ///     to: losing a plan on quit beats refusing to draw the tab.
@@ -43,12 +49,14 @@ public struct RootView: View {
         gearStore: GearStore? = nil,
         spotStore: any SpotStore = InMemorySpotStore(),
         bundles: BundleService? = nil,
+        manualSky: ManualWeatherProvider? = nil,
         community: any CommunityBackend = InMemoryCommunityBackend()
     ) {
         self.weatherService = weatherService
         self.gearStore = gearStore
         self.spotStore = spotStore
         self.bundles = bundles
+        self.manualSky = manualSky
         self.community = community
     }
 
@@ -79,7 +87,12 @@ public struct RootView: View {
             .tabItem { Label("Map", systemImage: "map") }
             .tag(Tab.map)
 
-            LightView(weatherService: weatherService, gearStore: gearStore, handoff: handoff)
+            LightView(
+                weatherService: weatherService,
+                gearStore: gearStore,
+                manualSky: manualSky,
+                handoff: handoff
+            )
                 .tabItem { Label("Light", systemImage: "sun.max") }
                 .tag(Tab.light)
 

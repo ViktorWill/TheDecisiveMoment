@@ -13,18 +13,29 @@ public struct LightView: View {
     @State private var viewModel: LightViewModel
     @State private var showsMeter = false
     @State private var showsBodyPicker = false
+    /// The sky control, opened off the cloud figure in a build that has a
+    /// forecast to override. A build without one has it on screen always.
+    @State private var showsSkyControl = false
 
     /// A spot handed over by the Map tab. The screen answers for it — its
     /// coordinate, its street, its sky — until the user steps back to here.
     private let handoff: SpotHandoff?
 
+    /// - Parameter manualSky: The provider behind the sky control, in a build
+    ///   with no WeatherKit. `nil` where WeatherKit leads and the control is an
+    ///   override rather than the only source.
     public init(
         weatherService: WeatherService,
         gearStore: GearStore? = nil,
+        manualSky: ManualWeatherProvider? = nil,
         handoff: SpotHandoff? = nil
     ) {
         _viewModel = State(
-            wrappedValue: LightViewModel(weatherService: weatherService, gearStore: gearStore)
+            wrappedValue: LightViewModel(
+                weatherService: weatherService,
+                gearStore: gearStore,
+                manualSky: manualSky
+            )
         )
         self.handoff = handoff
     }
@@ -40,8 +51,14 @@ public struct LightView: View {
                             roll: viewModel.loadedRoll,
                             handheldFloorSeconds: viewModel.handheldFloorSeconds,
                             onApplyLever: viewModel.apply,
-                            cloudCover: viewModel.activeWeatherReading?.cloudCover,
-                            isStaleWeather: viewModel.activeWeatherReading?.freshness == .stale,
+                            cloudCover: viewModel.sky?.cloudCover ?? viewModel.activeWeatherReading?.cloudCover,
+                            isStaleWeather: viewModel.isStaleWeather,
+                            isReportedWeather: viewModel.sky != nil,
+                            // Free build: the control is already on screen, so
+                            // the figure has nothing to open.
+                            onTapCloud: viewModel.requiresManualSky
+                                ? nil
+                                : { showsSkyControl = true },
                             isScrubbing: viewModel.isScrubbing,
                             scrubbedTo: viewModel.date,
                             cameraBody: viewModel.cameraBodyProfile,
@@ -117,6 +134,18 @@ public struct LightView: View {
                                     set: { viewModel.hourOffset = $0 }
                                 )
                             )
+                        }
+
+                        if viewModel.requiresManualSky || showsSkyControl {
+                            SkyPanel(
+                                selection: viewModel.displayedSky,
+                                onSelect: { viewModel.setSky($0) },
+                                onUseForecast: viewModel.requiresManualSky ? nil : {
+                                    viewModel.setSky(nil)
+                                    showsSkyControl = false
+                                }
+                            )
+                            .panel()
                         }
 
                         InputControlsView(viewModel: viewModel)
@@ -223,9 +252,18 @@ public struct LightView: View {
     }
 }
 
-#Preview {
+#Preview("Paid — WeatherKit leads") {
     LightView(
         weatherService: WeatherService(provider: StubWeatherProvider()),
         gearStore: nil
+    )
+}
+
+#Preview("Free — the sky comes from the photographer") {
+    let manualSky = ManualWeatherProvider(segment: .cloudyBright)
+    LightView(
+        weatherService: WeatherService(provider: manualSky),
+        gearStore: nil,
+        manualSky: manualSky
     )
 }

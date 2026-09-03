@@ -26,6 +26,12 @@ struct AnswerHeaderView: View {
     /// disagree with the EV above it.
     let cloudCover: Double?
     let isStaleWeather: Bool
+    /// Whether the cover came from the photographer rather than a forecast.
+    let isReportedWeather: Bool
+    /// Opens the sky control over the cloud figure, `docs/SPEC-light.md` "Sky,
+    /// when there is no WeatherKit". `nil` where there is nothing to open —
+    /// a build with no forecast has the control on screen already.
+    let onTapCloud: (() -> Void)?
     let isScrubbing: Bool
     let scrubbedTo: Date
     /// The body the answer is for, so a sensor that has run out of ISO says so
@@ -107,11 +113,7 @@ struct AnswerHeaderView: View {
                 UnsolvableView(error: nil, estimate: advice.estimate)
             }
 
-            Text(conditionsLine)
-                .scaledFont(size: 15, design: .rounded, monospacedDigit: true, maximumScale: 1.6)
-                .foregroundStyle(LightTheme.secondaryText)
-                .multilineTextAlignment(.center)
-                .accessibilityLabel(spokenConditionsLine)
+            conditions
 
             if advice.estimate.usedClearSkyFallback {
                 Label("No weather · clear sky assumed, uncertainty widened", systemImage: "wifi.slash")
@@ -123,13 +125,75 @@ struct AnswerHeaderView: View {
         .padding(.vertical, 8)
     }
 
+    /// The conditions line. In a build with a forecast the cloud figure is a
+    /// button — an observation beats a forecast, and the photographer is the
+    /// one standing under the sky.
+    @ViewBuilder
+    private var conditions: some View {
+        if let onTapCloud {
+            HStack(spacing: 6) {
+                Text(conditionsLead)
+                Text("·")
+                Button(action: onTapCloud) {
+                    HStack(spacing: 4) {
+                        Text(cloudPhrase)
+                        Image(systemName: "cloud.sun")
+                            .font(.system(size: 12))
+                    }
+                    .foregroundStyle(LightTheme.accent)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(spokenCloudPhrase). Report the sky yourself")
+            }
+            .scaledFont(size: 15, design: .rounded, monospacedDigit: true, maximumScale: 1.6)
+            .foregroundStyle(LightTheme.secondaryText)
+            .accessibilityElement(children: .contain)
+        } else {
+            Text(conditionsLine)
+                .scaledFont(size: 15, design: .rounded, monospacedDigit: true, maximumScale: 1.6)
+                .foregroundStyle(LightTheme.secondaryText)
+                .multilineTextAlignment(.center)
+                .accessibilityLabel(spokenConditionsLine)
+        }
+    }
+
+    /// The cover the line is allowed to quote: `nil` once the model has fallen
+    /// back to clear sky, so the figure can never contradict the EV above it.
+    private var quotedCloudCover: Double? {
+        advice.estimate.usedClearSkyFallback ? nil : cloudCover
+    }
+
+    private var cloudPhrase: String {
+        ExposurePhrasing.cloud(
+            cover: quotedCloudCover,
+            isStale: isStaleWeather,
+            isReported: isReportedWeather
+        )
+    }
+
+    private var spokenCloudPhrase: String {
+        ExposurePhrasing.spokenCloud(
+            cover: quotedCloudCover,
+            isStale: isStaleWeather,
+            isReported: isReportedWeather
+        )
+    }
+
+    /// Everything left of the cloud figure.
+    private var conditionsLead: String {
+        let estimate = advice.estimate
+        let ev = ExposurePhrasing.exposureValue(estimate.ev100, sigmaEV: estimate.sigmaEV)
+        return "\(ev) · \(ExposurePhrasing.sunElevation(advice.sun.elevationDegrees))"
+    }
+
     private var conditionsLine: String {
         let estimate = advice.estimate
         let ev = ExposurePhrasing.exposureValue(estimate.ev100, sigmaEV: estimate.sigmaEV)
         let conditions = ExposurePhrasing.conditions(
             sunElevationDegrees: advice.sun.elevationDegrees,
-            cloudCover: estimate.usedClearSkyFallback ? nil : cloudCover,
-            isStale: isStaleWeather
+            cloudCover: quotedCloudCover,
+            isStale: isStaleWeather,
+            isReported: isReportedWeather
         )
         return "\(ev) · \(conditions)"
     }
@@ -141,8 +205,9 @@ struct AnswerHeaderView: View {
         let ev = ExposurePhrasing.spokenExposureValue(estimate.ev100, sigmaEV: estimate.sigmaEV)
         let conditions = ExposurePhrasing.spokenConditions(
             sunElevationDegrees: advice.sun.elevationDegrees,
-            cloudCover: estimate.usedClearSkyFallback ? nil : cloudCover,
-            isStale: isStaleWeather
+            cloudCover: quotedCloudCover,
+            isStale: isStaleWeather,
+            isReported: isReportedWeather
         )
         return "\(ev), \(conditions)"
     }

@@ -98,16 +98,33 @@ public enum ExposurePhrasing {
     public static func conditions(
         sunElevationDegrees: Double,
         cloudCover: Double?,
-        isStale: Bool = false
+        isStale: Bool = false,
+        isReported: Bool = false
     ) -> String {
-        var parts = ["sun \(number(sunElevationDegrees, decimals: 1))°"]
-        if let cloudCover {
-            let percent = number((cloudCover * 100).rounded(), decimals: 0)
-            parts.append(isStale ? "\(percent)% cloud (stale)" : "\(percent)% cloud")
-        } else {
-            parts.append("no weather — clear sky assumed")
-        }
+        let parts = [
+            sunElevation(sunElevationDegrees),
+            cloud(cover: cloudCover, isStale: isStale, isReported: isReported)
+        ]
         return parts.joined(separator: " · ")
+    }
+
+    /// The sun's height as the conditions line engraves it: `sun 14.7°`.
+    public static func sunElevation(_ degrees: Double) -> String {
+        "sun \(number(degrees, decimals: 1))°"
+    }
+
+    /// The cloud figure on its own: `20% cloud`, `20% cloud (stale)`,
+    /// `50% cloud (reported)` when it came from the photographer rather than a
+    /// forecast, or the admission that there is no weather at all.
+    ///
+    /// Separate from ``conditions(sunElevationDegrees:cloudCover:isStale:isReported:)``
+    /// because the paid build makes exactly this figure tappable, and the two
+    /// must not be allowed to word it differently.
+    public static func cloud(cover: Double?, isStale: Bool = false, isReported: Bool = false) -> String {
+        guard let cover else { return "no weather — clear sky assumed" }
+        let percent = number((cover * 100).rounded(), decimals: 0)
+        if isReported { return "\(percent)% cloud (reported)" }
+        return isStale ? "\(percent)% cloud (stale)" : "\(percent)% cloud"
     }
 
     /// A signed stop difference: `+0.4 EV`, `−0.7 EV`. Uses a real minus sign.
