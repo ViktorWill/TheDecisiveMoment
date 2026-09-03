@@ -167,7 +167,7 @@ struct MapSheetView: View {
     /// fourteen pills is a row nobody reads.
     static let offeredKinds: [SpotKind] = [.plaza, .market, .street, .stairs, .transit, .park, .bridge, .viewpoint]
 
-    static let scoreFloors: [Double] = [0, 0.2, 0.3, 0.5, 0.7]
+    static let scoreFloors: [Double] = [0, 0.2, 0.4, 0.6, 0.8]
 
     private var scoreFloorPill: some View {
         Menu {
