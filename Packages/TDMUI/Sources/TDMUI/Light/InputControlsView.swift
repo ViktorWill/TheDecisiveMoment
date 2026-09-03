@@ -39,9 +39,10 @@ struct InputControlsView: View {
                 labelled("Aperture") {
                     // The photographer sets the ring; the body picks the
                     // shutter. `nil` lets the solver choose the ring too.
+                    let rings: [Double?] = [nil] + lens.sortedApertures.map { $0 as Double? }
                     ChipPicker(
-                        values: [nil] + lens.sortedApertures.map { Optional($0) },
-                        title: { $0.map { ExposurePhrasing.aperture($0) } ?? "Any" },
+                        values: rings,
+                        title: { ring in ring.map(ExposurePhrasing.aperture) ?? "Any" },
                         selection: Binding(
                             get: { viewModel.chosenAperture },
                             set: { viewModel.chosenAperture = $0 }
