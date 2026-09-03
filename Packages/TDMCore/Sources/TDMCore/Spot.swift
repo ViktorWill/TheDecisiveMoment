@@ -32,6 +32,14 @@ public enum SpotSource: String, Sendable, Codable, CaseIterable, Hashable {
     case local
 }
 
+/// A second name for ``SpotSource``.
+///
+/// In `spotforge`, `SpotSource` is the protocol a fetcher conforms to
+/// (`docs/SPOTFORGE.md` §1), and `TDMCore.SpotSource` cannot disambiguate this
+/// enum there because the module's name is shadowed by the ``TDMCore``
+/// namespace. This is the name that build uses for the enum.
+public typealias SpotSourceKind = SpotSource
+
 /// How much sky the place can see.
 ///
 /// Maps directly onto the scene modifier in `docs/EXPOSURE-MODEL.md` §4c, which

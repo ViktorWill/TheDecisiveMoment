@@ -1,0 +1,77 @@
+{
+  "head": {
+    "vars": [
+      "item",
+      "itemLabel",
+      "coord",
+      "sitelinks"
+    ]
+  },
+  "results": {
+    "bindings": [
+      {
+        "coord": {
+          "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+          "type": "literal",
+          "value": "Point(-73.99725 40.73096)"
+        },
+        "item": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q1163609"
+        },
+        "itemLabel": {
+          "type": "literal",
+          "value": "Washington Square Arch",
+          "xml:lang": "en"
+        },
+        "sitelinks": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "type": "literal",
+          "value": "34"
+        }
+      },
+      {
+        "coord": {
+          "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+          "type": "literal",
+          "value": "Point(-73.9979 40.7302)"
+        },
+        "item": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q104839"
+        },
+        "itemLabel": {
+          "type": "literal",
+          "value": "Judson Memorial Church",
+          "xml:lang": "en"
+        },
+        "sitelinks": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "type": "literal",
+          "value": "12"
+        }
+      },
+      {
+        "coord": {
+          "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+          "type": "literal",
+          "value": "Point(-73.996 40.732)"
+        },
+        "item": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q99999999"
+        },
+        "itemLabel": {
+          "type": "literal",
+          "value": "Q99999999",
+          "xml:lang": "en"
+        },
+        "sitelinks": {
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "type": "literal",
+          "value": "9"
+        }
+      }
+    ]
+  }
+}

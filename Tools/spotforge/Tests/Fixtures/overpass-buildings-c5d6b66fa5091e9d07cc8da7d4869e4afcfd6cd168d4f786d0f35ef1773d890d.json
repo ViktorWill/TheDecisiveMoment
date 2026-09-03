@@ -1,0 +1,42 @@
+{
+  "elements": [
+    {
+      "center": {
+        "lat": 40.73053,
+        "lon": -73.9971
+      },
+      "id": 101,
+      "tags": {
+        "building": "yes",
+        "building:levels": "10"
+      },
+      "type": "way"
+    },
+    {
+      "center": {
+        "lat": 40.73047,
+        "lon": -73.9969
+      },
+      "id": 102,
+      "tags": {
+        "building": "yes",
+        "building:levels": "11"
+      },
+      "type": "way"
+    },
+    {
+      "center": {
+        "lat": 40.73049,
+        "lon": -73.99704
+      },
+      "id": 103,
+      "tags": {
+        "building": "yes",
+        "height": "34 m"
+      },
+      "type": "way"
+    }
+  ],
+  "generator": "Overpass API 0.7.62 (recorded fixture, trimmed)",
+  "version": 0.6
+}

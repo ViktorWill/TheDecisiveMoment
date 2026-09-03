@@ -1,0 +1,25 @@
+# Two entries inside the fixture bbox. The real canon is data/curated/us-nyc.yml.
+
+- name: Washington Square Park
+  slug: washington-square
+  lat: 40.73096
+  lon: -73.99725
+  kind: plaza
+  tags: [performers, chess, fountain]
+  openness: open
+  streetBearing: 0
+  bestHours: [11, 12, 17, 18]
+  note: >
+    The fountain basin is a stage with a ring of people already watching,
+    which is as close to permission as street work gets.
+  score_boost: 0.30
+
+- name: MacDougal Street & West 4th
+  lat: 40.73020
+  lon: -73.99880
+  kind: intersection
+  tags: [village, bars, night]
+  openness: canyon
+  streetBearing: 30
+  bestHours: [20, 21, 22]
+  score_boost: 0.15

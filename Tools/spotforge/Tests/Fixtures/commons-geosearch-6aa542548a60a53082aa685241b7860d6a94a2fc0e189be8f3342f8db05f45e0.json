@@ -1,0 +1,303 @@
+{
+  "batchcomplete": true,
+  "query": {
+    "geosearch": [
+      {
+        "dist": 40.0,
+        "lat": 40.7308,
+        "lon": -73.9973,
+        "ns": 6,
+        "pageid": 4200000,
+        "title": "File:Washington Square 00.jpg"
+      },
+      {
+        "dist": 41.0,
+        "lat": 40.73082,
+        "lon": -73.99728,
+        "ns": 6,
+        "pageid": 4200001,
+        "title": "File:Washington Square 01.jpg"
+      },
+      {
+        "dist": 42.0,
+        "lat": 40.73084,
+        "lon": -73.99726,
+        "ns": 6,
+        "pageid": 4200002,
+        "title": "File:Washington Square 02.jpg"
+      },
+      {
+        "dist": 43.0,
+        "lat": 40.73086,
+        "lon": -73.99724,
+        "ns": 6,
+        "pageid": 4200003,
+        "title": "File:Washington Square 03.jpg"
+      },
+      {
+        "dist": 44.0,
+        "lat": 40.73088,
+        "lon": -73.99722,
+        "ns": 6,
+        "pageid": 4200004,
+        "title": "File:Washington Square 04.jpg"
+      },
+      {
+        "dist": 45.0,
+        "lat": 40.7309,
+        "lon": -73.9973,
+        "ns": 6,
+        "pageid": 4200005,
+        "title": "File:Washington Square 05.jpg"
+      },
+      {
+        "dist": 46.0,
+        "lat": 40.73092,
+        "lon": -73.99728,
+        "ns": 6,
+        "pageid": 4200006,
+        "title": "File:Washington Square 06.jpg"
+      },
+      {
+        "dist": 47.0,
+        "lat": 40.7308,
+        "lon": -73.99726,
+        "ns": 6,
+        "pageid": 4200007,
+        "title": "File:Washington Square 07.jpg"
+      },
+      {
+        "dist": 48.0,
+        "lat": 40.73082,
+        "lon": -73.99724,
+        "ns": 6,
+        "pageid": 4200008,
+        "title": "File:Washington Square 08.jpg"
+      },
+      {
+        "dist": 49.0,
+        "lat": 40.73084,
+        "lon": -73.99722,
+        "ns": 6,
+        "pageid": 4200009,
+        "title": "File:Washington Square 09.jpg"
+      },
+      {
+        "dist": 50.0,
+        "lat": 40.73086,
+        "lon": -73.9973,
+        "ns": 6,
+        "pageid": 4200010,
+        "title": "File:Washington Square 10.jpg"
+      },
+      {
+        "dist": 51.0,
+        "lat": 40.73088,
+        "lon": -73.99728,
+        "ns": 6,
+        "pageid": 4200011,
+        "title": "File:Washington Square 11.jpg"
+      },
+      {
+        "dist": 52.0,
+        "lat": 40.7309,
+        "lon": -73.99726,
+        "ns": 6,
+        "pageid": 4200012,
+        "title": "File:Washington Square 12.jpg"
+      },
+      {
+        "dist": 53.0,
+        "lat": 40.73092,
+        "lon": -73.99724,
+        "ns": 6,
+        "pageid": 4200013,
+        "title": "File:Washington Square 13.jpg"
+      },
+      {
+        "dist": 54.0,
+        "lat": 40.7308,
+        "lon": -73.99722,
+        "ns": 6,
+        "pageid": 4200014,
+        "title": "File:Washington Square 14.jpg"
+      },
+      {
+        "dist": 55.0,
+        "lat": 40.73082,
+        "lon": -73.9973,
+        "ns": 6,
+        "pageid": 4200015,
+        "title": "File:Washington Square 15.jpg"
+      },
+      {
+        "dist": 56.0,
+        "lat": 40.73084,
+        "lon": -73.99728,
+        "ns": 6,
+        "pageid": 4200016,
+        "title": "File:Washington Square 16.jpg"
+      },
+      {
+        "dist": 57.0,
+        "lat": 40.73086,
+        "lon": -73.99726,
+        "ns": 6,
+        "pageid": 4200017,
+        "title": "File:Washington Square 17.jpg"
+      },
+      {
+        "dist": 58.0,
+        "lat": 40.73088,
+        "lon": -73.99724,
+        "ns": 6,
+        "pageid": 4200018,
+        "title": "File:Washington Square 18.jpg"
+      },
+      {
+        "dist": 59.0,
+        "lat": 40.7309,
+        "lon": -73.99722,
+        "ns": 6,
+        "pageid": 4200019,
+        "title": "File:Washington Square 19.jpg"
+      },
+      {
+        "dist": 60.0,
+        "lat": 40.73092,
+        "lon": -73.9973,
+        "ns": 6,
+        "pageid": 4200020,
+        "title": "File:Washington Square 20.jpg"
+      },
+      {
+        "dist": 61.0,
+        "lat": 40.7308,
+        "lon": -73.99728,
+        "ns": 6,
+        "pageid": 4200021,
+        "title": "File:Washington Square 21.jpg"
+      },
+      {
+        "dist": 62.0,
+        "lat": 40.73082,
+        "lon": -73.99726,
+        "ns": 6,
+        "pageid": 4200022,
+        "title": "File:Washington Square 22.jpg"
+      },
+      {
+        "dist": 63.0,
+        "lat": 40.73084,
+        "lon": -73.99724,
+        "ns": 6,
+        "pageid": 4200023,
+        "title": "File:Washington Square 23.jpg"
+      },
+      {
+        "dist": 64.0,
+        "lat": 40.73086,
+        "lon": -73.99722,
+        "ns": 6,
+        "pageid": 4200024,
+        "title": "File:Washington Square 24.jpg"
+      },
+      {
+        "dist": 65.0,
+        "lat": 40.73088,
+        "lon": -73.9973,
+        "ns": 6,
+        "pageid": 4200025,
+        "title": "File:Washington Square 25.jpg"
+      },
+      {
+        "dist": 66.0,
+        "lat": 40.7309,
+        "lon": -73.99728,
+        "ns": 6,
+        "pageid": 4200026,
+        "title": "File:Washington Square 26.jpg"
+      },
+      {
+        "dist": 67.0,
+        "lat": 40.73092,
+        "lon": -73.99726,
+        "ns": 6,
+        "pageid": 4200027,
+        "title": "File:Washington Square 27.jpg"
+      },
+      {
+        "dist": 68.0,
+        "lat": 40.7308,
+        "lon": -73.99724,
+        "ns": 6,
+        "pageid": 4200028,
+        "title": "File:Washington Square 28.jpg"
+      },
+      {
+        "dist": 69.0,
+        "lat": 40.73082,
+        "lon": -73.99722,
+        "ns": 6,
+        "pageid": 4200029,
+        "title": "File:Washington Square 29.jpg"
+      },
+      {
+        "dist": 70.0,
+        "lat": 40.73084,
+        "lon": -73.9973,
+        "ns": 6,
+        "pageid": 4200030,
+        "title": "File:Washington Square 30.jpg"
+      },
+      {
+        "dist": 71.0,
+        "lat": 40.73086,
+        "lon": -73.99728,
+        "ns": 6,
+        "pageid": 4200031,
+        "title": "File:Washington Square 31.jpg"
+      },
+      {
+        "dist": 72.0,
+        "lat": 40.73088,
+        "lon": -73.99726,
+        "ns": 6,
+        "pageid": 4200032,
+        "title": "File:Washington Square 32.jpg"
+      },
+      {
+        "dist": 73.0,
+        "lat": 40.7309,
+        "lon": -73.99724,
+        "ns": 6,
+        "pageid": 4200033,
+        "title": "File:Washington Square 33.jpg"
+      },
+      {
+        "dist": 260.0,
+        "lat": 40.7322,
+        "lon": -73.9956,
+        "ns": 6,
+        "pageid": 4200100,
+        "title": "File:MacDougal Street 00.jpg"
+      },
+      {
+        "dist": 261.0,
+        "lat": 40.7322,
+        "lon": -73.9956,
+        "ns": 6,
+        "pageid": 4200101,
+        "title": "File:MacDougal Street 01.jpg"
+      },
+      {
+        "dist": 262.0,
+        "lat": 40.7322,
+        "lon": -73.9956,
+        "ns": 6,
+        "pageid": 4200102,
+        "title": "File:MacDougal Street 02.jpg"
+      }
+    ]
+  }
+}
