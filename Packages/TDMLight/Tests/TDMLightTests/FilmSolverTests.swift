@@ -337,7 +337,14 @@ struct FilmPhrasingTests {
 
         #expect(ExposurePhrasing.leverTitle(.raiseCeiling(toISO: 3_200)) == "Raise the ISO ceiling to 3200")
         #expect(ExposurePhrasing.leverTitle(.neutralDensity(stops: 3)) == "Put on a 3-stop ND")
-        #expect(ExposurePhrasing.leverTitle(.differentRoll(isoSpeed: 3_200)) == "Load something faster — ISO 3200")
+        #expect(
+            ExposurePhrasing.leverTitle(.differentRoll(isoSpeed: 3_200, faster: true))
+                == "Load something faster — ISO 3200"
+        )
+        #expect(
+            ExposurePhrasing.leverTitle(.differentRoll(isoSpeed: 50, faster: false))
+                == "Load something slower — ISO 50"
+        )
     }
 
     @Test("Digital phrases the ISO as a change, film as context")

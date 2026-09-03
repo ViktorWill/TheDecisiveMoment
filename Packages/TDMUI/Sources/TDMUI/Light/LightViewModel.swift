@@ -187,7 +187,7 @@ public final class LightViewModel {
             setLoadedRoll(roll)
         case let .lowerFloor(shutter, _):
             acceptedFloorSeconds = shutter
-        case let .differentRoll(isoSpeed):
+        case let .differentRoll(isoSpeed, _):
             // A different *roll*, not the same stock rated harder: past two
             // stops the push is not the answer, so this loads the catalogue
             // stock of the same medium nearest the speed that would work, at

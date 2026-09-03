@@ -80,7 +80,7 @@ public enum ExposureLever: Sendable, Equatable {
     /// Take light away, which is the bright-sun case.
     case neutralDensity(stops: Int)
     /// The honest answer when the gap is more than two stops.
-    case differentRoll(isoSpeed: Int)
+    case differentRoll(isoSpeed: Int, faster: Bool)
     /// Digital: the ceiling, not the sensor, is what is in the way, §7d.
     case raiseCeiling(toISO: Int)
 }

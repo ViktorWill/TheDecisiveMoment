@@ -379,7 +379,12 @@ public enum ExposureSolver {
         // this light, whatever the development can rescue.
         if let roll = request.body.loadedRoll, abs(closest.errorEV) > 2 {
             let wanted = Double(roll.ratedAt) * pow(2, needsMoreLight ? abs(closest.aimErrorEV) : -abs(closest.aimErrorEV))
-            levers.append(.differentRoll(isoSpeed: standardFilmSpeed(atLeast: wanted, faster: needsMoreLight)))
+            levers.append(
+                .differentRoll(
+                    isoSpeed: standardFilmSpeed(atLeast: wanted, faster: needsMoreLight),
+                    faster: needsMoreLight
+                )
+            )
         }
 
         // Last, because on a sensor it is the only one that ever applies and the

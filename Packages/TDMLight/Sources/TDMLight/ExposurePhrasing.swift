@@ -172,7 +172,8 @@ extension ExposurePhrasing {
         case let .rate(roll, _): "Push the roll to \(roll.ratedAt)"
         case let .lowerFloor(shutter, _): "Drop to \(self.shutter(shutter))"
         case let .neutralDensity(stops): "Put on a \(stops)-stop ND"
-        case let .differentRoll(isoSpeed): "Load something faster — ISO \(isoSpeed)"
+        case let .differentRoll(isoSpeed, faster):
+            "Load something \(faster ? "faster" : "slower") — ISO \(isoSpeed)"
         case let .raiseCeiling(iso): "Raise the ISO ceiling to \(iso)"
         }
     }
