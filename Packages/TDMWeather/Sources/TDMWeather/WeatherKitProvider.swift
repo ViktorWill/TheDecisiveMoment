@@ -1,4 +1,8 @@
-#if canImport(WeatherKit)
+// Not compiled at all in the Free configuration: a free Apple ID cannot carry
+// com.apple.developer.weatherkit, so importing the framework would link it and
+// every call would come back `.notAuthorised`. `docs/SPEC-light.md`, "Sky, when
+// there is no WeatherKit".
+#if canImport(WeatherKit) && !TDM_NO_WEATHERKIT
 import CoreLocation
 import Foundation
 import TDMCore
