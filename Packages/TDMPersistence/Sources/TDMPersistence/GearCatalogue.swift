@@ -50,11 +50,17 @@ public enum GearCatalogue {
     // MARK: - Bodies
 
     /// Leica M6: mechanical, 1 s–1/1000, and whatever roll is loaded.
-    public static func m6(loadedFilmISO: Int = 400, loadedFilm: String? = "Kodak Tri-X 400") -> CameraBody {
+    ///
+    /// The roll carries its own medium, so the solver's latitude and bias follow
+    /// the film rather than a constant, `docs/EXPOSURE-MODEL.md` §7a.
+    public static func m6(
+        roll: LoadedRoll = LoadedRoll(stock: FilmStock.stock(id: "hp5") ?? FilmStock.unnamed(boxSpeed: 400)),
+        loadedFilm: String? = nil
+    ) -> CameraBody {
         CameraBody(
             name: "Leica M6",
             shutterSpeeds: shutterLadder(slowestSeconds: 1, fastestFraction: 1_000),
-            iso: .fixed(loadedFilmISO),
+            iso: .fixed(roll),
             hasMeter: true,
             loadedFilm: loadedFilm
         )
@@ -64,7 +70,9 @@ public enum GearCatalogue {
     public static let m10 = CameraBody(
         name: "Leica M10",
         shutterSpeeds: shutterLadder(slowestSeconds: 8, fastestFraction: 4_000),
-        iso: .range(minimum: 100, maximum: 50_000),
+        // The ceiling is the photographer's, not the sensor's: 6400 is where
+        // the mockup starts and where an M10 file stops being pleasant.
+        iso: .range(minimum: 100, maximum: 50_000, ceiling: 6_400),
         hasMeter: true
     )
 
@@ -76,7 +84,7 @@ public enum GearCatalogue {
     public static let m11 = CameraBody(
         name: "Leica M11",
         shutterSpeeds: shutterLadder(slowestSeconds: 60, fastestFraction: 4_000),
-        iso: .range(minimum: 64, maximum: 50_000),
+        iso: .range(minimum: 64, maximum: 50_000, ceiling: 6_400),
         hasMeter: true
     )
 

@@ -398,6 +398,25 @@ Two consequences the UI must reflect:
   suggests two thirds of a stop more light than a meter would. That is correct, and the UI should
   say so once rather than looking like a bug.
 
+**Latitude is not the whole tolerance.** Latitude says what the film will *forgive*; it does not say
+what is worth *offering*. A whole-stop aperture ring against a doubling shutter dial cannot land
+closer than ±1/3 stop, and a candidate three stops over is not a recommendation, it is a different
+photograph. So the solver keeps a candidate when it is inside **both** bands, measured against the
+aim:
+
+```
+over  = min(latitude.over,  precision − bias)
+under = min(latitude.under, precision + bias)
+```
+
+with `precision = 1/3 stop` — the ladder's own resolution. Since the band is applied around
+`EV_target = EV_scene − bias`, the two biases cancel and the accepted set is exactly ±1/3 stop
+around the **meter reading**, *except* where the medium's latitude is tighter than that. Slide is
+the case where it is: `min(0.5, 1/3 + (−1/3)) = 1/6` of a stop on the over side, so a candidate that
+would be offered on HP5 is refused on Provia — the highlight side, which is the one slide has no
+recovery on. Every vector in §7b and §7d was generated under this rule
+(`docs/reference/film-vectors.py`).
+
 ## 7b. Analog: the solver may legitimately find nothing
 
 With ISO fixed, whole scenes fall outside what a roll can do. This is not an error state — it is the

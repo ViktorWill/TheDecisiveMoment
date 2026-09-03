@@ -13,12 +13,14 @@ struct GearCatalogueTests {
 
     @Test("The M6 is a film body: one fixed roll speed, 1 s to 1/1000")
     func m6IsFilm() {
-        let m6 = GearCatalogue.m6(loadedFilmISO: 400)
+        let m6 = GearCatalogue.m6()
         #expect(m6.iso.isFilm)
         #expect(m6.iso.availableValues == [400])
         #expect(m6.sortedShutterSpeeds.first == 1.0 / 1_000)
         #expect(m6.sortedShutterSpeeds.last == 1)
-        #expect(m6.loadedFilm != nil)
+        // The roll, not a free-text name, is what the solver reads, §7a.
+        #expect(m6.loadedRoll?.stock.id == "hp5")
+        #expect(m6.medium == .blackAndWhiteNegative)
     }
 
     @Test("Digital bodies carry their real ladders and ISO ceilings")
@@ -26,6 +28,9 @@ struct GearCatalogueTests {
         #expect(GearCatalogue.m10.sortedShutterSpeeds.first == 1.0 / 4_000)
         #expect(GearCatalogue.m10.sortedShutterSpeeds.last == 8)
         #expect(GearCatalogue.m10.iso.availableValues.first == 100)
+        // The ceiling is the photographer's preference, and it is stored.
+        #expect(GearCatalogue.m10.iso.ceiling == 6_400)
+        #expect(GearCatalogue.m10.iso.solvableValues.last == 6_400)
 
         #expect(GearCatalogue.m11.sortedShutterSpeeds.first == 1.0 / 4_000)
         #expect(GearCatalogue.m11.sortedShutterSpeeds.last == 60)

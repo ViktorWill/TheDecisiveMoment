@@ -101,9 +101,9 @@ is deliberately so.
 
 | Body | Shutter | ISO | Notes |
 |---|---|---|---|
-| Leica M6 | 1 s – 1/1000 | fixed, the loaded roll (default 400) | mechanical; `loadedFilm` names the stock |
-| Leica M10 | 8 s – 1/4000 | 100 – 50000 | |
-| Leica M11 | 60 s – 1/4000 | 64 – 50000 | mechanical shutter only; the 1/16000 electronic mode is not offered, because it is a mode the photographer has to remember to switch into |
+| Leica M6 | 1 s – 1/1000 | fixed, the loaded roll (seeded HP5 400) | mechanical; the roll carries the stock, and `loadedFilm` is only for a stock the catalogue has not got |
+| Leica M10 | 8 s – 1/4000 | 100 – 50000, ceiling 6400 | |
+| Leica M11 | 60 s – 1/4000 | 64 – 50000, ceiling 6400 | mechanical shutter only; the 1/16000 electronic mode is not offered, because it is a mode the photographer has to remember to switch into |
 
 The slow end of the dial is engraved 15, 30 and 60 s — not 16, 32 and 64. A doubling series would
 invent speeds the camera has not got.
@@ -125,9 +125,81 @@ and then go to ∞, because at those focal lengths there is nothing to engrave i
 Seed profiles pair a body with the lens most likely to be on it: M6 · 35 mm, M10 · 35 mm, M11 ·
 50 mm. The first is selected.
 
-Film mode changes the interaction meaningfully: ISO is locked for the whole roll, so the solver has
-one fewer degree of freedom and the app should show the roll speed as a fixed fact rather than a
-picker. Add a *"loaded film"* field so this is set once when the roll goes in.
+### The film catalogue
+
+A roll is a **stock** plus the speed it is **rated at**. The stock carries the medium, and the medium
+carries the latitude and bias the solver works to (EXPOSURE-MODEL §7a) — so choosing Velvia rather
+than HP5 changes the answer, not just a label. These eight are seeded; they are the stocks a street
+photographer is actually carrying.
+
+| Stock | Box speed | Medium | Why it is here |
+|---|---|---|---|
+| Ilford HP5 Plus | 400 | B&W negative | The default. Pushes to 1600 without complaint. |
+| Kodak Tri-X 400 | 400 | B&W negative | The other default, with more bite. |
+| Ilford FP4 Plus | 125 | B&W negative | Slow, fine grain, for bright days. |
+| Ilford Delta 3200 | 3200 | B&W negative | Rated 3200; what a dim street asks for. |
+| Kodak Portra 400 | 400 | Colour negative | Colour that forgives over-exposure. |
+| Kodak Ektar 100 | 100 | Colour negative | Saturated, fine, wants sun. |
+| Fujifilm Provia 100F | 100 | Slide | Slide with the least drama. |
+| Fujifilm Velvia 50 | 50 | Slide | No highlight recovery at all. Meter it. |
+
+**Rated at** offers whole stops from one pull to three pushes around box speed — for HP5 400 that is
+200 / 400 / 800 / 1600 / 3200 — and states the cost of each (EXPOSURE-MODEL §7c). It applies to the
+whole roll, not the frame, and is shown wherever the ISO appears: `HP5 400 @ 1600 (+2)`.
+Mockup: `design/Gear.dc.html`.
+
+## Two modes
+
+The Light tab is one screen with two behaviours, switched on the body's medium. The difference is
+what the ISO *is*, and it is not cosmetic: on film the solver has two degrees of freedom and may find
+nothing; on a sensor it has three and almost always finds something.
+
+**Analog** — the body has a roll loaded:
+
+- The ISO is rendered **dimmed, as context, not as a control**. It reads `HP5 400 @ 1600 (+2)`
+  wherever a digital body would show a solved ISO, with the cost of the rating stated beside it.
+- Changing it means changing the roll, which happens in the film block on the gear screen, not in the
+  answer.
+- Nothing on the screen invites a tap on the ISO — a roll cannot be changed frame by frame.
+
+**Digital** — the body has a sensor:
+
+- The ISO is rendered at **full weight, in the accent, as a solved value**, and labelled as a change:
+  *"Raise ISO to 1600"*. Mockup: `design/Digital.dc.html`.
+- An **ISO ceiling** slider sits under the answer, stepping through the body's real full-stop ladder.
+  It is the photographer's limit, not the sensor's: past it the file is not worth having, and the
+  solver reports a shortfall rather than exceeding it (EXPOSURE-MODEL §7d).
+- The alternatives row is labelled *"trade depth for a cleaner file"*, because that is what opening up
+  buys on a sensor.
+
+## When nothing works
+
+An empty list is not an answer. When no setting is within tolerance the screen shows the shortfall
+and the levers that would close it — the reason *is* the answer. Mockup:
+`design/NoSolution.dc.html`.
+
+The screen states, in this order:
+
+1. **What is short, and by how much**: *"HP5 400 is 0.9 stops short here. Nothing on the M6's dial
+   reaches it hand-held."* The figure comes from the solver, in stops, against the closest candidate.
+2. **The levers**, each a tappable card that re-solves, in the order of EXPOSURE-MODEL §7b:
+   - **Push the roll** — the first offer whenever the gap is under two stops. The card names the new
+     rating, the stops, and the cost, and carries the setting the push buys.
+   - **Drop below the handheld floor** — the next real stop on the dial under the floor, with the
+     blur named.
+   - **An ND filter** — the bright-sun case, where the roll is too fast rather than too slow.
+   - **A different roll** — offered instead of a push once the gap is over two stops.
+   - **Raise the ISO ceiling** — digital only, and only when the ceiling rather than the sensor is
+     what is in the way.
+3. **The two-stop line**: under two stops short the roll is salvageable; past two, the honest answer
+   is that this is the wrong film for this light, and that is worth knowing before the frame is burnt.
+
+Tapping a lever applies it — a new rating, a slower floor, a higher ceiling — and the screen re-solves
+in place. A lever that does not change the answer is not offered.
+
+The same rule covers the aperture that is off the dial: f/2 in bright sun on ISO 400 needs
+1/35 120 s, which no M has. The screen says so and offers the ND, rather than quietly recommending
+f/5.6 — that answers a question nobody asked.
 
 ## Output
 

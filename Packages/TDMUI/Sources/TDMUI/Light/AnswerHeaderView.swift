@@ -1,4 +1,5 @@
 import SwiftUI
+import TDMCore
 import TDMLight
 
 /// The three lines the feature exists for:
@@ -13,7 +14,13 @@ import TDMLight
 struct AnswerHeaderView: View {
     let advice: Advice
     let recommendation: ExposureRecommendation?
-    let solverError: ExposureSolverError?
+    /// The loaded roll, which switches the header into analog mode: the ISO
+    /// becomes dimmed context rather than a solved value, §7c.
+    let roll: LoadedRoll?
+    /// The floor this solve was run against, quoted by the no-solution levers.
+    let handheldFloorSeconds: TimeInterval
+    /// Applies a lever from the no-solution screen and re-solves.
+    let onApplyLever: (ExposureLever) -> Void
     /// The cover the estimate was built from, `nil` when the model fell back to
     /// clear sky. Passed in rather than re-derived so this line can never
     /// disagree with the EV above it.
@@ -34,18 +41,18 @@ struct AnswerHeaderView: View {
             if !advice.predictsSubjectExposure {
                 SilhouetteView(background: recommendation, sigmaEV: advice.estimate.sigmaEV)
             } else if let recommendation {
-                Text(
-                    ExposurePhrasing.setting(
-                        aperture: recommendation.aperture,
-                        shutter: recommendation.shutter,
-                        iso: recommendation.iso,
-                        sigmaEV: advice.estimate.sigmaEV
-                    )
+                SettingReadoutView(
+                    recommendation: recommendation,
+                    roll: roll,
+                    sigmaEV: advice.estimate.sigmaEV
                 )
-                .font(LightTheme.answerFont)
-                .foregroundStyle(LightTheme.primaryText)
-                .minimumScaleFactor(0.6)
-                .lineLimit(1)
+
+                if let roll, let footnote = SettingReadoutView.rollFootnote(roll) {
+                    Text(footnote)
+                        .font(LightTheme.captionFont)
+                        .foregroundStyle(LightTheme.tertiaryText)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
 
                 if let zone = recommendation.zone, let mark = advice.focusMarkMetres {
                     Text(
@@ -59,8 +66,16 @@ struct AnswerHeaderView: View {
                     .foregroundStyle(LightTheme.secondaryText)
                     .multilineTextAlignment(.center)
                 }
+            } else if let shortfall = advice.shortfall {
+                NoSolutionView(
+                    shortfall: shortfall,
+                    roll: roll,
+                    handheldFloorSeconds: handheldFloorSeconds,
+                    sigmaEV: advice.estimate.sigmaEV,
+                    onApply: onApplyLever
+                )
             } else {
-                UnsolvableView(error: solverError, estimate: advice.estimate)
+                UnsolvableView(error: nil, estimate: advice.estimate)
             }
 
             Text(conditionsLine)
@@ -150,21 +165,18 @@ private struct UnsolvableView: View {
         switch error {
         case .noSettingWithinTolerance:
             "The light is outside this body and lens. Open up, change film, or accept a slower shutter."
-        case let .strategyConstraintsUnsatisfiable(strategy):
-            "Nothing satisfies \(Self.name(of: strategy)) here. Try another strategy."
+        case .strategyConstraintsUnsatisfiable(.zoneFocus):
+            "Nothing satisfies zone focus here. Try another strategy."
+        case .strategyConstraintsUnsatisfiable(.freezeMotion):
+            "Nothing satisfies freeze motion here. Try another strategy."
+        case .strategyConstraintsUnsatisfiable(.subjectIsolation):
+            "Nothing satisfies isolate subject here. Try another strategy."
+        case .strategyConstraintsUnsatisfiable(.availableLight):
+            "Nothing satisfies available light here. Try another strategy."
         case .emptyGearProfile:
             "This gear profile has no shutter speeds, apertures or ISO to work with."
         case nil:
             "Pick a gear profile to get a setting."
-        }
-    }
-
-    private static func name(of strategy: ExposureStrategy) -> String {
-        switch strategy {
-        case .zoneFocus: "zone focus"
-        case .freezeMotion: "freeze motion"
-        case .subjectIsolation: "isolate subject"
-        case .availableLight: "available light"
         }
     }
 }

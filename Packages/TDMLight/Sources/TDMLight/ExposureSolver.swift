@@ -1,4 +1,5 @@
 import Foundation
+import TDMCore
 
 /// How fast the subject is moving, for the freeze-motion strategy.
 public enum SubjectMotion: String, Sendable, CaseIterable {
@@ -57,8 +58,10 @@ public struct ExposureRequest: Sendable, Equatable {
     /// When set, the zone is reported at the engraved mark nearest this
     /// distance; otherwise the solver picks the mark that reaches infinity.
     public var subjectDistanceMetres: Double?
-    /// Candidates further than this from the target EV are discarded. §7 says
-    /// ±1/3 stop.
+    /// How precisely the ladders can hit the aim at all: whole aperture stops
+    /// and a doubling shutter dial cannot do better than ±1/3 stop. The medium
+    /// narrows this further where it has less latitude — see
+    /// ``ExposureTolerance`` and §7a. It is not the whole tolerance on its own.
     public var toleranceEV: Double
 
     public init(
@@ -79,6 +82,18 @@ public struct ExposureRequest: Sendable, Equatable {
         self.subjectDistanceMetres = subjectDistanceMetres
         self.toleranceEV = toleranceEV
     }
+
+    /// What the light lands on, which decides the tolerance and the aim.
+    public var medium: Medium { body.medium }
+
+    /// The asymmetric band around the aim, §7a.
+    public var tolerance: ExposureTolerance {
+        ExposureTolerance(medium: medium, precisionEV: toleranceEV)
+    }
+
+    /// `EV_target = EV_scene − bias`. Negative film is deliberately given more
+    /// light than a meter would suggest; slide and digital slightly less.
+    public var targetEV100: Double { ev100 - medium.biasEV }
 }
 
 /// One settable answer: aperture, shutter, ISO, and what it gives.
@@ -87,16 +102,29 @@ public struct ExposureRecommendation: Sendable, Equatable {
     /// Shutter time in seconds — `1/250`, not `250`.
     public let shutter: TimeInterval
     public let iso: Int
-    /// Signed error against the target, in stops. Negative is under-exposed.
+    /// Signed error against the **meter reading**, in stops. Negative is more
+    /// light than the meter asks for.
     public let errorEV: Double
+    /// Signed error against the medium's aim, `EV_scene − bias`. This is what
+    /// the tolerance is applied to and what the ranking prefers; `errorEV` is
+    /// what a meter would read, and the two differ by the bias, §7a.
+    public let aimErrorEV: Double
     /// The zone this setting gives at the recommended engraved mark.
     public let zone: FocusRange?
 
-    public init(aperture: Double, shutter: TimeInterval, iso: Int, errorEV: Double, zone: FocusRange?) {
+    public init(
+        aperture: Double,
+        shutter: TimeInterval,
+        iso: Int,
+        errorEV: Double,
+        aimErrorEV: Double? = nil,
+        zone: FocusRange?
+    ) {
         self.aperture = aperture
         self.shutter = shutter
         self.iso = iso
         self.errorEV = errorEV
+        self.aimErrorEV = aimErrorEV ?? errorEV
         self.zone = zone
     }
 }
@@ -108,16 +136,25 @@ public struct ExposureSolution: Sendable, Equatable {
     public let alternatives: [ExposureRecommendation]
     /// The engraved mark every zone above is reported for, metres.
     public let focusMarkMetres: Double?
+    /// Set when the lens's widest aperture is off the dial at this light — the
+    /// isolation case §7b insists is stated rather than quietly narrowed.
+    public let wideOpen: UnreachableAperture?
 
     public init(
         primary: ExposureRecommendation,
         alternatives: [ExposureRecommendation],
-        focusMarkMetres: Double?
+        focusMarkMetres: Double?,
+        wideOpen: UnreachableAperture? = nil
     ) {
         self.primary = primary
         self.alternatives = alternatives
         self.focusMarkMetres = focusMarkMetres
+        self.wideOpen = wideOpen
     }
+
+    /// How many settings there are in total: the row that reads "3 of 3" is
+    /// literal, and the whole point is that it sometimes reads "2 of 2".
+    public var count: Int { 1 + alternatives.count }
 }
 
 /// Why no setting could be found.
@@ -154,43 +191,60 @@ public enum ExposureSolver {
     /// Solve for a setting.
     ///
     /// Enumerates the body's real shutter ladder against the lens's real
-    /// aperture stops and the available ISO, keeps everything within the
-    /// tolerance (±1/3 stop), applies the strategy's hard constraints, then
-    /// ranks. Returns the primary answer and the neighbours worth offering.
+    /// aperture stops and the ISO it can offer, keeps everything inside the
+    /// medium's asymmetric tolerance around `EV_scene − bias`, applies the
+    /// strategy's hard constraints, then ranks.
+    ///
+    /// Never returns an empty list: when nothing lands, the answer is a
+    /// ``ExposureShortfall`` naming the gap and the levers, because on a fixed
+    /// roll *"HP5 400 is 0.9 stops short here"* is the useful thing to say, §7b.
+    public static func resolve(_ request: ExposureRequest) -> ExposureOutcome {
+        resolve(request, offeringLevers: true)
+    }
+
+    /// The throwing form, for callers that only want a setting. `solve` and
+    /// `resolve` are the same solve; this one collapses the shortfall to the
+    /// reason it carries.
     public static func solve(_ request: ExposureRequest) throws -> ExposureSolution {
-        let isoValues = request.body.iso.availableValues
+        switch resolve(request) {
+        case let .solved(solution): return solution
+        case let .noSolution(shortfall): throw shortfall.reason
+        }
+    }
+
+    private static func resolve(_ request: ExposureRequest, offeringLevers: Bool) -> ExposureOutcome {
+        let isoValues = request.body.iso.solvableValues
         guard !request.body.shutterSpeeds.isEmpty, !request.lens.apertures.isEmpty, !isoValues.isEmpty else {
-            throw ExposureSolverError.emptyGearProfile
-        }
-
-        var withinTolerance: [(candidate: Candidate, passesStrategy: Bool)] = []
-        for iso in isoValues {
-            let target = exposureValue(ev100: request.ev100, iso: iso)
-            for shutter in request.body.shutterSpeeds where shutter > 0 {
-                for aperture in request.lens.apertures where aperture > 0 {
-                    let error = exposureValue(aperture: aperture, shutter: shutter) - target
-                    guard abs(error) <= request.toleranceEV + 1e-9 else { continue }
-                    let candidate = Candidate(aperture: aperture, shutter: shutter, iso: iso, errorEV: error)
-                    withinTolerance.append((candidate, satisfiesHardConstraints(candidate, request)))
-                }
-            }
-        }
-
-        guard !withinTolerance.isEmpty else {
-            throw ExposureSolverError.noSettingWithinTolerance(
-                targetEV: request.ev100,
-                toleranceEV: request.toleranceEV
+            return .noSolution(
+                ExposureShortfall(
+                    stops: 0,
+                    aimStops: 0,
+                    sense: .needsMoreLight,
+                    closest: nil,
+                    levers: offeringLevers ? ceilingLevers(request) : [],
+                    reason: .emptyGearProfile
+                )
             )
         }
-        let allowed = withinTolerance.filter(\.passesStrategy).map(\.candidate)
+
+        let candidates = enumerate(request, isoValues: isoValues)
+        let tolerance = request.tolerance
+        let withinTolerance = candidates.filter { tolerance.accepts(aimErrorEV: $0.aimErrorEV) }
+        let allowed = withinTolerance.filter { satisfiesHardConstraints($0, request) }
+
         guard !allowed.isEmpty else {
-            throw ExposureSolverError.strategyConstraintsUnsatisfiable(request.strategy)
+            let reason: ExposureSolverError = withinTolerance.isEmpty
+                ? .noSettingWithinTolerance(targetEV: request.ev100, toleranceEV: request.toleranceEV)
+                : .strategyConstraintsUnsatisfiable(request.strategy)
+            return .noSolution(
+                shortfall(for: request, candidates: candidates, reason: reason, offeringLevers: offeringLevers)
+            )
         }
 
         let ranked = allowed.sorted { lhs, rhs in
             let l = score(lhs, request)
             let r = score(rhs, request)
-            if l == r { return abs(lhs.errorEV) < abs(rhs.errorEV) }
+            if l == r { return abs(lhs.aimErrorEV) < abs(rhs.aimErrorEV) }
             return l < r
         }
 
@@ -198,27 +252,259 @@ public enum ExposureSolver {
         // answer asks for — so the alternatives show the depth collapsing as the
         // aperture opens rather than comparing different barrel settings.
         let mark = focusMark(for: ranked[0].aperture, request: request)
-        func recommendation(_ candidate: Candidate) -> ExposureRecommendation {
-            ExposureRecommendation(
-                aperture: candidate.aperture,
-                shutter: candidate.shutter,
-                iso: candidate.iso,
-                errorEV: candidate.errorEV,
-                zone: mark.map {
-                    ZoneFocus.range(
-                        lens: request.lens,
-                        body: request.body,
-                        markMetres: $0,
-                        aperture: candidate.aperture
+
+        return .solved(
+            ExposureSolution(
+                primary: recommendation(ranked[0], request: request, markMetres: mark),
+                alternatives: ranked.dropFirst().map { recommendation($0, request: request, markMetres: mark) },
+                focusMarkMetres: mark,
+                wideOpen: unreachableWideOpen(request, iso: ranked[0].iso)
+            )
+        )
+    }
+
+    // MARK: - Enumeration
+
+    private static func enumerate(_ request: ExposureRequest, isoValues: [Int]) -> [Candidate] {
+        var candidates: [Candidate] = []
+        for iso in isoValues {
+            let metered = exposureValue(ev100: request.ev100, iso: iso)
+            let aim = exposureValue(ev100: request.targetEV100, iso: iso)
+            for shutter in request.body.shutterSpeeds where shutter > 0 {
+                for aperture in request.lens.apertures where aperture > 0 {
+                    let value = exposureValue(aperture: aperture, shutter: shutter)
+                    candidates.append(
+                        Candidate(
+                            aperture: aperture,
+                            shutter: shutter,
+                            iso: iso,
+                            errorEV: value - metered,
+                            aimErrorEV: value - aim
+                        )
                     )
                 }
+            }
+        }
+        return candidates
+    }
+
+    private static func recommendation(
+        _ candidate: Candidate,
+        request: ExposureRequest,
+        markMetres: Double?
+    ) -> ExposureRecommendation {
+        ExposureRecommendation(
+            aperture: candidate.aperture,
+            shutter: candidate.shutter,
+            iso: candidate.iso,
+            errorEV: candidate.errorEV,
+            aimErrorEV: candidate.aimErrorEV,
+            zone: markMetres.map {
+                ZoneFocus.range(
+                    lens: request.lens,
+                    body: request.body,
+                    markMetres: $0,
+                    aperture: candidate.aperture
+                )
+            }
+        )
+    }
+
+    // MARK: - No solution
+
+    private static func shortfall(
+        for request: ExposureRequest,
+        candidates: [Candidate],
+        reason: ExposureSolverError,
+        offeringLevers: Bool
+    ) -> ExposureShortfall {
+        let constrained = candidates.filter { satisfiesHardConstraints($0, request) }
+        let pool = constrained.isEmpty ? candidates : constrained
+        let closest = pool.min { abs($0.errorEV) < abs($1.errorEV) }
+
+        guard let closest else {
+            return ExposureShortfall(
+                stops: 0,
+                aimStops: 0,
+                sense: .needsMoreLight,
+                closest: nil,
+                levers: [],
+                reason: reason
             )
         }
 
-        return ExposureSolution(
-            primary: recommendation(ranked[0]),
-            alternatives: ranked.dropFirst().map(recommendation),
-            focusMarkMetres: mark
+        let mark = focusMark(for: closest.aperture, request: request)
+        return ExposureShortfall(
+            stops: abs(closest.errorEV),
+            aimStops: abs(closest.aimErrorEV),
+            // A positive error means the setting wants more light than the scene
+            // has: the roll is short. Negative is the bright-sun case.
+            sense: closest.errorEV > 0 ? .needsMoreLight : .needsLessLight,
+            closest: recommendation(closest, request: request, markMetres: mark),
+            levers: offeringLevers ? levers(for: request, closest: closest) : [],
+            reason: reason
+        )
+    }
+
+    /// What would work, in the order §7b gives: rate the roll, move the floor,
+    /// take light away, change film. Each one is re-solved rather than asserted,
+    /// so a lever on screen is a lever that leads to a setting.
+    private static func levers(for request: ExposureRequest, closest: Candidate) -> [ExposureLever] {
+        var levers: [ExposureLever] = []
+        let needsMoreLight = closest.errorEV > 0
+        // Push comes in whole stops and has to close the gap to the *aim*, not
+        // to the meter: on negative film the aim is already a third to two
+        // thirds of a stop more light than the meter asks for.
+        let wholeStops = max(1, Int(abs(closest.aimErrorEV).rounded(.up)))
+
+        // Bounded before it is shifted: a scene ten stops under an ISO 25 roll
+        // would otherwise ask for a rating no arithmetic can hold.
+        if needsMoreLight, let roll = request.body.loadedRoll,
+           wholeStops <= LoadedRoll.pushRange.upperBound {
+            let pushed = LoadedRoll(stock: roll.stock, ratedAt: roll.ratedAt << wholeStops)
+            if pushed.pushStops <= Double(LoadedRoll.pushRange.upperBound) + 0.01 {
+                levers.append(.rate(roll: pushed, setting: bestSetting(request, iso: .fixed(pushed))))
+            }
+        }
+
+        if needsMoreLight, let floorLever = slowerFloorLever(request) {
+            levers.append(floorLever)
+        }
+
+        if !needsMoreLight {
+            levers.append(.neutralDensity(stops: max(1, Int(abs(closest.aimErrorEV).rounded(.up)))))
+        }
+
+        // Past two stops the honest answer is that this is the wrong film for
+        // this light, whatever the development can rescue.
+        if let roll = request.body.loadedRoll, abs(closest.errorEV) > 2 {
+            let wanted = Double(roll.ratedAt) * pow(2, needsMoreLight ? abs(closest.aimErrorEV) : -abs(closest.aimErrorEV))
+            levers.append(
+                .differentRoll(
+                    isoSpeed: standardFilmSpeed(atLeast: wanted, faster: needsMoreLight),
+                    faster: needsMoreLight
+                )
+            )
+        }
+
+        // Last, because on a sensor it is the only one that ever applies and the
+        // order is the one `docs/SPEC-light.md` "When nothing works" states.
+        levers.append(contentsOf: ceilingLevers(request))
+
+        return levers
+    }
+
+    /// The digital case: it is the ceiling in the way, not the sensor, §7d.
+    private static func ceilingLevers(_ request: ExposureRequest) -> [ExposureLever] {
+        guard case let .range(minimum, maximum, ceiling) = request.body.iso, ceiling < maximum else { return [] }
+        let uncapped = ISOAvailability.range(minimum: minimum, maximum: maximum, ceiling: maximum)
+        var body = request.body
+        body.iso = uncapped
+        var uncappedRequest = request
+        uncappedRequest.body = body
+        guard case let .solved(solution) = resolve(uncappedRequest, offeringLevers: false) else { return [] }
+        guard solution.primary.iso > ceiling else { return [] }
+        return [.raiseCeiling(toISO: solution.primary.iso)]
+    }
+
+    /// Accepting a slower shutter than the floor is the second lever: the app
+    /// offers the fastest speed that actually solves, so the blur is the least
+    /// the scene allows.
+    private static func slowerFloorLever(_ request: ExposureRequest) -> ExposureLever? {
+        let slower = request.body.shutterSpeeds
+            .filter { $0 > request.handheldFloor + 1e-12 }
+            .sorted()
+        for shutter in slower {
+            var relaxed = request
+            relaxed.handheldFloor = shutter
+            if case let .solved(solution) = resolve(relaxed, offeringLevers: false),
+               solution.primary.shutter >= shutter - 1e-12 {
+                return .lowerFloor(shutter: shutter, setting: solution.primary)
+            }
+        }
+        return nil
+    }
+
+    private static func bestSetting(_ request: ExposureRequest, iso: ISOAvailability) -> ExposureRecommendation? {
+        var body = request.body
+        body.iso = iso
+        var rerun = request
+        rerun.body = body
+        return resolve(rerun, offeringLevers: false).solution?.primary
+    }
+
+    /// The speeds film is actually sold at. A recommendation to load ISO 1100 is
+    /// not a recommendation.
+    static let filmSpeeds = [25, 50, 100, 125, 160, 200, 400, 800, 1600, 3200]
+
+    private static func standardFilmSpeed(atLeast wanted: Double, faster: Bool) -> Int {
+        if faster {
+            return filmSpeeds.first { Double($0) >= wanted - 1e-9 } ?? filmSpeeds.last ?? 3_200
+        }
+        return filmSpeeds.last { Double($0) <= wanted + 1e-9 } ?? filmSpeeds.first ?? 25
+    }
+
+    // MARK: - ISO as the solved variable, §7d
+
+    /// The ISO a setting needs exactly: `S = 100 · 2^(log2(N²/t) − EV100)`.
+    public static func requiredISO(ev100: Double, aperture: Double, shutter: TimeInterval) -> Double {
+        100 * pow(2, exposureValue(aperture: aperture, shutter: shutter) - ev100)
+    }
+
+    /// Solve for the ISO on a digital body, rounded **up** to the body's next
+    /// real step and reported against the user's ceiling, §7d.
+    ///
+    /// Returns `nil` on a fixed roll, where the ISO is not a variable at all.
+    public static func solveISO(
+        ev100: Double,
+        aperture: Double,
+        shutter: TimeInterval,
+        availability: ISOAvailability
+    ) -> ISORecommendation? {
+        guard case .range = availability else { return nil }
+        let ladder = availability.availableValues
+        guard !ladder.isEmpty else { return nil }
+
+        let exact = requiredISO(ev100: ev100, aperture: aperture, shutter: shutter)
+        // Up, never down: down is under-exposure, and on digital that is the
+        // direction with the least shadow latitude — and the one habit reaches
+        // for.
+        let stepped = ladder.first { Double($0) >= exact - 1e-9 } ?? ladder[ladder.count - 1]
+        let capped = availability.solvableValues.last.map { min(stepped, $0) } ?? stepped
+        return ISORecommendation(
+            exact: exact,
+            iso: capped,
+            exceedsCeiling: exact > Double(capped) + 1e-9
+        )
+    }
+
+    /// Whether an aperture is off the dial at this light: f/2 in bright sun on
+    /// ISO 400 wants 1/35 120 s and no M has it, §7b.
+    public static func unreachableAperture(
+        ev100: Double,
+        aperture: Double,
+        iso: Int,
+        body: CameraBodyProfile
+    ) -> UnreachableAperture? {
+        guard let fastest = body.fastestShutter else { return nil }
+        let required = aperture * aperture / pow(2, exposureValue(ev100: ev100, iso: iso))
+        guard required < fastest - 1e-12 else { return nil }
+        return UnreachableAperture(
+            aperture: aperture,
+            iso: iso,
+            requiredShutter: required,
+            fastestShutter: fastest,
+            neutralDensityStops: log2(fastest / required)
+        )
+    }
+
+    private static func unreachableWideOpen(_ request: ExposureRequest, iso: Int) -> UnreachableAperture? {
+        guard let widest = request.lens.apertures.filter({ $0 > 0 }).min() else { return nil }
+        return unreachableAperture(
+            ev100: request.ev100,
+            aperture: widest,
+            iso: iso,
+            body: request.body
         )
     }
 
@@ -228,7 +514,10 @@ public enum ExposureSolver {
         let aperture: Double
         let shutter: TimeInterval
         let iso: Int
+        /// Against the meter reading.
         let errorEV: Double
+        /// Against the medium's aim, `EV_scene − bias`.
+        let aimErrorEV: Double
     }
 
     /// Mild penalty outside f/5.6–f/11, where the lens is sharpest. Never a hard
@@ -255,7 +544,7 @@ public enum ExposureSolver {
         let isoStops = log2(Double(candidate.iso) / 100)
         let shutterStopsBelowFloor = max(0, log2(candidate.shutter / request.handheldFloor))
 
-        var score = 0.5 * abs(candidate.errorEV)
+        var score = 0.5 * abs(candidate.aimErrorEV)
         if !optimalApertureRange.contains(candidate.aperture) {
             score += optimalAperturePenalty
         }

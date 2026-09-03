@@ -51,6 +51,11 @@ public final class LightViewModel {
     public var chosenMarkMetres: Double? {
         didSet { if chosenMarkMetres != oldValue { recompute() } }
     }
+    /// A slower shutter the photographer has accepted, seconds, taken from the
+    /// "drop to 1/30" lever on the no-solution screen. `nil` is the hold rule.
+    public var acceptedFloorSeconds: TimeInterval? {
+        didSet { if acceptedFloorSeconds != oldValue { recompute() } }
+    }
 
     // MARK: State
 
@@ -131,6 +136,84 @@ public final class LightViewModel {
     /// The mark the barrel is drawn at: what the user dragged to, or the
     /// solver's own choice. Both come from the lens's engravings.
     public var selectedMarkMetres: Double? { chosenMarkMetres ?? focusMarkMetres }
+
+    // MARK: Film and sensor, §7a–7d
+
+    /// What the light lands on. The Light tab is two screens, and this is the
+    /// switch, `docs/SPEC-light.md` "Two modes".
+    public var medium: Medium { profile?.body.medium ?? .digital }
+
+    /// Film mode: the ISO is a fact of the loaded roll, shown as context.
+    public var isAnalog: Bool { medium.isFilm }
+
+    public var loadedRoll: LoadedRoll? { profile?.body.loadedRoll }
+
+    /// The highest ISO the photographer wants a file at, `nil` on film.
+    public var isoCeiling: Int? { profile?.body.iso.ceiling }
+
+    /// Every ISO the selected sensor offers, for the ceiling slider.
+    public var isoLadder: [Int] { profile?.body.iso.availableValues ?? [] }
+
+    /// Why there is no setting, and what would fix it, §7b.
+    public var shortfall: ExposureShortfall? { advice?.shortfall }
+
+    /// The floor the current answer was solved against, seconds.
+    public var handheldFloorSeconds: TimeInterval {
+        acceptedFloorSeconds ?? steadiness.floor(
+            focalLengthMillimetres: profile?.lens.focalLengthMillimetres ?? 50
+        )
+    }
+
+    /// Swaps the roll — a new stock, or the same stock rated differently. The
+    /// medium comes with it, so the tolerance and bias change too.
+    public func setLoadedRoll(_ roll: LoadedRoll) {
+        guard var updated = profile, updated.body.iso.isFilm else { return }
+        updated.body.iso = .fixed(roll)
+        store(updated)
+    }
+
+    /// The ceiling is the photographer's, not the sensor's, §7d.
+    public func setISOCeiling(_ iso: Int) {
+        guard var updated = profile, case let .range(minimum, maximum, _) = updated.body.iso else { return }
+        updated.body.iso = .range(minimum: minimum, maximum: maximum, ceiling: min(max(iso, minimum), maximum))
+        store(updated)
+    }
+
+    /// Applies a lever from the no-solution screen and re-solves. The screen is
+    /// only worth showing if its buttons do something.
+    public func apply(_ lever: ExposureLever) {
+        switch lever {
+        case let .rate(roll, _):
+            setLoadedRoll(roll)
+        case let .lowerFloor(shutter, _):
+            acceptedFloorSeconds = shutter
+        case let .differentRoll(isoSpeed, _):
+            // A different *roll*, not the same stock rated harder: past two
+            // stops the push is not the answer, so this loads the catalogue
+            // stock of the same medium nearest the speed that would work, at
+            // its own box speed.
+            guard let roll = loadedRoll,
+                  let stock = FilmStock.catalogue
+                      .filter({ $0.medium == roll.medium && $0.id != roll.stock.id })
+                      .min(by: { abs($0.boxSpeed - isoSpeed) < abs($1.boxSpeed - isoSpeed) })
+            else { return }
+            setLoadedRoll(LoadedRoll(stock: stock))
+        case let .raiseCeiling(iso):
+            setISOCeiling(iso)
+        case .neutralDensity:
+            // Nothing to re-solve: the filter is on the lens or it is not.
+            break
+        }
+    }
+
+    private func store(_ updated: GearProfile) {
+        profile = updated
+        if let index = profiles.firstIndex(where: { $0.id == updated.id }) {
+            profiles[index] = updated
+        }
+        try? gearStore?.save(updated)
+        recompute()
+    }
 
     /// The selected gear, in the shape the solver and the barrel drawing want.
     public var lensProfile: LensProfile? { profile.map { LensProfile($0.lens) } }
@@ -340,8 +423,9 @@ public final class LightViewModel {
             calibrationOffsetEV: calibrationEV(at: date) + profile.calibrationOffsetEV,
             body: CameraBodyProfile(profile.body),
             lens: LensProfile(profile.lens),
-            strategy: ExposureStrategy(profile.strategy, motion: motion),
+            strategy: .init(profile.strategy, motion: motion),
             steadiness: steadiness,
+            handheldFloorSeconds: acceptedFloorSeconds,
             subjectDistanceMetres: chosenMarkMetres
         )
 
