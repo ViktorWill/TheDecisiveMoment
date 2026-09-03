@@ -1,30 +1,14 @@
 import SwiftUI
 
-/// Liquid Glass, where the current design guidance says it belongs: floating
-/// controls, never the content underneath them.
-///
-/// The app's deployment target is iOS 18, so the effect is availability-gated
-/// and falls back to a flat raised fill. It is also skipped when the user has
-/// asked for reduced transparency, and — since this app is used at night — the
-/// fallback is the darker of the two, never the brighter.
 struct FloatingControlBackground: ViewModifier {
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     var isSelected: Bool = false
 
     func body(content: Content) -> some View {
-        if #available(iOS 26.0, *), !reduceTransparency {
-            content
-                .glassEffect(
-                    isSelected ? .regular.tint(LightTheme.accent.opacity(0.35)) : .regular,
-                    in: Capsule()
-                )
-        } else {
-            content
-                .background(
-                    isSelected ? LightTheme.accent.opacity(0.28) : LightTheme.raised,
-                    in: Capsule()
-                )
-        }
+        content
+            .background(
+                isSelected ? LightTheme.accent.opacity(0.28) : LightTheme.raised,
+                in: Capsule()
+            )
     }
 }
 
