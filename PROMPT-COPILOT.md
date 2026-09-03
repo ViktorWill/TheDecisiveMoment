@@ -436,6 +436,60 @@ contributors" is visible on the map surface.
 
 ---
 
+## M5a — Run without a paid Apple account
+
+```text
+The project declares com.apple.developer.weatherkit, so a build signed with
+a free Apple ID cannot sign at all. Everything else the app uses — MapKit,
+CoreLocation, AVCapture, SwiftData — is free-tier fine, so one entitlement
+is the only thing between this app and a phone. Fix that without degrading
+the paid build.
+
+Read docs/SPEC-light.md "Sky, when there is no WeatherKit" first.
+
+1. project.yml — add a "Free" build configuration and a matching scheme
+   "The Decisive Moment (Free)":
+     - CODE_SIGN_ENTITLEMENTS points at a second entitlements file with NO
+       WeatherKit key. Do not delete or edit the existing one.
+     - SWIFT_ACTIVE_COMPILATION_CONDITIONS adds TDM_NO_WEATHERKIT.
+   The default scheme keeps the entitlement and is otherwise unchanged.
+   Both must build from one `xcodegen generate`.
+
+2. TDMWeather — add ManualWeatherProvider: no network, builds a
+   WeatherObservation from a user-selected sky condition. Map the five
+   segments to the cover values in docs/SPEC-light.md exactly; those are the
+   EXPOSURE-MODEL §4b rows and must not be re-derived.
+   Under TDM_NO_WEATHERKIT do not compile WeatherKitProvider at all, and
+   wire ManualWeatherProvider as the only provider — the app must not make a
+   network call that is guaranteed to fail with .notAuthorised.
+
+3. TDMUI — the five-segment sky control, styled exactly like the Scene
+   control in design/Main.dc.html: same height, hairlines, radii, active
+   colour.
+     - Free build: always visible, in place of the weather readout.
+     - Paid build: the cloud figure in the conditions line becomes tappable
+       and opens the same control as an override, with a way back to the
+       forecast.
+
+4. The 12-hour scrubber keeps working without a forecast — sun position is
+   computed on device. Hold the manual cover constant across the window and
+   widen sigma for future hours per EXPOSURE-MODEL §9. Do not hide it.
+
+5. docs/SETUP.md — replace the "you need the paid membership" framing with
+   both paths, and state the free-tier realities plainly: the build expires
+   after 7 days and must be re-run from Xcode, three sideloaded apps at a
+   time, no TestFlight.
+
+Tests:
+  - The five segments map to cover 0.0 / 0.25 / 0.5 / 0.75 / 1.0 and produce
+    -0.00 / -0.28 / -0.92 / -1.84 / -3.00 EV, matching §4b exactly.
+  - Under TDM_NO_WEATHERKIT the WeatherKit import is absent from the built
+    module. Assert it at the build level, not in a comment.
+  - A manual reading reports sigma 0.5, not the stale-forecast 0.8.
+```
+
+---
+
 ## M6 — Community stub and TestFlight
 
 ```text

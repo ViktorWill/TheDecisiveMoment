@@ -108,7 +108,15 @@ is deliberately so.
 |---|---|---|---|
 | Leica M6 | 1 s – 1/1000 | fixed, the loaded roll (seeded HP5 400) | mechanical; the roll carries the stock, and `loadedFilm` is only for a stock the catalogue has not got |
 | Leica M10 | 8 s – 1/4000 | 100 – 50000, ceiling 6400 | |
-| Leica M11 | 60 s – 1/4000 | 64 – 50000, ceiling 6400 | mechanical shutter only; the 1/16000 electronic mode is not offered, because it is a mode the photographer has to remember to switch into |
+| Leica M11 | 60 s – 1/4000 mech · 1/16000 electronic | 64 – 50000, ceiling 6400 | electronic speeds are a **lever**, never a default — see below |
+
+**On the M11's electronic shutter.** It is a mode you have to remember to switch into, so it must
+never be the default recommendation — that reasoning is right. But excluding it outright costs more
+than it saves: 1/16000 is the only way *any* M reaches f/2 in bright sun, which needs 1/5619 at
+ISO 64 and is beyond the mechanical 1/4000. Model it the way push is modelled — a lever the app
+offers with its condition stated (*"switch to electronic shutter"*), never a speed it silently
+assumes you are on. Without it the M4b vector that f/2 in bright sun is reachable on exactly one
+body cannot pass.
 
 The slow end of the dial is engraved 15, 30 and 60 s — not 16, 32 and 64. A doubling series would
 invent speeds the camera has not got.
@@ -176,6 +184,37 @@ nothing; on a sensor it has three and almost always finds something.
   solver reports a shortfall rather than exceeding it (EXPOSURE-MODEL §7d).
 - The alternatives row is labelled *"trade depth for a cleaner file"*, because that is what opening up
   buys on a sensor.
+
+## Sky, when there is no WeatherKit
+
+WeatherKit needs a paid Apple Developer membership, so a build signed with a free Apple ID cannot
+carry the entitlement at all — automatic signing refuses it outright. That build is still worth
+having, and it should not fall back to clear sky and be wrong by three stops on an overcast day.
+
+Cloud cover is the only weather input the model consumes (§4b), and the person holding the phone is
+standing outside looking at the sky. So take it from them:
+
+| Segment | Cover | Δ EV | Straight from the §4b table |
+|---|---|---|---|
+| Clear | 0.00 | −0.00 | full sun, distinct shadows |
+| Light haze | 0.25 | −0.28 | slight haze |
+| Hazy sun | 0.50 | −0.92 | soft shadows |
+| Cloudy bright | 0.75 | −1.84 | no shadows |
+| Overcast | 1.00 | −3.00 | heavy overcast |
+
+Five segments, same shape and styling as Scene, where the weather readout goes.
+
+- **Free build**: the only source, always visible.
+- **Paid build**: WeatherKit leads, and the cloud figure in the conditions line is tappable to
+  override it. Worth keeping permanently — forecasts are wrong, and an observation is fresher than a
+  cached one.
+
+Uncertainty stays at 0.5 EV for a manual reading taken now: it is an observation, not a stale
+forecast, and claiming otherwise in either direction would be dishonest.
+
+The 12-hour scrubber still works without a forecast — sun position is computed on device, so that
+curve is real. Hold cloud cover constant across the window and widen σ for future hours per §9
+rather than dropping the feature.
 
 ## When nothing works
 

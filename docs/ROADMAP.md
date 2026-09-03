@@ -103,6 +103,18 @@ tracks the sun; a dropped pin survives a bundle refresh.
 
 ---
 
+### M5a — Run without a paid Apple account
+
+A free Apple ID cannot carry the WeatherKit entitlement, which blocks signing entirely. Adds a Free
+build configuration without it, plus a manual five-segment sky control supplying the one weather
+input the model actually uses — useful permanently as a forecast override.
+
+**Done when:** the Free scheme installs on a device signed with a free Apple ID, the Light tab is
+fully usable, and the five segments reproduce the cloud deltas in
+[EXPOSURE-MODEL §4b](EXPOSURE-MODEL.md).
+
+---
+
 ### M6 — Community stub and TestFlight
 
 The local sessions model, the placeholder tab, App Privacy strings, icon, onboarding, first build to
