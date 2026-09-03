@@ -14,6 +14,9 @@ public enum Visibility: String, Sendable, Codable, CaseIterable, Hashable {
     case city
 }
 
+/// An unambiguous name for session visibility outside TDMCore.
+public typealias SessionVisibility = Visibility
+
 /// Someone who shoots. Local-only in v1.
 public struct Photographer: Sendable, Hashable, Codable, Identifiable {
     public var id: UUID

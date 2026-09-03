@@ -239,7 +239,7 @@ enum CommunityPhrasing {
     }
 
     /// What a visibility setting means, in the plainest words available.
-    static func explanation(for visibility: TDMCore.Visibility) -> String {
+    static func explanation(for visibility: SessionVisibility) -> String {
         switch visibility {
         case .private: "Only you. Stored on this device."
         case .link: "Anyone you send the link to. Not available yet."
