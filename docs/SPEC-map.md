@@ -9,8 +9,9 @@ A full-bleed MapKit map. No chrome competing with it.
 - **Top**: a city chip — `New York City · 842 spots · offline` — tapping it opens the city picker.
 - **Bottom**: a draggable sheet at three detents. Collapsed shows a search field and filter pills;
   medium shows the ranked list of nearby spots; large is the full list.
-- **Floating, bottom-right**: recentre button, and a sun toggle that overlays the current solar
-  azimuth.
+- **Floating, top-right**: recentre button, and a sun toggle that overlays the current solar
+  azimuth. They sit at the top because the sheet is persistent and owns the bottom of the screen —
+  this is what `design/Map.dc.html` shows.
 
 Dark map style by default. This gets used at dusk.
 
@@ -37,12 +38,17 @@ adopt the colour of their highest-scoring member.
 
 Marker glyph is by `kind` (SF Symbols: `building.columns` plaza, `cart` market, `figure.walk`
 street, `stairs` stairs, `tram` transit …). Marker size and opacity scale with `score` — the good
-stuff is visibly bigger without needing a legend.
+stuff is visibly bigger without needing a legend. Radius is `10 + 7 · score` points and opacity
+`0.65 + 0.35 · score`, from `design/Map.dc.html`; below a 12-point radius the glyph is dropped for a
+plain dot, because a symbol that small reads as noise.
 
 Curated spots get a distinct accent colour and always render above generated ones.
 
 Optional **photo-density heatmap** layer from the Commons grid, off by default. It is atmospheric
-rather than precise, and should be labelled as such.
+rather than precise, and should be labelled as such. *Not built in v1.*
+
+`© OpenStreetMap contributors` sits on the map surface itself, with the licence of any other source
+the visible bundle draws on.
 
 ## Filters
 
@@ -52,14 +58,24 @@ Pills in the collapsed sheet, multi-select, persisted between launches:
 - **Openness** — open / canyon / covered
 - **Source** — curated only · include generated · my pins
 - **Lit now** — computed live from solar azimuth against `streetBearing`; hides spots currently in
-  shadow. This is the filter that will actually get used.
-- **Score floor** — a slider, default 0.3.
+  shadow. This is the filter that will actually get used. The geometry is one solar solve per
+  refresh and a handful of arithmetic per spot (`TDMSpots.SunFilter`): nothing is lit below the
+  horizon; `covered` is never lit; `open` is always lit in daylight; `canyon` is lit when the sun
+  clears 45° — the shadow line of a 1:1 block reaches the far kerb there — or when its azimuth is
+  within 30° of the street axis, folded to 0…90° because a street is an axis and not a direction. A
+  `canyon` with no recorded bearing needs the 45°; any other spot without one is treated as open,
+  since hiding it would hide most of a generated bundle over a fact the data does not carry.
+- **Score floor** — a menu of five steps (any · 0.2 · 0.4 · 0.6 · 0.8), default 0.3.
+
+Curated spots are exempt from the score floor: a hand-written note is worth more than the generated
+number attached to it.
 
 Search is a plain substring match over `name` and `tags`, offline, no network.
 
 ## Spot detail
 
-Opens as a sheet over the map.
+Pushes inside the sheet's navigation stack rather than opening a second sheet over the first — the
+map sheet is persistent, so a sheet on top of it would bury the map entirely.
 
 - Name, kind, distance and walking time.
 - The score, **as prose**: *"137 geotagged photos nearby · marketplace · curated"*. Never the bare
@@ -73,8 +89,8 @@ Opens as a sheet over the map.
 - Photos, if any, with author and licence beneath each — required, not optional.
 - Actions: *Directions* (hands off to Maps), *Save*, *Mark as visited*, *Add a note*.
 
-Personal notes and visit state are local, keyed by spot `id`, and survive a bundle update — which is
-why ids have to be stable.
+Personal notes, saves and visit state are local, keyed by spot `id` in `UserDefaults`, and survive a
+bundle update — which is why ids have to be stable.
 
 ## Your own pins
 
@@ -91,8 +107,9 @@ Export as GeoJSON from settings, so the data is never trapped.
 
 Everything above works with no network, except the *Light right now* strip, which falls back to a
 clear-sky estimate and says so. Map tiles themselves come from MapKit and are the one thing that
-genuinely needs a connection; when tiles fail, the annotations still render over an empty grid and a
-banner explains that only tiles are missing.
+genuinely needs a connection; when tiles fail, the annotations still render over MapKit's empty
+grid. The city chip carries an `OFFLINE` badge whenever the visible city is being served from
+storage, which is the honest thing to say without a tile-level error MapKit does not report.
 
 There is no spinner anywhere in the offline path. If data is stored, it draws immediately.
 
@@ -101,4 +118,5 @@ There is no spinner anywhere in the offline path. If data is stored, it draws im
 - Bounding-box query in SwiftData against the visible rect, not a full-city load.
 - Debounce region changes by 150 ms.
 - Cap rendered annotations at 300; when a region holds more, raise the effective score floor and say
-  so subtly rather than dropping markers silently.
+  so subtly rather than dropping markers silently. `TDMSpots.SpotClusterer` does the ranking, keeps
+  the best 300 by score, and reports the floor it had to reach so the sheet can print it.

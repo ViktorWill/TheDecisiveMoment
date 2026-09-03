@@ -77,6 +77,9 @@ public final class LightViewModel {
     /// A tapped alternative, promoted to the top of the screen until the model
     /// next changes underneath it.
     public private(set) var promoted: ExposureRecommendation?
+    /// The spot the Map handed over, when the screen is answering for one
+    /// rather than for wherever the phone is.
+    public private(set) var spotName: String?
     /// Offsets the live meter has taught the app, keyed by scene and light
     /// source.
     public private(set) var calibrations: [CalibrationKey: Double] = [:]
@@ -361,6 +364,27 @@ public final class LightViewModel {
             bodies = GearCatalogue.bodies
             profile = profiles.first
         }
+    }
+
+    /// Takes a spot from the Map tab: its coordinate, the street it runs along
+    /// and the sky it can see, which is exactly the set of inputs the user would
+    /// otherwise have to describe (`docs/SPEC-map.md`, "Spot detail").
+    public func apply(_ handoff: SpotHandoff) {
+        spotName = handoff.name
+        streetBearingDegrees = handoff.streetBearingDegrees
+        scene = handoff.scene
+        location.override = handoff.coordinate
+        recompute()
+        Task { await refreshWeather(force: true) }
+    }
+
+    /// Back to wherever the phone is.
+    public func clearSpot() {
+        spotName = nil
+        streetBearingDegrees = nil
+        scene = .openSky
+        location.override = nil
+        recompute()
     }
 
     public func select(_ profile: GearProfile) {

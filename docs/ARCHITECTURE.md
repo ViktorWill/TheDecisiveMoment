@@ -88,7 +88,9 @@ where the app's actual value lives.
 
 **`TDMSpots`** — bundle decoding and integrity checking, the merge/dedupe/scoring rules, search and
 filtering, and the `SpotStore` protocol the persistence layer implements. Ranking is here rather
-than in the pipeline so a re-rank does not require a data rebuild.
+than in the pipeline so a re-rank does not require a data rebuild. The map's rules live here too and
+are therefore testable on Linux: `SunFilter` (*lit now*), `SpotClusterer` (clustering and the
+300-annotation budget), `SpotProse` (a score said in words), `LocalPin` and the GeoJSON export.
 
 **`TDMWeather`** — `WeatherProvider` protocol with `current(at:)` and `hourly(at:through:)`.
 Implementations: `WeatherKitProvider`, and `StubWeatherProvider` for tests and previews. The
