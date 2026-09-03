@@ -35,16 +35,43 @@ public enum ExposurePhrasing {
     public static func iso(_ value: Int) -> String { "ISO \(value)" }
 
     /// `f/8 · 1/250 · ISO 400` — the one line the screen exists for.
-    public static func setting(aperture f: Double, shutter seconds: TimeInterval, iso value: Int) -> String {
-        "\(aperture(f)) · \(shutter(seconds)) · \(iso(value))"
+    ///
+    /// σ is required rather than optional: the headline is exactly the place
+    /// honesty rule 1 applies, so there is no unhedged overload to reach for by
+    /// accident.
+    public static func setting(
+        aperture f: Double,
+        shutter seconds: TimeInterval,
+        iso value: Int,
+        sigmaEV: Double
+    ) -> String {
+        "\(aperture(f)) · \(shutter(seconds, sigmaEV: sigmaEV)) · \(iso(value))"
     }
 
-    /// A distance mark as it reads on the barrel: `0.7 m`, `3 m`, `∞`.
+    /// A distance mark as it reads on the barrel: `0.7 m`, `3 m`, `0.85 m`, `∞`.
+    ///
+    /// Honesty rule 4 is about the *value*, so this formatter never rounds one
+    /// mark into another: it uses the fewest decimals that reproduce the mark
+    /// exactly, up to ``distanceDecimalLimit``.
     public static func distance(_ metres: Double) -> String {
         guard metres.isFinite else { return "∞" }
-        // Past 100 m a tenth of a metre is noise the depth-of-field maths cannot
-        // support, and no barrel is engraved that finely anyway.
-        let decimals = metres >= 100 || metres.rounded() == metres ? 0 : 1
+        for decimals in 0...distanceDecimalLimit {
+            let rounded = (metres * pow(10, Double(decimals))).rounded() / pow(10, Double(decimals))
+            if abs(rounded - metres) < 1e-9 {
+                return number(metres, decimals: decimals) + " m"
+            }
+        }
+        return number(metres, decimals: distanceDecimalLimit) + " m"
+    }
+
+    /// No lens is engraved finer than a centimetre.
+    public static let distanceDecimalLimit = 2
+
+    /// A *computed* depth-of-field limit, which is an estimate rather than an
+    /// engraving and is rounded like one: `1.9 m`, `7 m`, `∞`.
+    public static func sharpLimit(_ metres: Double) -> String {
+        guard metres.isFinite else { return "∞" }
+        let decimals = metres >= 10 || metres.rounded() == metres ? 0 : 1
         return number(metres, decimals: decimals) + " m"
     }
 
@@ -55,9 +82,9 @@ public enum ExposurePhrasing {
     public static func zoneSentence(markMetres: Double, near: Double, far: Double) -> String {
         let mark = distance(markMetres)
         if !far.isFinite {
-            return "scale to \(mark) — sharp \(distance(near)) to ∞"
+            return "scale to \(mark) — sharp \(sharpLimit(near)) to ∞"
         }
-        return "scale to \(mark) — sharp \(number(near, decimals: near >= 10 ? 0 : 1)) to \(distance(far))"
+        return "scale to \(mark) — sharp \(number(near, decimals: near >= 10 ? 0 : 1)) to \(sharpLimit(far))"
     }
 
     /// `EV 14.1 ± 0.5`. Honesty rule 2: the uncertainty is part of the answer.

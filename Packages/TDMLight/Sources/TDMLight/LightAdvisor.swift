@@ -87,6 +87,23 @@ public struct Advice: Sendable, Equatable {
 
     /// The engraved mark the primary answer is reported for, metres.
     public var focusMarkMetres: Double? { solution?.focusMarkMetres }
+
+    /// Honesty rule 5: back-lit subjects are silhouettes and the model does not
+    /// predict them, so there is no subject exposure to show.
+    public var predictsSubjectExposure: Bool { !estimate.warnsAboutSilhouette }
+
+    /// The setting to put at the top of the screen — `nil` when the honest
+    /// answer is a warning instead.
+    public var subjectSolution: ExposureSolution? {
+        predictsSubjectExposure ? solution : nil
+    }
+
+    /// The same solve, when the subject is back-lit: an exposure for the
+    /// *background*, offered only under that label so it cannot be mistaken for
+    /// a prediction about the face.
+    public var backgroundSolution: ExposureSolution? {
+        predictsSubjectExposure ? nil : solution
+    }
 }
 
 /// Sun → EV → setting → zone, composed once so every caller gets the same chain.
@@ -157,10 +174,15 @@ public enum LightAdvisor {
     /// `cloudCoverForHour` returns the forecast for an hour, or `nil` where the
     /// forecast does not reach — those hours fall back to clear sky and carry
     /// the wider σ, which is what the sparkline should show.
+    ///
+    /// `calibrationOffsetEVForHour`, when given, is asked for each hour: an
+    /// offset learned under street lamps must not be carried into the afternoon
+    /// half of the same scrub.
     public static func hourly(
         from start: Date,
         hours: Int,
         request: AdviceRequest,
+        calibrationOffsetEVForHour: ((Date) -> Double)? = nil,
         cloudCoverForHour: (Date) -> (cloudCover: Double?, freshness: WeatherFreshness, precipitation: Precipitation)
     ) -> [Advice] {
         guard hours > 0 else { return [] }
@@ -172,6 +194,9 @@ public enum LightAdvisor {
             hourly.cloudCover = weather.cloudCover
             hourly.weatherFreshness = weather.freshness
             hourly.precipitation = weather.precipitation
+            if let calibrationOffsetEVForHour {
+                hourly.calibrationOffsetEV = calibrationOffsetEVForHour(date)
+            }
             return advise(hourly)
         }
     }

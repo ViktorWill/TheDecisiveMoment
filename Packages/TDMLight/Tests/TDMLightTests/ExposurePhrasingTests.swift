@@ -29,7 +29,7 @@ struct ExposurePhrasingTests {
     @Test("The worked example of §7 reads as the spec writes it")
     func phrasesTheAnswer() {
         #expect(
-            ExposurePhrasing.setting(aperture: 8, shutter: 1.0 / 250, iso: 400)
+            ExposurePhrasing.setting(aperture: 8, shutter: 1.0 / 250, iso: 400, sigmaEV: 0.5)
                 == "f/8 · 1/250 · ISO 400"
         )
         #expect(
@@ -64,12 +64,12 @@ struct ExposurePhrasingTests {
         )
     }
 
-    @Test("Distances lose their decimal where the maths cannot support it")
+    @Test("Computed distances lose their decimal where the maths cannot support it")
     func phrasesDistance() {
-        #expect(ExposurePhrasing.distance(0.7) == "0.7 m")
-        #expect(ExposurePhrasing.distance(3) == "3 m")
-        #expect(ExposurePhrasing.distance(7.16) == "7.2 m")
-        #expect(ExposurePhrasing.distance(183.4) == "183 m")
+        #expect(ExposurePhrasing.sharpLimit(0.7) == "0.7 m")
+        #expect(ExposurePhrasing.sharpLimit(3) == "3 m")
+        #expect(ExposurePhrasing.sharpLimit(7.16) == "7.2 m")
+        #expect(ExposurePhrasing.sharpLimit(183.4) == "183 m")
     }
 
     @Test("Countdowns stop at the minute")
@@ -83,5 +83,28 @@ struct ExposurePhrasingTests {
     func phrasesSignedStops() {
         #expect(ExposurePhrasing.signedStops(0.42) == "+0.4 EV")
         #expect(ExposurePhrasing.signedStops(-0.7) == "−0.7 EV")
+    }
+
+    @Test("A mark keeps its own value rather than being rounded into another")
+    func neverRoundsAnEngravedMark() {
+        #expect(ExposurePhrasing.distance(0.85) == "0.85 m")
+        #expect(ExposurePhrasing.distance(0.7) == "0.7 m")
+        #expect(ExposurePhrasing.distance(3) == "3 m")
+        #expect(ExposurePhrasing.distance(122) == "122 m")
+    }
+
+    @Test("A computed depth-of-field limit is rounded like the estimate it is")
+    func roundsComputedLimits() {
+        #expect(ExposurePhrasing.sharpLimit(7.16) == "7.2 m")
+        #expect(ExposurePhrasing.sharpLimit(41.3) == "41 m")
+        #expect(ExposurePhrasing.sharpLimit(.infinity) == "∞")
+    }
+
+    @Test("The headline hedges when the estimate cannot support the digits")
+    func hedgesTheHeadline() {
+        #expect(
+            ExposurePhrasing.setting(aperture: 2, shutter: 1.0 / 30, iso: 1600, sigmaEV: 1.5)
+                == "f/2 · about 1/30 · ISO 1600"
+        )
     }
 }
