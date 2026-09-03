@@ -1,0 +1,16 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html",       "x": 0,    "y": 0,    "w": 393, "h": 852, "title": "Light — the answer" },
+    { "file": "SunPanel.dc.html",   "x": 493,  "y": 0,    "w": 393, "h": 852, "title": "Light — planning" },
+    { "file": "Gear.dc.html",       "x": 986,  "y": 0,    "w": 393, "h": 852, "title": "Gear" },
+    { "file": "Map.dc.html",        "x": 1479, "y": 0,    "w": 393, "h": 852, "title": "Map" },
+    { "file": "SpotDetail.dc.html", "x": 1972, "y": 0,    "w": 393, "h": 852, "title": "Spot detail" },
+    { "file": "Tokens.dc.html",     "x": 0,    "y": 1000, "w": 780, "h": 1020, "title": "Design system" }
+  ],
+  "annotations": [
+    { "id": "brief", "x": 0, "y": -150, "w": 460, "text": "The Decisive Moment — Instrument direction.\nNear-black ground, hairline rules, IBM Plex Mono figures, one amber accent.\nStatic mockups for milestones M4 and M5." },
+    { "id": "barrel-note", "x": 0, "y": 880, "w": 393, "text": "The distance scale uses real Leica mark spacing — positions are linear in 1/distance, which is why the marks bunch toward infinity. Band = sharp range, index = chosen mark." },
+    { "id": "alts-note", "x": 493, "y": 880, "w": 393, "text": "Only three settings exist here: the M6 tops out at 1/1000, so at EV 16.05 the ladder gives exactly f/8, f/11 and f/16. The alternatives row is complete, not truncated." }
+  ],
+  "launch": { "view": "canvas" }
+}

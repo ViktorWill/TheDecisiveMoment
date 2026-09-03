@@ -1,0 +1,137 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #E8A64A; } a:hover { color: #F2BB6E; }
+    .mono { font-family: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace; font-variant-numeric: tabular-nums; }
+    .sans { font-family: 'IBM Plex Sans', -apple-system, system-ui, sans-serif; }
+    .lbl { font-family: 'IBM Plex Sans', -apple-system, system-ui, sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #62666C; }
+  </style>
+</helmet>
+
+<div style="width: 393px; height: 852px; background: #101113; color: #EDEDEA; display: flex; flex-direction: column; overflow: hidden;">
+
+  <div style="height: 59px; flex-shrink: 0;"></div>
+
+  <div style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 20px; flex-shrink: 0;">
+    <svg width="16" height="16" viewBox="0 0 10 10" fill="none" stroke="#E8A64A" stroke-width="1.6"><path d="M6.5 1.5 L3 5 L6.5 8.5"/></svg>
+    <div class="lbl" style="color: #EDEDEA;">Gear</div>
+  </div>
+
+  <div style="height: 1px; background: #2A2E34; flex-shrink: 0;"></div>
+
+  <div style="padding: 18px 20px 0; flex-shrink: 0;">
+    <div class="lbl">Body</div>
+
+    <div style="border: 1px solid #E8A64A; background: #191B1E; border-radius: 8px; padding: 14px; margin-top: 11px;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div class="sans" style="font-size: 16px; font-weight: 600;">Leica M6</div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E8A64A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 13px;">
+        <div>
+          <div class="lbl" style="font-size: 9px;">Format</div>
+          <div class="mono" style="font-size: 13px; margin-top: 3px; color: #C8CBCF;">36 × 24 · CoC 0.030</div>
+        </div>
+        <div>
+          <div class="lbl" style="font-size: 9px;">Shutter</div>
+          <div class="mono" style="font-size: 13px; margin-top: 3px; color: #C8CBCF;">1s – 1/1000</div>
+        </div>
+      </div>
+      <div style="height: 1px; background: #2A2E34; margin: 13px 0;"></div>
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div>
+          <div class="lbl" style="font-size: 9px;">Loaded film</div>
+          <div class="sans" style="font-size: 14px; margin-top: 3px;">Ilford HP5 Plus</div>
+        </div>
+        <div style="display: flex; align-items: baseline; gap: 5px;">
+          <span class="mono" style="font-size: 22px; color: #E8A64A;">400</span>
+          <span class="lbl" style="font-size: 9px;">ISO</span>
+        </div>
+      </div>
+      <div class="sans" style="font-size: 11px; color: #62666C; margin-top: 9px; line-height: 1.45;">
+        Fixed for the whole roll — the solver works with two degrees of freedom, not three.
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 8px; margin-top: 8px;">
+      <div class="sans" style="flex: 1; height: 44px; border: 1px solid #2A2E34; background: #16181B; border-radius: 8px; display: flex; align-items: center; padding: 0 13px; font-size: 13px; color: #9A9DA3;">Leica M10</div>
+      <div class="sans" style="flex: 1; height: 44px; border: 1px solid #2A2E34; background: #16181B; border-radius: 8px; display: flex; align-items: center; padding: 0 13px; font-size: 13px; color: #9A9DA3;">Leica M11</div>
+    </div>
+  </div>
+
+  <div style="padding: 22px 20px 0; flex-shrink: 0;">
+    <div class="lbl">Lens</div>
+
+    <div style="border: 1px solid #E8A64A; background: #191B1E; border-radius: 8px; padding: 14px; margin-top: 11px;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div class="sans" style="font-size: 16px; font-weight: 600;">35 mm Summicron</div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E8A64A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 13px;">
+        <div>
+          <div class="lbl" style="font-size: 9px;">Aperture</div>
+          <div class="mono" style="font-size: 13px; margin-top: 3px; color: #C8CBCF;">f/2 – f/16 · ½ stops</div>
+        </div>
+        <div>
+          <div class="lbl" style="font-size: 9px;">Minimum focus</div>
+          <div class="mono" style="font-size: 13px; margin-top: 3px; color: #C8CBCF;">0.7 m</div>
+        </div>
+      </div>
+
+      <div style="height: 1px; background: #2A2E34; margin: 13px 0 12px;"></div>
+
+      <div class="lbl" style="font-size: 9px;">Engraved distance marks</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px;">
+        <span class="mono" style="font-size: 11px; color: #C8CBCF; background: #23272D; border-radius: 4px; padding: 4px 7px;">0.7</span>
+        <span class="mono" style="font-size: 11px; color: #C8CBCF; background: #23272D; border-radius: 4px; padding: 4px 7px;">0.8</span>
+        <span class="mono" style="font-size: 11px; color: #C8CBCF; background: #23272D; border-radius: 4px; padding: 4px 7px;">1</span>
+        <span class="mono" style="font-size: 11px; color: #C8CBCF; background: #23272D; border-radius: 4px; padding: 4px 7px;">1.2</span>
+        <span class="mono" style="font-size: 11px; color: #C8CBCF; background: #23272D; border-radius: 4px; padding: 4px 7px;">1.5</span>
+        <span class="mono" style="font-size: 11px; color: #C8CBCF; background: #23272D; border-radius: 4px; padding: 4px 7px;">2</span>
+        <span class="mono" style="font-size: 11px; color: #C8CBCF; background: #23272D; border-radius: 4px; padding: 4px 7px;">3</span>
+        <span class="mono" style="font-size: 11px; color: #C8CBCF; background: #23272D; border-radius: 4px; padding: 4px 7px;">5</span>
+        <span class="mono" style="font-size: 11px; color: #C8CBCF; background: #23272D; border-radius: 4px; padding: 4px 7px;">10</span>
+        <span class="mono" style="font-size: 11px; color: #C8CBCF; background: #23272D; border-radius: 4px; padding: 4px 7px;">∞</span>
+      </div>
+      <div class="sans" style="font-size: 11px; color: #62666C; margin-top: 11px; line-height: 1.45;">
+        The advisor only ever names a mark from this list. If it is not on your barrel, it is not advice.
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 8px; margin-top: 8px;">
+      <div class="sans" style="flex: 1; height: 44px; border: 1px solid #2A2E34; background: #16181B; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #9A9DA3;">28 mm</div>
+      <div class="sans" style="flex: 1; height: 44px; border: 1px solid #2A2E34; background: #16181B; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #9A9DA3;">50 mm</div>
+      <div class="sans" style="flex: 1; height: 44px; border: 1px solid #2A2E34; background: #16181B; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #9A9DA3;">75 mm</div>
+      <div style="width: 44px; height: 44px; border: 1px solid #2A2E34; background: #16181B; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9A9DA3" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding: 22px 20px 0; flex-shrink: 0;">
+    <div class="lbl">Handheld floor</div>
+    <div style="display: flex; gap: 1px; margin-top: 11px; background: #2A2E34; border-radius: 6px; overflow: hidden;">
+      <div class="sans" style="flex: 1; height: 44px; display: flex; align-items: center; justify-content: center; background: #E8A64A; color: #101113; font-size: 12px; font-weight: 600;">1/focal · 1/35</div>
+      <div class="sans" style="flex: 1; height: 44px; display: flex; align-items: center; justify-content: center; background: #191B1E; color: #9A9DA3; font-size: 12px;">1/2·focal · 1/70</div>
+    </div>
+    <div class="sans" style="font-size: 11px; color: #62666C; margin-top: 9px; line-height: 1.45;">
+      A rangefinder has no mirror slap, so the slower floor is genuinely holdable. Off by default.
+    </div>
+  </div>
+
+  <div style="flex-grow: 1;"></div>
+
+</div>
+</x-dc>
+</body>
+</html>
