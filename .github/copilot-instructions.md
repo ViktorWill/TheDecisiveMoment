@@ -16,6 +16,8 @@ matches the code is worse than no spec.
 | Bundle format | `docs/DATA-BUNDLES.md` |
 | Data pipeline | `docs/SPOTFORGE.md` |
 | Screens | `docs/SPEC-map.md`, `docs/SPEC-light.md`, `docs/SPEC-community.md` |
+| **Visual design** | **`design/Tokens.dc.html`** — palette, type scale, spacing, marker glyphs |
+| Screen mockups | `design/Main.dc.html`, `design/SunPanel.dc.html`, `design/Gear.dc.html`, `design/Map.dc.html`, `design/SpotDetail.dc.html` |
 
 ## Hard constraints
 
@@ -38,7 +40,20 @@ matches the code is worse than no spec.
 6. **Attribution is not optional.** OSM-derived data shows "© OpenStreetMap contributors"; Commons
    photos show author and licence adjacent to the image.
 
-7. **The app is used at night.** Dark-first design. No white flashes.
+7. **The app is used at night.** Dark-first. No white flashes.
+
+8. **Match the mockups.** `design/` holds static mockups as plain HTML. Lift the EXACT values from
+   them — hex colours, font sizes, weights, letter-spacing, paddings, radii, control heights, SVG
+   glyph geometry. Do not round to an 8pt grid, do not substitute system defaults, and do not
+   introduce a colour that is not in `design/Tokens.dc.html`. Open the files and read them; they are
+   the visual spec, and they are more precise than a screenshot would be.
+
+   Two details there are load-bearing rather than decorative, and both have a comment in
+   `design/README.md`:
+   - The distance scale is positioned **linearly in 1/distance**, matching a real engraved Leica
+     barrel. Reproduce the spacing, not just the set of marks.
+   - Figures are **tabular** everywhere. Use `.monospacedDigit()` so a changing readout does not
+     jitter. Prefer `SF Mono` on device over shipping the webfont the mockups use for preview.
 
 ## Style
 

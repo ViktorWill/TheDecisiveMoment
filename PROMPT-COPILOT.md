@@ -213,6 +213,13 @@ Acceptance:
 Build the Light tab per docs/SPEC-light.md, plus Packages/TDMWeather and the
 gear-profile storage in Packages/TDMPersistence.
 
+The visual design is specified. Read design/Tokens.dc.html for the palette,
+type scale, spacing and glyphs, and design/Main.dc.html, design/SunPanel.dc.html
+and design/Gear.dc.html for the three screens you are building. They are plain
+HTML — lift the exact hex values, sizes, weights, paddings and radii rather than
+approximating them, and add no colour that is not in Tokens. design/README.md
+explains the two details that are load-bearing rather than decorative.
+
 TDMWeather:
   - WeatherProvider protocol exposing only what the model consumes:
     cloud cover, condition, precipitation intensity, visibility —
@@ -253,8 +260,9 @@ Dark-first. Everything except weather works in airplane mode; without weather,
 fall back to clear sky, widen uncertainty by 0.7 EV in quadrature, and show it.
 
 Acceptance: on a device, the screen gives a sane reading for the current street,
-the zone scale shows only real marks, and airplane mode degrades exactly as
-described rather than blocking.
+the zone scale shows only real marks AND is spaced linearly in 1/distance, the
+rendered screen matches design/Main.dc.html side by side, and airplane mode
+degrades exactly as described rather than blocking.
 ```
 
 ---
@@ -264,6 +272,12 @@ described rather than blocking.
 ```text
 Build the Map tab per docs/SPEC-map.md, plus bundle storage in
 Packages/TDMPersistence.
+
+The visual design is specified: design/Tokens.dc.html for the system,
+design/Map.dc.html and design/SpotDetail.dc.html for these two screens. Lift
+exact values. Note that the map canvas uses a darker ground (#0B0C0E) than the
+rest of the app (#101113) so markers separate against it, and that marker radius
+and opacity scale with score — which is why there is no legend.
 
 TDMPersistence:
   - SwiftData models for cached bundles and user pins. Store spots as rows, not
