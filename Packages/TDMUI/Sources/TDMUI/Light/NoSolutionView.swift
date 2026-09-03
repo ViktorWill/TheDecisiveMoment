@@ -96,7 +96,7 @@ struct NoSolutionView: View {
                 ? "Under two stops short — the ceiling or a wider aperture would close it."
                 : "More than two stops. This scene needs a different approach."
         }
-        shortfall.isSalvageable
+        return shortfall.isSalvageable
             ? "Under two stops short, so the roll is salvageable. Past two, the honest answer is that this is the wrong film for this light — and that is worth knowing before you burn the frame."
             : "More than two stops. This is the wrong film for this light, and that is worth knowing before you burn the frame."
     }

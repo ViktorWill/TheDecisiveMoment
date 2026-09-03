@@ -501,7 +501,7 @@ public enum ExposureSolver {
     private static func unreachableWideOpen(_ request: ExposureRequest, iso: Int) -> UnreachableAperture? {
         guard let widest = request.lens.apertures.filter({ $0 > 0 }).min() else { return nil }
         return unreachableAperture(
-            ev100: request.targetEV100,
+            ev100: request.ev100,
             aperture: widest,
             iso: iso,
             body: request.body

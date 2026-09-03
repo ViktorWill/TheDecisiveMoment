@@ -297,6 +297,12 @@ struct FilmSolverTests {
         let wideOpen = try #require(solution.wideOpen)
         #expect(wideOpen.aperture == 2)
         #expect(1 / wideOpen.requiredShutter > 4_000)
+        #expect(
+            abs(
+                wideOpen.requiredShutter
+                    - 4 / pow(2, ExposureSolver.exposureValue(ev100: Self.brightSun, iso: 400))
+            ) < 1e-12
+        )
         // The settings offered are still real ones — the limit is stated beside
         // them, not instead of them.
         #expect(solution.primary.aperture > 2)
