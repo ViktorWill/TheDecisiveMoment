@@ -174,7 +174,7 @@ private struct UnsolvableView: View {
         }
     }
 
-    private static func name(of strategy: ExposureStrategy) -> String {
+    private static func name(of strategy: TDMLight.ExposureStrategy) -> String {
         switch strategy {
         case .zoneFocus: "zone focus"
         case .freezeMotion: "freeze motion"
