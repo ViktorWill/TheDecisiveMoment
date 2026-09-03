@@ -1,9 +1,12 @@
 // swift-tools-version: 6.0
 import PackageDescription
 
-// Deliberately no `platforms:` — this package builds and tests on Linux.
+// No `platforms:` of its own, but it still builds and tests on Linux since
+// `platforms:` is ignored there — the iOS minimum here matches TDMCore's,
+// which it depends on.
 let package = Package(
     name: "TDMLight",
+    platforms: [.iOS(.v13)],
     products: [
         .library(name: "TDMLight", targets: ["TDMLight"])
     ],
