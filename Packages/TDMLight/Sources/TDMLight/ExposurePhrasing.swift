@@ -1,4 +1,5 @@
 import Foundation
+import TDMCore
 
 /// Turning numbers into the sentence the user acts on.
 ///
@@ -134,5 +135,63 @@ public enum ExposurePhrasing {
         // A real minus sign: the app is read at arm's length, and a hyphen at
         // that distance is easy to miss on a negative sun elevation.
         return String(format: "%.\(decimals)f", cleaned).replacingOccurrences(of: "-", with: "−")
+    }
+}
+
+// MARK: - Film and sensor, §7a–7d
+
+extension ExposurePhrasing {
+    /// `0.9 stops`, `1 stop`. The figure the no-solution screen leads with.
+    public static func stops(_ value: Double) -> String {
+        let magnitude = abs(value)
+        let text = number(magnitude, decimals: abs(magnitude - magnitude.rounded()) < 0.05 ? 0 : 1)
+        return text == "1" ? "1 stop" : "\(text) stops"
+    }
+
+    /// `HP5 400 @ 1600 (+2)` — what stands wherever the ISO would, on film.
+    public static func loadedRoll(_ roll: LoadedRoll) -> String { roll.displayName }
+
+    /// `Raise ISO to 1600`. On a sensor the ISO is a change the photographer
+    /// makes, so it is phrased as one, §7d.
+    public static func raiseISO(to value: Int) -> String { "Raise ISO to \(value)" }
+
+    /// `HP5 400 is 0.9 stops short here.`
+    public static func shortfallSentence(_ shortfall: ExposureShortfall, roll: LoadedRoll?) -> String {
+        let subject = roll.map(loadedRoll) ?? "This gear"
+        switch shortfall.sense {
+        case .needsMoreLight:
+            return "\(subject) is \(stops(shortfall.stops)) short here."
+        case .needsLessLight:
+            return "\(subject) is \(stops(shortfall.stops)) over here — there is too much light for it."
+        }
+    }
+
+    /// The headline of a lever card: what the photographer would do.
+    public static func leverTitle(_ lever: ExposureLever) -> String {
+        switch lever {
+        case let .rate(roll, _): "Push the roll to \(roll.ratedAt)"
+        case let .lowerFloor(shutter, _): "Drop to \(self.shutter(shutter))"
+        case let .neutralDensity(stops): "Put on a \(stops)-stop ND"
+        case let .differentRoll(isoSpeed): "Load something faster — ISO \(isoSpeed)"
+        case let .raiseCeiling(iso): "Raise the ISO ceiling to \(iso)"
+        }
+    }
+
+    /// The line under it: what it costs, in the words §7b uses.
+    public static func leverDetail(_ lever: ExposureLever, floor: TimeInterval? = nil) -> String {
+        switch lever {
+        case let .rate(roll, _):
+            let cost = roll.cost ?? "Develop the whole roll for it."
+            return "\(roll.signedStops) stops · \(cost.lowercased()) · applies to the whole roll"
+        case .lowerFloor:
+            let floorPhrase = floor.map { "Below the \(shutter($0)) floor · " } ?? ""
+            return floorPhrase + "moving subjects will smear"
+        case .neutralDensity:
+            return "Takes light away so the aperture you want stays on the dial"
+        case .differentRoll:
+            return "More than two stops short — this is the wrong film for this light"
+        case .raiseCeiling:
+            return "Your ceiling, not the sensor's limit — the file will be noisier"
+        }
     }
 }

@@ -14,10 +14,17 @@ public final class StoredCameraBody {
     public var name: String = ""
     /// Seconds. `1/250`, never `250`.
     public var shutterSpeeds: [TimeInterval] = []
-    /// A loaded roll's speed, when film is loaded.
+    /// A loaded roll's rated speed, when film is loaded — the push/pull speed,
+    /// not the box speed.
     public var fixedISO: Int?
+    /// `FilmStock.id` of the loaded roll, when it is one of the catalogue
+    /// stocks. `nil` means the roll is only a speed.
+    public var filmStockIdentifier: String?
     public var minimumISO: Int?
     public var maximumISO: Int?
+    /// The highest ISO the photographer wants a file at. `nil` means the whole
+    /// sensor range is fair game, `docs/EXPOSURE-MODEL.md` §7d.
+    public var isoCeiling: Int?
     public var circleOfConfusionMillimetres: Double = 0.030
     public var hasMeter: Bool = true
     public var loadedFilm: String?
@@ -34,14 +41,18 @@ public final class StoredCameraBody {
 
     public func apply(_ iso: ISOMode) {
         switch iso {
-        case let .fixed(value):
-            fixedISO = value
+        case let .fixed(roll):
+            fixedISO = roll.ratedAt
+            filmStockIdentifier = roll.stock.isNamed ? roll.stock.id : nil
             minimumISO = nil
             maximumISO = nil
-        case let .range(minimum, maximum):
+            isoCeiling = nil
+        case let .range(minimum, maximum, ceiling):
             fixedISO = nil
+            filmStockIdentifier = nil
             minimumISO = minimum
             maximumISO = maximum
+            isoCeiling = ceiling
         }
     }
 
@@ -50,9 +61,17 @@ public final class StoredCameraBody {
     public var value: CameraBody {
         let iso: ISOMode
         if let fixedISO {
-            iso = .fixed(fixedISO)
+            // A stock the catalogue has lost is not a reason to lose the roll:
+            // the speed alone still constrains the solve.
+            let stock = filmStockIdentifier.flatMap(FilmStock.stock(id:))
+            iso = .fixed(stock.map { LoadedRoll(stock: $0, ratedAt: fixedISO) } ?? LoadedRoll(speed: fixedISO))
         } else {
-            iso = .range(minimum: minimumISO ?? 100, maximum: maximumISO ?? 100)
+            let maximum = maximumISO ?? 100
+            iso = .range(
+                minimum: minimumISO ?? 100,
+                maximum: maximum,
+                ceiling: isoCeiling ?? maximum
+            )
         }
         return CameraBody(
             id: identifier,

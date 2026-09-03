@@ -22,6 +22,10 @@ public struct AdviceRequest: Sendable, Equatable {
     public var lens: LensProfile
     public var strategy: ExposureStrategy
     public var steadiness: HandheldSteadiness
+    /// A floor the photographer has accepted by hand, seconds, overriding
+    /// ``steadiness``. This is how the "drop to 1/30" lever re-solves without
+    /// pretending the hold got steadier.
+    public var handheldFloorSeconds: TimeInterval?
     /// A distance the user has asked for, in metres. The solver snaps it to an
     /// engraved mark; when it is `nil` the solver goes for maximum depth.
     public var subjectDistanceMetres: Double?
@@ -41,6 +45,7 @@ public struct AdviceRequest: Sendable, Equatable {
         lens: LensProfile,
         strategy: ExposureStrategy = .zoneFocus,
         steadiness: HandheldSteadiness = .standard,
+        handheldFloorSeconds: TimeInterval? = nil,
         subjectDistanceMetres: Double? = nil
     ) {
         self.date = date
@@ -57,6 +62,7 @@ public struct AdviceRequest: Sendable, Equatable {
         self.lens = lens
         self.strategy = strategy
         self.steadiness = steadiness
+        self.handheldFloorSeconds = handheldFloorSeconds
         self.subjectDistanceMetres = subjectDistanceMetres
     }
 }
@@ -66,24 +72,26 @@ public struct Advice: Sendable, Equatable {
     public let date: Date
     public let sun: SolarPosition
     public let estimate: LightEstimate
-    /// `nil` when the gear cannot expose this light; ``solverError`` says why,
-    /// and the screen says that rather than showing a setting that does not work.
-    public let solution: ExposureSolution?
-    public let solverError: ExposureSolverError?
+    /// The solve, which is either settings or a stated shortfall. "Your gear
+    /// cannot expose this, and here is what would" is an answer, not a failure,
+    /// `docs/SPEC-light.md` "When nothing works".
+    public let outcome: ExposureOutcome
 
-    public init(
-        date: Date,
-        sun: SolarPosition,
-        estimate: LightEstimate,
-        solution: ExposureSolution?,
-        solverError: ExposureSolverError?
-    ) {
+    public init(date: Date, sun: SolarPosition, estimate: LightEstimate, outcome: ExposureOutcome) {
         self.date = date
         self.sun = sun
         self.estimate = estimate
-        self.solution = solution
-        self.solverError = solverError
+        self.outcome = outcome
     }
+
+    /// `nil` when the gear cannot expose this light; ``shortfall`` then says by
+    /// how much and what to do about it.
+    public var solution: ExposureSolution? { outcome.solution }
+
+    /// What is missing, and the levers that would close it.
+    public var shortfall: ExposureShortfall? { outcome.shortfall }
+
+    public var solverError: ExposureSolverError? { outcome.shortfall?.reason }
 
     /// The engraved mark the primary answer is reported for, metres.
     public var focusMarkMetres: Double? { solution?.focusMarkMetres }
@@ -136,37 +144,18 @@ public enum LightAdvisor {
             body: request.body,
             lens: request.lens,
             strategy: request.strategy,
-            handheldFloor: request.steadiness.floor(
+            handheldFloor: request.handheldFloorSeconds ?? request.steadiness.floor(
                 focalLengthMillimetres: request.lens.focalLengthMillimetres
             ),
             subjectDistanceMetres: request.subjectDistanceMetres
         )
 
-        do {
-            return Advice(
-                date: request.date,
-                sun: sun,
-                estimate: estimate,
-                solution: try ExposureSolver.solve(exposureRequest),
-                solverError: nil
-            )
-        } catch let error as ExposureSolverError {
-            return Advice(
-                date: request.date,
-                sun: sun,
-                estimate: estimate,
-                solution: nil,
-                solverError: error
-            )
-        } catch {
-            return Advice(
-                date: request.date,
-                sun: sun,
-                estimate: estimate,
-                solution: nil,
-                solverError: .emptyGearProfile
-            )
-        }
+        return Advice(
+            date: request.date,
+            sun: sun,
+            estimate: estimate,
+            outcome: ExposureSolver.resolve(exposureRequest)
+        )
     }
 
     /// One answer per hour, for the time scrubber.

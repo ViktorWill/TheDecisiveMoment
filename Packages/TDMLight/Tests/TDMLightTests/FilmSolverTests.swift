@@ -302,3 +302,50 @@ struct FilmSolverTests {
         #expect(solution.primary.aperture > 2)
     }
 }
+
+/// The words the two modes and the no-solution screen are made of.
+@Suite("Phrasing — film and sensor")
+struct FilmPhrasingTests {
+    @Test("A shortfall reads as a sentence about the roll, not as an empty list")
+    func shortfallSentence() throws {
+        let request = ExposureRequest(
+            ev100: 5.0,
+            body: TestFilm.m6(LoadedRoll(stock: TestFilm.hp5)),
+            lens: TestGear.summicron35,
+            strategy: .zoneFocus,
+            handheldFloor: 1.0 / 35
+        )
+        let shortfall = try #require(ExposureSolver.resolve(request).shortfall)
+
+        #expect(
+            ExposurePhrasing.shortfallSentence(shortfall, roll: request.body.loadedRoll)
+                == "HP5 400 is 0.9 stops short here."
+        )
+        #expect(ExposurePhrasing.stops(1.0) == "1 stop")
+        #expect(ExposurePhrasing.stops(2.02) == "2 stops")
+    }
+
+    @Test("Each lever says what it is and what it costs")
+    func leverWords() {
+        let push = ExposureLever.rate(roll: LoadedRoll(stock: TestFilm.hp5, ratedAt: 1_600), setting: nil)
+        #expect(ExposurePhrasing.leverTitle(push) == "Push the roll to 1600")
+        #expect(ExposurePhrasing.leverDetail(push).hasPrefix("+2 stops · coarse grain, blocked shadows"))
+
+        let floor = ExposureLever.lowerFloor(shutter: 1.0 / 30, setting: nil)
+        #expect(ExposurePhrasing.leverTitle(floor) == "Drop to 1/30")
+        #expect(ExposurePhrasing.leverDetail(floor, floor: 1.0 / 35) == "Below the 1/35 floor · moving subjects will smear")
+
+        #expect(ExposurePhrasing.leverTitle(.raiseCeiling(toISO: 3_200)) == "Raise the ISO ceiling to 3200")
+        #expect(ExposurePhrasing.leverTitle(.neutralDensity(stops: 3)) == "Put on a 3-stop ND")
+        #expect(ExposurePhrasing.leverTitle(.differentRoll(isoSpeed: 3_200)) == "Load something faster — ISO 3200")
+    }
+
+    @Test("Digital phrases the ISO as a change, film as context")
+    func isoWords() {
+        #expect(ExposurePhrasing.raiseISO(to: 1_600) == "Raise ISO to 1600")
+        #expect(
+            ExposurePhrasing.loadedRoll(LoadedRoll(stock: TestFilm.hp5, ratedAt: 1_600))
+                == "HP5 400 @ 1600 (+2)"
+        )
+    }
+}
