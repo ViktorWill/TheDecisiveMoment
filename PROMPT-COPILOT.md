@@ -326,6 +326,65 @@ regenerate them.
 
 ---
 
+## M4b — The full M body roster
+
+```text
+Run this after M4a. It is gear work, so it belongs with the Light tab and
+the gear screen, not with the map.
+
+Add every M from the M6 forward: M6, M7, MP, M-A, M8, M9, M10, M11.
+docs/SPEC-light.md "The body roster" has the full table — shutter ladders,
+ISO ranges, meters, formats. Treat those as seed values and check each
+against the manual as you go; a wrong top shutter speed produces confident
+nonsense.
+
+Three of them are not just different numbers in the same shape, and each
+needs real code, not a row in a list:
+
+1. THE M8 IS NOT FULL FRAME. APS-H, 27 x 18 mm, CoC 0.0225 mm. Circle of
+   confusion becomes a property of CameraBody and every depth-of-field call
+   takes it from there — grep for 0.030 and remove every hardcoded use.
+   Every M8 hyperfocal is exactly 1.333x the full-frame figure; assert that
+   ratio as an invariant. The barrel scale must draw the M8's band.
+   Also show that a 35mm frames like a 47mm on this body. That is framing
+   information only — it changes no exposure maths, so do not let it leak
+   into the solver.
+
+2. THE M-A HAS NO METER. This is the body the app matters most to. When the
+   selected body has no meter, the phone live meter (EXPOSURE-MODEL section
+   8) is promoted from a secondary action to a primary one, and no copy
+   anywhere may say "compare with your camera's reading" — there is nothing
+   to compare with.
+
+3. THE M7 HAS APERTURE PRIORITY. Add an .aperturePriority strategy available
+   only on bodies that support it: the user picks the aperture, the body
+   picks a stepless shutter, so the +/-1/3 stop quantisation does not apply
+   and the app outputs an aperture plus an exposure-compensation setting
+   rather than a shutter speed. Also model the mechanical fallback — with a
+   flat battery an M7 has 1/60 and 1/125 and nothing else.
+
+Also: the M8 and M9 ceiling at ISO 2500. The no-solution result from M4a is
+NOT analog-only — wire it for digital bodies that run out of sensor, with
+levers that do not include pushing.
+
+Mockup for the body picker: design/Bodies.dc.html.
+
+Tests — verified, do not adjust (docs/reference/body-vectors.py regenerates
+them):
+  - CoC: full frame 0.0300, M8 0.0225 (= 0.030 x 32.45 / 43.27)
+  - 35mm f/8 hyperfocal: 5.14 m full frame, 6.84 m on M8
+  - 50mm f/8 hyperfocal: 10.47 m full frame, 13.94 m on M8
+  - M8 hyperfocal / full-frame hyperfocal == 1.333 for every lens and stop
+  - 35mm f/8 at the 3 m mark: 1.90-7.16 m full frame, 2.09-5.32 m on M8
+  - f/2 at EV100 15.10 is reachable on the M11 WITH the electronic shutter
+    (needs 1/5619 at ISO 64, has 1/16000) and on NO other body, M11
+    mechanical included. Do not generalise this either way.
+  - f/2 - 1/125 at EV100 3.0 needs ISO 6250: M8 and M9 are SHORT, M10 and
+    M11 are fine
+```
+
+---
+
 ## M5 — Map screen
 
 ```text

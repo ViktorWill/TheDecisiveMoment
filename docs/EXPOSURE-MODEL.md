@@ -236,7 +236,18 @@ should present it as an estimate to be checked against the live meter.
 
 ## 6. Depth of field and zone focus
 
-Full-frame, circle of confusion `c = 0.030 mm` (configurable; 0.025 for a stricter standard).
+Circle of confusion is a property of the **body**, not a constant, because one M in the roster is
+not full frame.
+
+| Format | Bodies | Diagonal | CoC |
+|---|---|---|---|
+| 35 mm full frame, 36 × 24 | M6, M7, MP, M-A, M9, M10, M11 | 43.27 mm | **0.0300 mm** |
+| APS-H, 27 × 18 | **M8** | 32.45 mm | **0.0225 mm** |
+
+CoC scales with the diagonal (`0.030 × 32.45 / 43.27`), which is also what the 1.333× crop factor
+gives. Both conventions agree to four decimals, so there is nothing to choose between them.
+
+Configurable per body — 0.025 for a stricter standard — but never hardcoded at a call site.
 
 ```
 Hyperfocal      H     = f² / (N · c) + f
@@ -255,6 +266,28 @@ All distances in mm internally, presented in metres.
 | 50 mm | 20.88 m | 14.93 m | 10.47 m | 7.63 m | 5.26 m |
 
 Tolerance ±0.02 m. These agree with standard published hyperfocal tables for full frame.
+
+### Test vectors — the M8 is 33% further out
+
+A smaller CoC means a longer hyperfocal at every aperture. The ratio is constant — `0.030 / 0.0225`
+— so **every M8 hyperfocal is exactly 1.333× the full-frame figure**, which is a cheap invariant to
+assert in a test.
+
+| Lens | f/ | Full frame | M8 (APS-H) |
+|---|---|---|---|
+| 28 mm | f/8 | 3.29 m | **4.38 m** |
+| 35 mm | f/8 | 5.14 m | **6.84 m** |
+| 50 mm | f/8 | 10.47 m | **13.94 m** |
+
+And the zone it actually produces, 35 mm at f/8 set to the 3 m mark:
+
+| Body | Sharp from | Sharp to |
+|---|---|---|
+| Full frame | 1.90 m | 7.16 m |
+| M8 | **2.09 m** | **5.32 m** |
+
+A third less depth than the same lens, same aperture, same mark on a full-frame body. Rendering the
+full-frame band for an M8 user would be a quiet, confident lie, which is the worst kind.
 
 ### Test vectors — zone ranges
 
@@ -382,9 +415,22 @@ Verified cases, 35 mm on an M6 (1 s – 1/1000), handheld floor as noted:
 | Dim street, EV100 5.0, floor 1/35 | Delta 3200 | 3 — f/4 · 1/60 through f/2 · 1/250 |
 
 And the case that catches people out: **f/2 for subject isolation in bright sun on ISO 400 needs
-1/35 120 s.** The M6 stops at 1/1000 and even the M10 stops at 1/4000, so it is impossible on any M
-at any ISO the roll offers. The honest answer is an ND filter or a slower film, and the app should
-say that instead of quietly offering f/5.6.
+1/35 120 s.** No M has that shutter. Even at each body's slowest available ISO, exactly one can
+reach it:
+
+| Body | At its slowest ISO | Needs | Top speed | |
+|---|---|---|---|---|
+| M6 · MP · M-A · M7 | ISO 100 film | 1/8 780 | 1/1000 | no |
+| M8 | ISO 160 | 1/14 048 | 1/8000 | no |
+| M9 | ISO 80 (pull) | 1/7 024 | 1/4000 | no |
+| M10 | ISO 100 | 1/8 780 | 1/4000 | no |
+| M11, mechanical | ISO 64 | 1/5 619 | 1/4000 | no |
+| **M11, electronic** | ISO 64 | 1/5 619 | **1/16 000** | **yes** |
+
+So the answer is body-specific and the app must not generalise: on an M11 it is a setting, on
+everything else it is an ND filter or a slower film. Note the M8 is the *worst* of the digital
+bodies here despite the fastest mechanical shutter, because its base ISO 160 costs more than
+1/8000 buys back.
 
 When there is no solution, name the shortfall in stops and offer the levers that exist, in this
 order:
@@ -431,7 +477,18 @@ and on digital that is the direction with the least latitude for shadows but the
 reach for by habit.
 
 When even the ceiling is not enough, say so with the same shortfall language as §7b rather than
-silently exceeding it.
+silently exceeding it — **and this is not hypothetical.** The M8 and M9 top out at ISO 2500, which
+is two generations behind the M10 and M11:
+
+| Scene | f/2 · 1/125 needs | M8 · M9 (2500) | M10 · M11 (50 000) |
+|---|---|---|---|
+| Lit street, EV 5.0 | ISO 1 562 | fits | fits |
+| Dim side street, EV 3.0 | ISO 6 250 | **short** | fits |
+| Near dark, EV 1.0 | ISO 25 000 | **short** | fits |
+
+The no-solution screen is therefore **not analog-only**. An M8 on a dim side street runs out of
+sensor exactly the way an HP5 roll runs out of film, and deserves the same honest answer — with a
+different set of levers, since pushing is not one of them.
 
 ---
 

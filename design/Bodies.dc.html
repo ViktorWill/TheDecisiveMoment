@@ -1,0 +1,146 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #E8A64A; } a:hover { color: #F2BB6E; }
+    .mono { font-family: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace; font-variant-numeric: tabular-nums; }
+    .sans { font-family: 'IBM Plex Sans', -apple-system, system-ui, sans-serif; }
+    .lbl { font-family: 'IBM Plex Sans', -apple-system, system-ui, sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #62666C; }
+    .row { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border: 1px solid #2A2E34; background: #16181B; border-radius: 8px; }
+    .nm { font-family: 'IBM Plex Sans', sans-serif; font-size: 15px; font-weight: 600; color: #C8CBCF; }
+    .sp { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #62666C; margin-top: 3px; }
+  </style>
+</helmet>
+
+<div style="width: 393px; height: 852px; background: #101113; color: #EDEDEA; display: flex; flex-direction: column; overflow: hidden;">
+
+  <div style="height: 59px; flex-shrink: 0;"></div>
+
+  <div style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 20px; flex-shrink: 0;">
+    <svg width="16" height="16" viewBox="0 0 10 10" fill="none" stroke="#E8A64A" stroke-width="1.6"><path d="M6.5 1.5 L3 5 L6.5 8.5"/></svg>
+    <div class="lbl" style="color: #EDEDEA;">Body</div>
+  </div>
+
+  <div style="height: 1px; background: #2A2E34; flex-shrink: 0;"></div>
+
+  <div style="padding: 16px 20px 0; flex-shrink: 0;">
+    <div class="lbl">Film</div>
+    <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 10px;">
+
+      <div class="row">
+        <div style="flex-grow: 1;">
+          <div class="nm">M6</div>
+          <div class="sp">1 s – 1/1000 · TTL meter · the roll</div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div style="flex-grow: 1;">
+          <div class="nm">M7</div>
+          <div class="sp">32 s – 1/1000 AE · 1/60 + 1/125 on a flat battery</div>
+        </div>
+        <span class="sans" style="font-size: 9px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #E8A64A; border: 1px solid rgba(232,166,74,0.5); border-radius: 3px; padding: 3px 6px; flex-shrink: 0;">A mode</span>
+      </div>
+
+      <div class="row">
+        <div style="flex-grow: 1;">
+          <div class="nm">MP</div>
+          <div class="sp">1 s – 1/1000 · TTL meter · the roll</div>
+        </div>
+      </div>
+
+      <div class="row" style="border-color: rgba(196,57,47,0.5);">
+        <div style="flex-grow: 1;">
+          <div class="nm">M-A</div>
+          <div class="sp">1 s – 1/1000 · fully mechanical</div>
+        </div>
+        <span class="sans" style="font-size: 9px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #C4392F; border: 1px solid rgba(196,57,47,0.5); border-radius: 3px; padding: 3px 6px; flex-shrink: 0;">No meter</span>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="padding: 20px 20px 0; flex-shrink: 0;">
+    <div class="lbl">Digital</div>
+    <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 10px;">
+
+      <div style="border: 1px solid #E8A64A; background: #191B1E; border-radius: 8px; padding: 13px 14px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="flex-grow: 1;">
+            <div class="nm" style="color: #EDEDEA;">M8</div>
+            <div class="sp">32 s – 1/8000 · ISO 160 – 2500</div>
+          </div>
+          <span class="sans" style="font-size: 9px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #101113; background: #E8A64A; border-radius: 3px; padding: 3px 6px; flex-shrink: 0;">APS-H</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E8A64A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M4 12.5 9.5 18 20 6.5"/></svg>
+        </div>
+
+        <div style="height: 1px; background: #2A2E34; margin: 12px 0;"></div>
+
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <svg width="66" height="46" viewBox="0 0 66 46" style="flex-shrink: 0;">
+            <rect x="1" y="1" width="64" height="43" fill="#1C1F24" stroke="#3E444C" stroke-width="1"/>
+            <rect x="9" y="6.5" width="48" height="32" fill="rgba(232,166,74,0.16)" stroke="#E8A64A" stroke-width="1"/>
+            <text x="33" y="26" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#E8A64A">1.33×</text>
+          </svg>
+          <div class="sans" style="font-size: 11.5px; line-height: 1.5; color: #9A9DA3;">
+            27 × 18 mm, so CoC is <span class="mono" style="color: #EDEDEA;">0.0225</span> and every hyperfocal runs <span class="mono" style="color: #E8A64A;">1.33×</span> longer. Your 35 mm frames like a 47.
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 1px; margin-top: 12px; background: #2A2E34; border-radius: 6px; overflow: hidden;">
+          <div style="flex: 1; background: #16181B; padding: 9px 11px;">
+            <div class="lbl" style="font-size: 8px;">Full frame · 35 f/8 at 3 m</div>
+            <div class="mono" style="font-size: 12px; color: #6E7278; margin-top: 4px;">1.90 – 7.16 m</div>
+          </div>
+          <div style="flex: 1; background: #16181B; padding: 9px 11px;">
+            <div class="lbl" style="font-size: 8px; color: #E8A64A;">This body</div>
+            <div class="mono" style="font-size: 12px; color: #E8A64A; margin-top: 4px;">2.09 – 5.32 m</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div style="flex-grow: 1;">
+          <div class="nm">M9</div>
+          <div class="sp">32 s – 1/4000 · ISO 80 – 2500</div>
+        </div>
+        <span class="sans" style="font-size: 9px; color: #62666C; flex-shrink: 0;">low ceiling</span>
+      </div>
+
+      <div class="row">
+        <div style="flex-grow: 1;">
+          <div class="nm">M10</div>
+          <div class="sp">8 s – 1/4000 · ISO 100 – 50 000</div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div style="flex-grow: 1;">
+          <div class="nm">M11</div>
+          <div class="sp">1/4000 mech · 1/16 000 electronic · ISO 64 – 50 000</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="flex-grow: 1;"></div>
+
+  <div style="padding: 0 20px 26px; flex-shrink: 0;">
+    <div class="sans" style="font-size: 11px; line-height: 1.55; color: #62666C; border-left: 1px solid #2A2E34; padding-left: 12px;">
+      Shutter ladders and ISO ranges are seed values from the manuals. The advisor is exactly as accurate as this table — a wrong top speed produces confident nonsense.
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

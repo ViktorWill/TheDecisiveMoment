@@ -12,6 +12,7 @@ everything else gets out of their way.
 | `NoSolution.dc.html` | Light — *"not on this roll"*, the state a fixed ISO makes possible |
 | `SunPanel.dc.html` | Light — 12-hour scrubber, sun panel, live-meter entry |
 | `Gear.dc.html` | Body, film stock and push/pull, lens profiles |
+| `Bodies.dc.html` | The full M roster — M6, M7, MP, M-A, M8, M9, M10, M11 |
 | `Map.dc.html` | Spot map with filter sheet |
 | `SpotDetail.dc.html` | Spot detail |
 | `Tokens.dc.html` | **The design system** — palette, type scale, spacing, marker glyphs |

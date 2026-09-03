@@ -80,6 +80,19 @@ an M10 answering that same street with ISO 1600.
 
 ---
 
+### M4b — The full M body roster
+
+Every M from the M6 forward: M6, M7, MP, M-A, M8, M9, M10, M11. Mostly seed data, but three of them
+need real code — the M8 is APS-H so circle of confusion becomes a body property, the M-A has no
+meter so the phone's live meter is promoted to primary, and the M7's aperture priority earns its own
+strategy.
+
+**Done when:** the seven vectors in [PROMPT-COPILOT.md](../PROMPT-COPILOT.md) M4b pass — in
+particular every M8 hyperfocal landing at exactly 1.333× the full-frame figure, and f/2 in bright
+sun being reachable on the M11's electronic shutter and on nothing else.
+
+---
+
 ### M5 — Map screen
 
 The screen from [SPEC-map.md](SPEC-map.md), bundle download and verification, offline cache, filters,

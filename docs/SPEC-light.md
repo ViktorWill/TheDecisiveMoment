@@ -42,8 +42,46 @@ Built for a manual rangefinder specifically.
 **Body**: name; sensor full-frame (36×24, CoC 0.030 mm); ISO mode — either a **fixed roll speed**
 (film) or a **range with a ceiling** (digital); the real shutter ladder; whether it has a meter.
 
-Seed profiles: M6 (1 s–1/1000, film, fixed ISO), M10 (8 s–1/4000, ISO 100–50000), M11 (60 s–1/4000
-mechanical, ISO 64–50000).
+### The body roster
+
+Every M from the M6 forward, because they are all still in daily use and the differences between
+them are exactly what this feature exists to know.
+
+| Body | Medium | Format | CoC | Shutter | ISO | Meter |
+|---|---|---|---|---|---|---|
+| **M6** | film | 36 × 24 | 0.030 | 1 s – 1/1000 | the roll | TTL |
+| **M7** | film | 36 × 24 | 0.030 | 32 s – 1/1000 AE · 1/60 + 1/125 without battery | the roll | TTL + aperture priority |
+| **MP** | film | 36 × 24 | 0.030 | 1 s – 1/1000 | the roll | TTL |
+| **M-A** | film | 36 × 24 | 0.030 | 1 s – 1/1000 | the roll | **none** |
+| **M8** | digital | **27 × 18 APS-H** | **0.0225** | 32 s – 1/8000 | 160 – 2500 | TTL |
+| **M9** | digital | 36 × 24 | 0.030 | 32 s – 1/4000 | 80 (pull) – 2500 | TTL |
+| **M10** | digital | 36 × 24 | 0.030 | 8 s – 1/4000 | 100 – 50 000 | TTL |
+| **M11** | digital | 36 × 24 | 0.030 | 60 s – 1/4000 mech · 1/16 000 electronic | 64 – 50 000 | TTL |
+
+These are seed values. Verify each against the manual before shipping — the app's answers are
+exactly as good as this table, and a wrong top shutter speed produces confident nonsense.
+
+Three of these are not just different numbers in the same shape:
+
+**The M8 is not full frame.** APS-H, 27 × 18 mm, so its circle of confusion is 0.0225 mm and every
+hyperfocal is **1.333× longer** than the full-frame figure. At 35 mm f/8 on the 3 m mark a
+full-frame body is sharp 1.90–7.16 m and the M8 is sharp 2.09–5.32 m — a third less depth. The
+barrel scale must draw the M8's band, not the full-frame one. It also frames like a 47 mm, which is
+worth showing next to the focal length but changes no exposure maths.
+
+**The M-A has no meter at all.** This is the body the app is most useful to: the phone's live meter
+(§8) stops being a cross-check and becomes the only meter in the bag. Surface it prominently rather
+than as a secondary action, and never phrase anything as "compare with your camera's reading".
+
+**The M7 has aperture priority.** That earns a strategy the mechanical bodies cannot offer: pick the
+aperture, let the body choose a stepless shutter. The ±⅓ stop quantisation does not apply in AE, so
+the app suggests an aperture and a compensation dial setting rather than a shutter speed. It should
+also note the mechanical fallback — without a battery an M7 has 1/60 and 1/125 and nothing else,
+which is worth knowing before the battery dies rather than after.
+
+**And the M8 and M9 top out at ISO 2500.** Digital is not automatically unconstrained: on a dim side
+street at EV 3.0, f/2 · 1/125 needs ISO 6250 and both bodies are short. The no-solution screen
+applies to them too, with levers that do not include pushing.
 
 **Lens**: name; focal length; aperture range and click spacing (half stops on modern M glass); the
 **engraved distance marks**; minimum focus.
