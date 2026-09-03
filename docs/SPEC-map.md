@@ -23,13 +23,19 @@ Dark map style by default. This gets used at dusk.
    the nearest `center`.
 3. If that city's bundle is stored and current, load it. If not, show a download prompt with the
    size: *"New York City — 842 spots, 180 KB. Download."*
-4. If no city matches, say so plainly — *"No spot data for this area yet"* — and show the user's own
+4. If the stored city's bundle is older than the index's `bundleVersion`, offer the update with its
+   size — *"New spots for New York City — 184 KB. Update."* — and download only when it is accepted.
+   The check is a comparison against the index already in hand: no bundle is fetched to make it, and
+   nothing is swapped out from under someone mid-walk. This is what makes the monthly regeneration
+   reach a device at all.
+5. If no city matches, say so plainly — *"No spot data for this area yet"* — and show the user's own
    pins. Offer the city picker so they can look at somewhere else.
 
 The city picker lists all cities from `index.json`, sorted by distance, with download state and size
-per row. Downloading a city you are not in is a first-class action: you plan a trip on the sofa, you
-use it in the street. It should also be possible to pre-download over Wi-Fi with an explicit
-*"Download for offline"* action per city.
+per row — a stored city whose bundle the index has moved past reads *"update available"* and offers
+the update in place. Downloading a city you are not in is a first-class action: you plan a trip on
+the sofa, you use it in the street. It should also be possible to pre-download over Wi-Fi with an
+explicit *"Download for offline"* action per city.
 
 ## Annotations
 

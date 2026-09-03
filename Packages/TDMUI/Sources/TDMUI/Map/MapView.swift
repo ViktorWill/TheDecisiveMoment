@@ -171,6 +171,8 @@ public struct MapView: View {
                 banner(note, colour: MapTheme.curated)
             } else if let prompt = model.downloadPrompt, let entry = model.indexEntry {
                 downloadBanner(prompt, entry: entry)
+            } else if let prompt = model.updatePrompt, let entry = model.updateEntry {
+                downloadBanner(prompt, entry: entry)
             } else if let note = model.emptyAreaNote {
                 banner(note, colour: MapTheme.tertiaryText)
             }

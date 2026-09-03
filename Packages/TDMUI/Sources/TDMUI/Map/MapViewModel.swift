@@ -65,6 +65,9 @@ public final class MapViewModel {
     /// Cities offered by the index, for the picker.
     public private(set) var indexCities: [CityIndexEntry] = []
     public private(set) var storedCityIds: Set<String> = []
+    /// Stored cities the index has a newer `bundleVersion` for. Nothing is
+    /// downloaded to find this out, and nothing is downloaded until asked.
+    public private(set) var updatableCityIds: Set<String> = []
     public private(set) var pins: [Spot] = []
     /// The gear the *light right now* strip solves for. The shipped catalogue
     /// stands in when the store is empty or broken, exactly as on the Light tab.
@@ -137,6 +140,23 @@ public final class MapViewModel {
     public var downloadPrompt: String? {
         guard let indexEntry, city?.cityId != indexEntry.cityId else { return nil }
         return "\(indexEntry.name) — \(indexEntry.spotCount) spots, \(Self.byteCount(indexEntry.bytes)). Download."
+    }
+
+    /// The index entry for the drawn city when the index carries a newer bundle
+    /// for it — what the update prompt names.
+    public var updateEntry: CityIndexEntry? {
+        guard let city, updatableCityIds.contains(city.cityId) else { return nil }
+        return indexCities.first { $0.cityId == city.cityId }
+    }
+
+    /// The prompt for a stored city the monthly regeneration has moved on from:
+    /// *"New spots for New York City — 184 KB. Update."*
+    ///
+    /// Stated with its size and never acted on unasked: swapping the spots out
+    /// from under someone mid-walk, over cellular, is not ours to decide.
+    public var updatePrompt: String? {
+        guard let entry = updateEntry else { return nil }
+        return "New spots for \(entry.name) — \(Self.byteCount(entry.bytes)). Update."
     }
 
     /// Said plainly when the index has nothing for where the user is standing.
@@ -240,6 +260,22 @@ public final class MapViewModel {
         }
         await loadStoredIds()
         await adoptStoredCity()
+        await checkForBundleUpdates()
+    }
+
+    /// Compares every stored city against the index's `bundleVersion`.
+    ///
+    /// This is the trigger the monthly regeneration in `.github/workflows/bundles.yml`
+    /// needs: without it a stored city is never re-downloaded. It is a
+    /// comparison against the index already in hand — no bundle request, no
+    /// spinner, and nothing changes on screen until the user accepts.
+    func checkForBundleUpdates() async {
+        guard let bundles else { return }
+        var stale: Set<String> = []
+        for entry in indexCities where storedCityIds.contains(entry.cityId) {
+            if await bundles.needsDownload(entry: entry) { stale.insert(entry.cityId) }
+        }
+        updatableCityIds = stale
     }
 
     private func loadStoredIds() async {
@@ -310,6 +346,7 @@ public final class MapViewModel {
         do {
             _ = try await bundles.refresh(entry: entry)
             await loadStoredIds()
+            updatableCityIds.remove(entry.cityId)
             if let summary = try? await store.storedCity(cityId: entry.cityId) {
                 city = summary
             }
@@ -336,6 +373,7 @@ public final class MapViewModel {
     public func removeStoredCity(_ entry: CityIndexEntry) async {
         try? await store.removeCity(cityId: entry.cityId)
         await loadStoredIds()
+        updatableCityIds.remove(entry.cityId)
         if city?.cityId == entry.cityId { city = nil }
         await refresh()
     }
