@@ -3,10 +3,15 @@
 A Swift command-line executable at `Tools/spotforge`. It runs at build time — never on a phone —
 and turns four sources into the city bundles described in [DATA-BUNDLES.md](DATA-BUNDLES.md).
 
+There is no `Package.swift` at the repo root — this is a multi-package layout, and `spotforge` is
+its own package. Run it with `--package-path` from wherever you are, rather than `cd`-ing into
+`Tools/spotforge`; the working directory that `--out` and `--cities` resolve against stays wherever
+you invoked `swift run` from, which for these examples is the repo root:
+
 ```sh
-swift run spotforge build --city us-nyc --out bundles/v1
-swift run spotforge build --all --out bundles/v1
-swift run spotforge validate bundles/v1
+swift run --package-path Tools/spotforge spotforge build --city us-nyc --out bundles/v1
+swift run --package-path Tools/spotforge spotforge build --all --out bundles/v1
+swift run --package-path Tools/spotforge spotforge validate bundles/v1
 ```
 
 It links `TDMCore`, so it writes the same `Spot` type the app decodes. The schema cannot drift.
@@ -384,6 +389,12 @@ The workflow must not run on every push. These are volunteer-run APIs.
 spotforge build --city <id> [--city <id>…] | --all [options]
 spotforge validate [<directory>]
 ```
+
+Invoked as `swift run --package-path Tools/spotforge spotforge <subcommand> …` from wherever you
+want `--out` and `--cities` to resolve against — see the top of this document. There is no root
+`Package.swift`, so a bare `swift run spotforge …` fails with *"Could not find Package.swift"*
+unless you have separately `cd`'d into `Tools/spotforge`, which then resolves `--out bundles/v1`
+against the wrong directory.
 
 | Option | Meaning |
 |---|---|
