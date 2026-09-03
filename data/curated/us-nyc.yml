@@ -1,0 +1,164 @@
+# The New York canon — docs/SPOTFORGE.md §5.
+#
+# Hand-written, small, slow-growing. Ten good entries beat a thousand generated
+# ones. Every field except `name`, `lat` and `lon` is optional; `slug` defaults
+# to a slugified `name` and gives the entry its stable id, `curated:us-nyc/{slug}`.
+#
+# `streetBearing` is degrees from north of the dominant street axis, normalised
+# to 0–180. `bestHours` are local hours, 0–23. `score_boost` is added before
+# normalisation and is the whole point of this file: it is how a working street
+# corner is allowed to outrank a monument with forty thousand photographs of it.
+
+- name: Fifth Avenue & 42nd Street
+  slug: fifth-42nd
+  lat: 40.75350
+  lon: -73.98130
+  kind: intersection
+  tags: [crowds, canyon-light, midtown, commuters]
+  openness: canyon
+  streetBearing: 15
+  bestHours: [8, 9, 17, 18]
+  note: >
+    Winogrand worked this stretch for years. The crosstown blocks let light through
+    twice a day; the avenue itself is in shadow most of the time. Stand on the
+    northeast corner and shoot back into the crowd coming off the light.
+  score_boost: 0.25
+
+- name: Washington Square Park
+  slug: washington-square
+  lat: 40.73096
+  lon: -73.99725
+  kind: plaza
+  tags: [performers, students, chess, fountain, arch]
+  openness: open
+  streetBearing: 0
+  bestHours: [11, 12, 13, 16, 17, 18, 19]
+  note: >
+    The fountain basin is a stage with a ring of people already watching, which
+    is as close to permission as street work gets. The arch frames north up Fifth;
+    late afternoon rakes across its east face. Chess tables in the southwest corner
+    run all day and the players do not mind a camera at chest height.
+  score_boost: 0.30
+
+- name: Union Square Greenmarket
+  slug: union-square-greenmarket
+  lat: 40.73610
+  lon: -73.99050
+  kind: market
+  tags: [market, produce, crowds, mondays, wednesdays, fridays, saturdays]
+  openness: open
+  streetBearing: 15
+  bestHours: [8, 9, 10, 11, 16, 17]
+  note: >
+    Market days only — Monday, Wednesday, Friday, Saturday. The north end at 17th
+    Street is the densest, and the stall awnings put a soft top light on faces that
+    the open plaza never gives you. Early is better: by noon it is tourists, by
+    eight it is people who actually cook.
+  score_boost: 0.25
+
+- name: Grand Central Terminal Main Concourse
+  slug: grand-central-concourse
+  lat: 40.75270
+  lon: -73.97720
+  kind: transit
+  tags: [commuters, interior, shafts, balcony, rush-hour]
+  openness: covered
+  bestHours: [8, 9, 17, 18, 19]
+  note: >
+    Meter for the floor, not the windows, or the crowd goes to silhouette — which
+    is sometimes what you want. The west balcony gives the whole concourse from
+    above; the Vanderbilt Hall doors give you people arriving head-on. Commercial
+    tripod work needs a permit, handheld does not.
+  score_boost: 0.20
+
+- name: Brooklyn Bridge Promenade
+  slug: brooklyn-bridge-promenade
+  lat: 40.70800
+  lon: -73.99960
+  kind: bridge
+  tags: [tourists, cables, backlight, sunrise, silhouettes]
+  openness: open
+  streetBearing: 125
+  bestHours: [6, 7, 8, 18, 19]
+  note: >
+    Unrelentingly photographed and still worth it at first light, when the walkway
+    is empty enough that a single figure between the cables reads. The cable geometry
+    does the composing; your job is the timing. Post-2021 the cyclists are on their
+    own deck, which makes standing still survivable.
+  score_boost: 0.15
+
+- name: Canal Street & Broadway
+  slug: canal-broadway
+  lat: 40.71930
+  lon: -74.00060
+  kind: intersection
+  tags: [chinatown, vendors, density, signage, bags]
+  openness: canyon
+  streetBearing: 75
+  bestHours: [10, 11, 12, 13, 14, 15]
+  note: >
+    Four lanes of pedestrian traffic against a wall of signage, and nobody has any
+    attention to spare for you. Canal runs east–west so the middle of the day is
+    the lit half; the north sidewalk is where the vendors are. Shoot wide and close,
+    keep moving with the flow rather than against it.
+  score_boost: 0.30
+
+- name: Bethesda Terrace Arcade
+  slug: bethesda-terrace
+  lat: 40.77410
+  lon: -73.97090
+  kind: arcade
+  tags: [central-park, tiled-ceiling, musicians, reflected-light, weddings]
+  openness: covered
+  bestHours: [10, 11, 12, 13, 14, 15]
+  note: >
+    The Minton tile ceiling bounces a warm, even light down onto everyone who walks
+    through, and the arches frame the fountain beyond. A busker is almost always
+    working the reverb. Bright outside means roughly three stops down inside the
+    arcade — expose for the arch, let the terrace blow.
+  score_boost: 0.25
+
+- name: Washington Street, DUMBO
+  slug: dumbo-washington-street
+  lat: 40.70360
+  lon: -73.98920
+  kind: street
+  tags: [manhattan-bridge, cobbles, queues, brooklyn, evening]
+  openness: canyon
+  streetBearing: 30
+  bestHours: [7, 8, 17, 18, 19]
+  note: >
+    The bridge-between-the-warehouses view has a queue in front of it most of the
+    day, and the queue is the better picture. Turn around: the cobbles and the
+    loading docks toward Front Street are where the neighbourhood still is.
+  score_boost: 0.20
+
+- name: Coney Island Boardwalk
+  slug: coney-island-boardwalk
+  lat: 40.57250
+  lon: -73.97900
+  kind: waterfront
+  tags: [summer, beach, rides, weekends, crowds, hard-light]
+  openness: open
+  streetBearing: 75
+  bestHours: [11, 12, 13, 16, 17, 18, 19]
+  note: >
+    Summer weekends only, really. Hard sea light straight down until late afternoon,
+    then an hour where everything on the boardwalk turns gold and the rides come on.
+    Winter is a different picture entirely: empty planking, three people, and wind.
+  score_boost: 0.20
+
+- name: The Oculus, World Trade Center
+  slug: oculus-wtc
+  lat: 40.71160
+  lon: -74.01100
+  kind: arcade
+  tags: [interior, ribs, white, commuters, path, graphic]
+  openness: covered
+  bestHours: [8, 9, 12, 13, 17, 18]
+  note: >
+    A white ribbed hall that is effectively a giant softbox: midday sun through the
+    spine puts a hard stripe down the floor and everything else is diffuse. Shoot
+    from the upper level down onto the marble and let people become marks on it;
+    the ribs give you leading lines for free.
+  score_boost: 0.15

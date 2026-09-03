@@ -1,0 +1,17 @@
+# Cities spotforge builds bundles for — docs/SPOTFORGE.md §1.
+#
+# Districts exist so Overpass queries stay under the server timeout on large
+# cities, and so the UI can say "12 new spots in Brooklyn" rather than treating
+# a city as one undifferentiated blob.
+
+- id: us-nyc
+  name: New York City
+  country: US
+  center: { lat: 40.7128, lon: -74.0060 }
+  bbox:   { minLat: 40.4774, minLon: -74.2591, maxLat: 40.9176, maxLon: -73.7004 }
+  districts:
+    - { name: Manhattan,     bbox: { minLat: 40.6980, minLon: -74.0200, maxLat: 40.8800, maxLon: -73.9070 } }
+    - { name: Brooklyn,      bbox: { minLat: 40.5700, minLon: -74.0420, maxLat: 40.7395, maxLon: -73.8330 } }
+    - { name: Queens,        bbox: { minLat: 40.5400, minLon: -73.9630, maxLat: 40.8010, maxLon: -73.7004 } }
+    - { name: The Bronx,     bbox: { minLat: 40.7855, minLon: -73.9340, maxLat: 40.9176, maxLon: -73.7654 } }
+    - { name: Staten Island, bbox: { minLat: 40.4774, minLon: -74.2591, maxLat: 40.6514, maxLon: -74.0345 } }

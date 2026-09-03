@@ -23,8 +23,8 @@ city. Modelled in v1, backed by a server in a later phase.
 ## Status
 
 Design complete. The scaffold (M0) is in place: the module graph exists as six packages under
-`Packages/`, a `spotforge` stub under `Tools/`, and an app shell with three empty tabs. The
-features themselves are not implemented yet.
+`Packages/`, an app shell with three empty tabs, and the bundle pipeline `spotforge` under `Tools/`.
+The app features themselves are not implemented yet.
 
 Start here:
 

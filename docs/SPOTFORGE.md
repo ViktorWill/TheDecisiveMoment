@@ -11,11 +11,18 @@ swift run spotforge validate bundles/v1
 
 It links `TDMCore`, so it writes the same `Spot` type the app decodes. The schema cannot drift.
 
-> ### Before implementing: smoke-test the endpoints
+> ### Endpoint check, 2026-09
 >
-> The query URLs below were written from documentation, **not executed** — the environment they were
-> authored in blocks outbound requests to these hosts. Paste each into a browser and confirm the
-> shape of the response before writing code against it. If one has changed, fix this document first.
+> The queries below were originally written from documentation and never executed. They have since
+> been checked against the current published API references for Overpass QL, the Wikidata Query
+> Service and the MediaWiki `geosearch` and `imageinfo` modules, and the sections below were
+> corrected where the documentation and the original text disagreed — see §2 (`out` takes one
+> geometry mode, so features need two passes), §4 (`gsradius` bounds and the sampling lattice).
+>
+> They have **not** been run against the live services: the sandbox this was implemented in resolves
+> no DNS for `overpass-api.de`, `query.wikidata.org` or `commons.wikimedia.org`, and pretending
+> otherwise would be worse than saying so. The first real run is the first `spotforge build` without
+> `--fixtures`; if a response shape has drifted since, fix this document in the same change.
 
 ## Stages
 
@@ -86,11 +93,28 @@ it from the app. Prefer `https://overpass.kumi.systems/api/interpreter` as a fal
   node["public_transport"="station"]({{bbox}});
   way ["leisure"="park"]({{bbox}});
   way ["natural"="coastline"]({{bbox}});
+)->.spots;
+.spots out center tags;
+.spots out ids geom;
+```
+
+`out center` gives a single representative coordinate for ways, which is what the map needs — but an
+`out` statement takes **one** geometry mode, so `out center geom` is not a thing. The set is stored
+as `.spots` and printed twice: once for the centre and the tags, once for the node geometry the
+street bearing is derived from. Records are rejoined by `type` and `id`; a way that appears only in
+the first pass simply has no bearing.
+
+The building heights the `canyon` reading needs are a second query, because a building is not a spot
+and must not end up in the candidate set:
+
+```
+[out:json][timeout:180];
+(
+  way ["building"]["building:levels"]({{bbox}});
+  way ["building"]["height"]({{bbox}});
 );
 out center tags;
 ```
-
-`out center` gives a single representative coordinate for ways, which is what the map needs.
 
 ### OSM tag → `kind`
 
@@ -113,9 +137,11 @@ out center tags;
 
 - **`streetBearing`** — for a way, the bearing of the line between its first and last node,
   normalised to 0–180°.
-- **`openness`** — `covered` when `tunnel=yes` or `covered=yes`; `canyon` when the mean height of
-  buildings within 30 m exceeds ~25 m (use `building:levels` where present, otherwise leave `open`);
-  `open` otherwise. Be conservative — a wrong `canyon` costs the user 3.5 stops.
+- **`openness`** — `covered` when `tunnel=yes`, `covered=yes` or `building=arcade`; `canyon` when at
+  least two buildings sit within 30 m and their mean height exceeds 25 m; `open` otherwise. Heights
+  come from `height` where it is tagged and from `building:levels` × 3.1 m where it is not. Be
+  conservative — a wrong `canyon` costs the user 3.5 stops, so a point with one tall neighbour and
+  nothing else stays `open`.
 
 ---
 
@@ -162,12 +188,21 @@ https://commons.wikimedia.org/w/api.php
 ```
 
 `gsnamespace=6` is the part people get wrong; the default namespace 0 returns articles and the query
-looks broken. Radius caps at 10 km, limit at 500.
+looks broken. `gsradius` takes 10–10 000 m and `gslimit` caps at 500.
 
-Rather than one query per candidate spot — which would be thousands of requests — sample a grid
-across the city at ~250 m spacing, accumulate counts into cells, and read each candidate's density
-from its cell plus its eight neighbours. One pass, bounded cost, and the resulting grid is also what
-draws the heatmap layer.
+Rather than one query per candidate spot — which would be thousands of requests — sweep the city and
+accumulate counts into a grid of **250 m cells**, then read each candidate's density from its cell
+plus its eight neighbours. One pass, bounded cost, and the resulting grid is also what draws the
+heatmap layer.
+
+The sweep samples on a **500 m lattice with `gsradius=500`**, which is not the same number as the
+cell size: circles of radius 500 m centred every 500 m overlap everywhere, since the furthest a
+point can be from the nearest sample is 354 m. A file returned by two overlapping samples is counted
+once, by page id. A cell holding 25 files or more becomes a candidate in its own right — somewhere
+people photograph that no other source names — with the id `commons:cell/{lat}/{lon}`.
+
+A bbox large enough to need more than 20 000 samples fails the build rather than running for a day
+against a volunteer service; that is what districts are for.
 
 For the top-scoring spots, fetch representative images with `prop=imageinfo` and
 `iiprop=url|extmetadata` to get `thumbURL`, `pageURL`, author and licence. **Store the licence.** A
@@ -180,6 +215,7 @@ like it was made by someone who shoots.
 
 ```yaml
 - name: Fifth Avenue & 42nd Street
+  slug: fifth-avenue-42nd
   lat: 40.75350
   lon: -73.98130
   kind: intersection
@@ -196,6 +232,10 @@ like it was made by someone who shoots.
 
 Curated entries never get dropped by the size cap and always carry `curated: true`. `score_boost`
 is added before normalisation.
+
+The id is `curated:{cityId}/{slug}`. `slug` is optional — it is derived from the name when it is
+absent — but writing it down pins the id, so renaming an entry does not silently break a user's pin.
+Two entries that reduce to the same slug fail the build.
 
 This file is the app's soul and it does not scale — which is fine. Ten good entries per city beat a
 thousand generated ones.
@@ -335,3 +375,34 @@ you can see that a spot vanished because someone retagged it in OSM, rather than
 the field.
 
 The workflow must not run on every push. These are volunteer-run APIs.
+
+---
+
+## 10. The command line
+
+```
+spotforge build --city <id> [--city <id>…] | --all [options]
+spotforge validate [<directory>]
+```
+
+| Option | Meaning |
+|---|---|
+| `--out <dir>` | Where bundles are written. Default `bundles/v1`. |
+| `--cities <path>` | City declarations. Default `data/cities.yml`. |
+| `--curated <dir>` | Curated canon files. Default `data/curated`. |
+| `--cache <dir>` | Response cache, keyed by query hash. Default `.cache`. |
+| `--fixtures <dir>` | Build from recorded responses and touch no network. |
+| `--report` | Print the per-source summary. |
+| `--strict` | Exit non-zero when a source returned nothing or failed. |
+| `--no-photos` | Skip the representative-image pass. |
+
+`validate` re-reads `index.json`, decompresses every bundle, re-decodes it with the same
+`TDMSpots.BundleDecoder` the app uses, and checks the SHA-256 over the decompressed JSON. It is the
+last gate before a bundle is published, and it exits non-zero on the first thing that does not
+add up.
+
+`--fixtures` is how the tests — and anyone without network access — exercise the whole pipeline. The
+recorded responses live in `Tools/spotforge/Tests/Fixtures/`, named `{label}-{cacheKey}.json`, where
+the cache key is the same hash the disk cache uses. A request with no recording fails with
+`HTTPError.offline` rather than falling back to the network, so a test can never quietly reach a
+volunteer service. `Tools/spotforge/Tests/Fixtures/README.md` explains how to re-record one.

@@ -1,0 +1,126 @@
+{
+  "elements": [
+    {
+      "center": {
+        "lat": 40.7318,
+        "lon": -73.9972
+      },
+      "id": 1,
+      "tags": {
+        "highway": "pedestrian",
+        "name": "Washington Square North"
+      },
+      "type": "way"
+    },
+    {
+      "center": {
+        "lat": 40.73096,
+        "lon": -73.99725
+      },
+      "id": 4,
+      "tags": {
+        "leisure": "park",
+        "name": "Washington Square Park",
+        "wikidata": "Q1163609"
+      },
+      "type": "way"
+    },
+    {
+      "id": 5,
+      "lat": 40.7298,
+      "lon": -73.9988,
+      "tags": {
+        "amenity": "marketplace",
+        "name": "Greenmarket at Washington Square"
+      },
+      "type": "node"
+    },
+    {
+      "id": 6,
+      "lat": 40.73115,
+      "lon": -73.9988,
+      "tags": {
+        "name": "West 4 Street\u2013Washington Square",
+        "railway": "station"
+      },
+      "type": "node"
+    },
+    {
+      "id": 7,
+      "lat": 40.732,
+      "lon": -73.9955,
+      "tags": {
+        "tourism": "viewpoint"
+      },
+      "type": "node"
+    },
+    {
+      "center": {
+        "lat": 40.7305,
+        "lon": -73.997
+      },
+      "id": 8,
+      "tags": {
+        "highway": "steps",
+        "name": "Steps to the Arcade"
+      },
+      "type": "way"
+    },
+    {
+      "geometry": [
+        {
+          "lat": 40.7318,
+          "lon": -73.9985
+        },
+        {
+          "lat": 40.7318,
+          "lon": -73.996
+        }
+      ],
+      "id": 1,
+      "type": "way"
+    },
+    {
+      "geometry": [
+        {
+          "lat": 40.7305,
+          "lon": -73.9979
+        },
+        {
+          "lat": 40.7315,
+          "lon": -73.9979
+        },
+        {
+          "lat": 40.7315,
+          "lon": -73.9966
+        },
+        {
+          "lat": 40.7305,
+          "lon": -73.9966
+        },
+        {
+          "lat": 40.7305,
+          "lon": -73.9979
+        }
+      ],
+      "id": 4,
+      "type": "way"
+    },
+    {
+      "geometry": [
+        {
+          "lat": 40.73044,
+          "lon": -73.99706
+        },
+        {
+          "lat": 40.73056,
+          "lon": -73.99694
+        }
+      ],
+      "id": 8,
+      "type": "way"
+    }
+  ],
+  "generator": "Overpass API 0.7.62 (recorded fixture, trimmed)",
+  "version": 0.6
+}

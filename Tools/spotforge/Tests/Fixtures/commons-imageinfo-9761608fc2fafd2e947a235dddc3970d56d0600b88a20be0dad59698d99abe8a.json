@@ -1,0 +1,47 @@
+{
+  "batchcomplete": true,
+  "query": {
+    "pages": [
+      {
+        "imageinfo": [
+          {
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Washington_Square_Arch.jpg",
+            "extmetadata": {
+              "Artist": {
+                "source": "commons-desc-page",
+                "value": "<a href=\"https://commons.wikimedia.org/wiki/User:Example\">Jane Example</a>"
+              },
+              "LicenseShortName": {
+                "source": "commons-desc-page",
+                "value": "CC BY-SA 4.0"
+              }
+            },
+            "thumburl": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Washington_Square_Arch.jpg/440px-Washington_Square_Arch.jpg",
+            "url": "https://upload.wikimedia.org/wikipedia/commons/1/12/Washington_Square_Arch.jpg"
+          }
+        ],
+        "ns": 6,
+        "pageid": 4200000,
+        "title": "File:Washington Square Arch.jpg"
+      },
+      {
+        "imageinfo": [
+          {
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Fountain.jpg",
+            "extmetadata": {
+              "LicenseShortName": {
+                "source": "commons-desc-page",
+                "value": "CC BY-SA 4.0"
+              }
+            },
+            "thumburl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/22/Fountain.jpg/440px-Fountain.jpg",
+            "url": "https://upload.wikimedia.org/wikipedia/commons/2/22/Fountain.jpg"
+          }
+        ],
+        "ns": 6,
+        "pageid": 4200001,
+        "title": "File:Fountain, unattributed.jpg"
+      }
+    ]
+  }
+}

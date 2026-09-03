@@ -1,0 +1,8 @@
+# The fixture city: three hundred metres around Washington Square, small enough
+# that the whole pipeline is four recorded responses and one Commons sample.
+
+- id: us-nyc
+  name: New York City
+  country: US
+  center: { lat: 40.7305, lon: -73.9970 }
+  bbox:   { minLat: 40.7290, minLon: -73.9990, maxLat: 40.7320, maxLon: -73.9950 }
