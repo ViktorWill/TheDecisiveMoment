@@ -24,7 +24,7 @@ public struct WeatherKitProvider: WeatherProvider {
                 cloudCover: current.cloudCover,
                 condition: Self.skyCondition(current.condition),
                 precipitationIntensityMillimetresPerHour:
-                    current.precipitationIntensity.converted(to: .millimetersPerHour).value,
+                    current.precipitationIntensity.converted(to: .metersPerSecond).value * 3_600_000,
                 visibilityMetres: current.visibility.converted(to: .meters).value
             )
         } catch {
@@ -53,7 +53,7 @@ public struct WeatherKitProvider: WeatherProvider {
                     cloudCover: hour.cloudCover,
                     condition: Self.skyCondition(hour.condition),
                     precipitationIntensityMillimetresPerHour:
-                        hour.precipitationIntensity.converted(to: .millimetersPerHour).value,
+                        hour.precipitationAmount.converted(to: .millimeters).value,
                     visibilityMetres: hour.visibility.converted(to: .meters).value
                 )
             }
