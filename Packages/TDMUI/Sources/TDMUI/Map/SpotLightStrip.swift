@@ -45,6 +45,15 @@ struct SpotLightStrip: View {
                             .foregroundStyle(MapTheme.secondaryText)
                     }
                     .padding(.top, 10)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(
+                        ExposurePhrasing.spokenSetting(
+                            aperture: recommendation.aperture,
+                            shutter: recommendation.shutter,
+                            iso: recommendation.iso,
+                            sigmaEV: advice?.estimate.sigmaEV ?? 0
+                        )
+                    )
                 }
 
                 Text(sentence)

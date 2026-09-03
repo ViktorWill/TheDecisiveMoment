@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import TDMCore
+import TDMPersistence
 import TDMSpots
 
 /// The Community tab's state: the local photographer, their plans, and enough

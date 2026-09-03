@@ -12,7 +12,6 @@ public struct CommunityView: View {
     @State private var model: CommunityViewModel
     @State private var editing: ShootSession?
     @State private var isEditingProfile = false
-    @State private var pendingDeletion: ShootSession?
 
     public init(model: CommunityViewModel) {
         _model = State(initialValue: model)
@@ -96,7 +95,7 @@ public struct CommunityView: View {
             Text("Your plans")
         } footer: {
             Text("Stored on this device. Nobody else can see these.")
-                .font(MapTheme.rowDetailFont)
+                .scaledFont(size: 11)
         }
     }
 
@@ -121,7 +120,7 @@ public struct CommunityView: View {
             } icon: {
                 Image(systemName: "person.2")
             }
-            .font(MapTheme.rowDetailFont)
+            .scaledFont(size: 11)
             .foregroundStyle(MapTheme.secondaryText)
 
             Label {
@@ -129,7 +128,7 @@ public struct CommunityView: View {
             } icon: {
                 Image(systemName: "lock")
             }
-            .font(MapTheme.rowDetailFont)
+            .scaledFont(size: 11)
             .foregroundStyle(MapTheme.secondaryText)
         } header: {
             Text("What this becomes")
@@ -144,10 +143,10 @@ public struct CommunityView: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(model.profile?.displayName ?? Photographer.defaultDisplayName)
-                            .font(MapTheme.rowTitleFont)
+                            .scaledFont(size: 14, weight: .semibold)
                             .foregroundStyle(MapTheme.primaryText)
                         Text(model.profile?.gearSummary ?? "Add the gear you usually carry")
-                            .font(MapTheme.rowDetailFont)
+                            .scaledFont(size: 11)
                             .foregroundStyle(MapTheme.secondaryText)
                     }
                     Spacer()
@@ -162,7 +161,7 @@ public struct CommunityView: View {
             Text("You")
         } footer: {
             Text("There is no account. This name is only used to say who a plan belongs to.")
-                .font(MapTheme.rowDetailFont)
+                .scaledFont(size: 11)
         }
     }
 
@@ -179,24 +178,24 @@ struct SessionRowView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(session.title)
-                .font(MapTheme.rowTitleFont)
+                .scaledFont(size: 14, weight: .semibold)
                 .foregroundStyle(MapTheme.primaryText)
 
             // Tabular figures: a list of times that jitters as it redraws is
             // harder to scan than one that does not.
             Text(when)
-                .font(MapTheme.rowDistanceFont)
+                .scaledFont(size: 11, monospacedDigit: true)
                 .foregroundStyle(MapTheme.secondaryText)
 
             if let anchorName {
                 Label(anchorName, systemImage: "mappin.and.ellipse")
-                    .font(MapTheme.rowDetailFont)
+                    .scaledFont(size: 11)
                     .foregroundStyle(MapTheme.tertiaryText)
             }
         }
         .padding(.vertical, 2)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(accessibilityLabel)
+        .accessibilityLabel(spokenLabel)
     }
 
     private var when: String {
@@ -204,8 +203,9 @@ struct SessionRowView: View {
         return "\(start) · \(CommunityPhrasing.duration(session.duration))"
     }
 
-    private var accessibilityLabel: String {
-        var parts = [session.title, when.replacingOccurrences(of: " · ", with: ", for ")]
+    private var spokenLabel: String {
+        let start = session.startsAt.formatted(date: .abbreviated, time: .shortened)
+        var parts = [session.title, "\(start), for \(CommunityPhrasing.spokenDuration(session.duration))"]
         if let anchorName { parts.append("at \(anchorName)") }
         parts.append("private")
         return parts.joined(separator: ", ")
@@ -214,13 +214,24 @@ struct SessionRowView: View {
 
 /// Words the Community tab needs and the model does not.
 enum CommunityPhrasing {
-    /// `2 h`, `1 h 30`, `45 min`. A plan is not timed finer than five minutes.
+    /// `2 h`, `1 h 30`, `45 min`, as a dial is engraved rather than as a
+    /// sentence.
     static func duration(_ seconds: TimeInterval) -> String {
         let minutes = Int((seconds / 60).rounded())
         if minutes < 60 { return "\(minutes) min" }
         let hours = minutes / 60
         let remainder = minutes % 60
         return remainder == 0 ? "\(hours) h" : String(format: "%d h %02d", hours, remainder)
+    }
+
+    /// The same length said aloud: `h` is not a word.
+    static func spokenDuration(_ seconds: TimeInterval) -> String {
+        let minutes = Int((seconds / 60).rounded())
+        if minutes < 60 { return "\(minutes) minutes" }
+        let hours = minutes / 60
+        let remainder = minutes % 60
+        let hourPhrase = hours == 1 ? "1 hour" : "\(hours) hours"
+        return remainder == 0 ? hourPhrase : "\(hourPhrase) \(remainder) minutes"
     }
 
     /// What a visibility setting means, in the plainest words available.

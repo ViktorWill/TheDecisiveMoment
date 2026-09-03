@@ -156,7 +156,7 @@ refusing to answer — a rough number in the field beats a spinner.
 | `TDMCore` / `TDMSpots` | Round-trip the example bundle in [DATA-BUNDLES.md](DATA-BUNDLES.md) as a committed fixture. Schema drift fails CI. Merge and scoring tested on synthetic clusters. |
 | `spotforge` | Network sources behind a protocol; pipeline tested against recorded fixture responses, not live APIs. |
 | `TDMWeather` | `StubWeatherProvider` only. The WeatherKit wrapper is thin enough to verify by inspection. |
-| `TDMUI` | SwiftUI previews across light/dark and Dynamic Type. No snapshot tests — churn cost exceeds their value at this size. |
+| `TDMUI` | SwiftUI previews across light/dark and Dynamic Type. No snapshot tests — churn cost exceeds their value at this size. The spoken forms of the readout are tested in `TDMLight`, where they are strings rather than views. |
 
 CI runs `swift test` on Linux for the three pure packages. A macOS job builds the app target.
 
@@ -164,7 +164,15 @@ CI runs `swift test` on Linux for the three pure packages. A macOS job builds th
 
 Location never leaves the device. The only outbound calls are the WeatherKit request (Apple, coarse
 coordinate) and the bundle download (a static file, identical for every user, revealing only which
-city was fetched). No accounts, no analytics, no third-party SDKs in v1.
+city was fetched). No accounts, no analytics, no third-party SDKs in v1. Shooting plans, pins, gear
+and calibration offsets are rows in the app's own store and are never uploaded.
+
+`App/Resources/PrivacyInfo.xcprivacy` says exactly that: `NSPrivacyCollectedDataTypes` is empty,
+tracking is `false`, and the one declared API reason is `CA92.1` for `UserDefaults`, which holds the
+map filters, a spot's marks, and whether the onboarding has been seen. The two usage strings in
+`project.yml` are written to be literally true — the camera is opened by the live meter with no
+capture output attached, so no photo can be taken or stored — and both permissions are requested at
+the point of use rather than on first launch.
 
 When the community section gains a backend, that changes materially and gets its own privacy review
 before a line of it ships — see [SPEC-community.md](SPEC-community.md).

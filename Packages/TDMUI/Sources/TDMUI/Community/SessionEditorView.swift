@@ -89,7 +89,7 @@ struct SessionEditorView: View {
                 } footer: {
                     Text(CommunityPhrasing.explanation(for: .private)
                         + " Sharing a plan with a city arrives with the backend, and it will be a choice you make each time.")
-                        .font(MapTheme.rowDetailFont)
+                        .scaledFont(size: 11)
                 }
 
                 if !isNew {
@@ -155,7 +155,7 @@ struct SessionEditorView: View {
             }
 
             Text(String(format: "Meeting point %.5f, %.5f", draft.meetingPoint.latitude, draft.meetingPoint.longitude))
-                .font(MapTheme.tickFont)
+                .scaledFont(size: 9, monospacedDigit: true)
                 .foregroundStyle(MapTheme.tertiaryText)
                 .accessibilityLabel(
                     String(
@@ -169,7 +169,7 @@ struct SessionEditorView: View {
         } footer: {
             // The rule that survives into phase 3, so it is stated in v1.
             Text("Meet in public places.")
-                .font(MapTheme.rowDetailFont)
+                .scaledFont(size: 11)
         }
     }
 
@@ -215,10 +215,10 @@ struct SpotAnchorPickerView: View {
                         } label: {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(spot.name)
-                                    .font(MapTheme.rowTitleFont)
+                                    .scaledFont(size: 14, weight: .semibold)
                                     .foregroundStyle(MapTheme.primaryText)
                                 Text(SpotProse.label(for: spot.kind).capitalizedFirst)
-                                    .font(MapTheme.rowDetailFont)
+                                    .scaledFont(size: 11)
                                     .foregroundStyle(MapTheme.secondaryText)
                             }
                         }
@@ -277,7 +277,7 @@ struct ProfileEditorView: View {
                     )
                 } footer: {
                     Text("Stays on this device. There is no account and nothing is uploaded.")
-                        .font(MapTheme.rowDetailFont)
+                        .scaledFont(size: 11)
                 }
             }
             .scrollContentBackground(.hidden)

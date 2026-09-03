@@ -46,6 +46,14 @@ struct BodyPickerView: View {
                 .foregroundStyle(LightTheme.tertiaryText)
 
             VStack(spacing: 6) {
+                if bodies.isEmpty {
+                    // Only reachable if the gear store answered with a partial
+                    // roster; the shipped catalogue always has both halves.
+                    Text("No \(title.lowercased()) bodies on this device.")
+                        .font(LightTheme.captionFont)
+                        .foregroundStyle(LightTheme.tertiaryText)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
                 ForEach(bodies) { body in
                     Button {
                         onSelect(body)

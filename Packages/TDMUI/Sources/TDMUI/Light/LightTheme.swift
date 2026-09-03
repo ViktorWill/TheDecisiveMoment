@@ -42,6 +42,9 @@ public enum LightTheme {
     /// A section label: 10 / 600, 0.12 em, upper case in `design/Tokens.dc.html`.
     public static let sectionLabelFont = Font.system(size: 10, weight: .semibold, design: .rounded)
     /// The big readout figures of `design/Digital.dc.html`: 34 / 500, tabular.
+    /// The size is public as well as the font, because the readout scales with
+    /// the user's text size through ``ScaledFont`` rather than sitting fixed.
+    public static let readoutSize: CGFloat = 34
     public static let readoutFont = Font.system(size: 34, weight: .medium, design: .rounded)
         .monospacedDigit()
     /// A caption under a readout, 11 / 400, tabular.
