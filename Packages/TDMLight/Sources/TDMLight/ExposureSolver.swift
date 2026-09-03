@@ -37,7 +37,10 @@ public enum ExposureStrategy: Sendable, Equatable {
 
     /// Whether a body can actually be set this way.
     public func isAvailable(on body: CameraBodyProfile) -> Bool {
-        self != .aperturePriority || body.supportsAperturePriority
+        guard self == .aperturePriority else { return true }
+        // A flat battery takes the automatic shutter with it: what is left on an
+        // M7 is 1/60 and 1/125, mechanically.
+        return body.supportsAperturePriority && body.shutterMode != .flatBattery
     }
 }
 

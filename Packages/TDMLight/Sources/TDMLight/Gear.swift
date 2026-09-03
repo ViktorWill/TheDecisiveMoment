@@ -49,6 +49,13 @@ public enum ISOAvailability: Sendable, Equatable {
         return availableValues.filter { $0 <= ceiling }
     }
 
+    /// The sensor's own limits, ceiling ignored — what raising the ceiling
+    /// could reach. `nil` on film, where there is nothing to raise.
+    public var sensorRange: (minimum: Int, maximum: Int)? {
+        if case let .range(minimum, maximum, _) = self { return (minimum, maximum) }
+        return nil
+    }
+
     public var ceiling: Int? {
         if case let .range(_, _, ceiling) = self { return ceiling }
         return nil
