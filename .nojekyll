@@ -1,0 +1,4 @@
+This file's presence tells GitHub Pages to skip Jekyll processing and serve
+bundles/v1/* as raw static files. See docs/SPOTFORGE.md, which contains
+{{bbox}}-style placeholders in code blocks that Jekyll's Liquid engine would
+otherwise try to interpret.
