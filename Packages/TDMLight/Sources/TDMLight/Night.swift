@@ -54,7 +54,7 @@ extension NightPreset {
     }
 
     /// The regime a sun elevation falls in.
-    static func regime(sunElevationDegrees h: Double) -> LightRegime {
+    public static func regime(sunElevationDegrees h: Double) -> LightRegime {
         if h >= 0 { return .daylight }
         if h > blendFloorElevationDegrees { return .twilight }
         return .night
