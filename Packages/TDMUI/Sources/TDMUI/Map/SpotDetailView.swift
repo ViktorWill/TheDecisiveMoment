@@ -347,7 +347,6 @@ struct NoteEditorView: View {
     @Binding var text: String
     let onSave: () -> Void
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.openURL) private var openURL
 
     var body: some View {
         NavigationStack {

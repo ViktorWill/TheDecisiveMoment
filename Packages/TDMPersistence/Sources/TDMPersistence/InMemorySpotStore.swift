@@ -13,6 +13,11 @@ public actor InMemorySpotStore: SpotStore {
     private var cities: [String: City] = [:]
     private var spotsByCity: [String: [Spot]] = [:]
     private var localPins: [String: Spot] = [:]
+    /// Insertion order, so pins come back newest-first as they do from
+    /// SwiftData — a difference here would let a test pass against the double
+    /// and fail on the device.
+    private var pinOrder: [String: Int] = [:]
+    private var nextPinOrder = 0
     private var importedAt: [String: Date] = [:]
     private let clock: @Sendable () -> Date
 
@@ -83,14 +88,19 @@ public actor InMemorySpotStore: SpotStore {
     public func upsertPin(_ spot: Spot) throws {
         guard LocalPin.isLocal(id: spot.id) else { throw SpotStoreError.notALocalPin(id: spot.id) }
         localPins[spot.id] = spot
+        if pinOrder[spot.id] == nil {
+            pinOrder[spot.id] = nextPinOrder
+            nextPinOrder += 1
+        }
     }
 
     public func removePin(id: String) throws {
         guard LocalPin.isLocal(id: id) else { throw SpotStoreError.notALocalPin(id: id) }
         localPins[id] = nil
+        pinOrder[id] = nil
     }
 
     public func pins() -> [Spot] {
-        localPins.values.sorted { $0.name < $1.name }
+        localPins.values.sorted { (pinOrder[$0.id] ?? 0) > (pinOrder[$1.id] ?? 0) }
     }
 }

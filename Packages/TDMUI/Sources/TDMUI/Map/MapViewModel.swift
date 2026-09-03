@@ -232,17 +232,14 @@ public final class MapViewModel {
     /// Failures are silent here: the map is already drawn.
     func resolveCity() async {
         guard let bundles else { return }
-        do {
-            if let index = try? await bundles.index() {
-                indexCities = index.citiesSortedByDistance(from: coordinate)
-                indexEntry = index.city(containing: coordinate)
-            }
-            _ = try await store.storedIndex()
-            await loadStoredIds()
-            await adoptStoredCity()
-        } catch {
-            // Offline is the normal case, not an error worth a banner.
+        // Offline is the normal case here, not an error worth a banner: the
+        // index simply stays at whatever was last stored.
+        if let index = try? await bundles.index() {
+            indexCities = index.citiesSortedByDistance(from: coordinate)
+            indexEntry = index.city(containing: coordinate)
         }
+        await loadStoredIds()
+        await adoptStoredCity()
     }
 
     private func loadStoredIds() async {

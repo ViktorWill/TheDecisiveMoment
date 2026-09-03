@@ -106,9 +106,13 @@ struct PinEditorView: View {
             kind: kind,
             openness: openness,
             tags: tags,
-            note: note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : note,
+            note: trimmedNote.isEmpty ? nil : trimmedNote,
             streetBearingDegrees: useHeading ? streetBearingDegrees : nil
         )
+    }
+
+    private var trimmedNote: String {
+        note.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private var tags: [String] {
