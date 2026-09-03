@@ -9,7 +9,8 @@ it. If you change the model, run this first, check the independent cross-checks 
 update both the document and the Swift tests from its output.
 
 ```sh
-python3 docs/reference/vectors.py
+python3 docs/reference/vectors.py        # sections 1-6
+python3 docs/reference/film-vectors.py   # sections 7a-7d, analog vs digital
 ```
 
 The cross-checks worth watching, because they are the ones that catch a wrong model rather than a

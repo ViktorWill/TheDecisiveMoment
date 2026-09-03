@@ -1,0 +1,109 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #E8A64A; } a:hover { color: #F2BB6E; }
+    .mono { font-family: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace; font-variant-numeric: tabular-nums; }
+    .sans { font-family: 'IBM Plex Sans', -apple-system, system-ui, sans-serif; }
+    .lbl { font-family: 'IBM Plex Sans', -apple-system, system-ui, sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #62666C; }
+  </style>
+</helmet>
+
+<div style="width: 393px; height: 852px; background: #101113; color: #EDEDEA; display: flex; flex-direction: column; overflow: hidden;">
+
+  <div style="height: 59px; flex-shrink: 0;"></div>
+
+  <div style="display: flex; align-items: center; justify-content: space-between; height: 44px; padding: 0 20px; flex-shrink: 0;">
+    <div class="lbl" style="color: #EDEDEA;">Light</div>
+    <div style="display: flex; align-items: center; gap: 8px; background: #191B1E; border: 1px solid #2A2E34; border-radius: 6px; padding: 7px 10px;">
+      <span class="mono" style="font-size: 12px; color: #EDEDEA;">M6 · 35mm</span>
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#62666C" stroke-width="1.4"><path d="M3.5 1.5 L7 5 L3.5 8.5"/></svg>
+    </div>
+  </div>
+
+  <div style="height: 1px; background: #2A2E34; flex-shrink: 0;"></div>
+
+  <div style="padding: 26px 20px 20px; flex-shrink: 0;">
+    <div class="lbl" style="color: #C4392F;">Zone focus</div>
+    <div class="sans" style="font-size: 30px; font-weight: 600; line-height: 1.15; margin-top: 12px;">Not on this roll</div>
+    <div class="sans" style="font-size: 15px; line-height: 1.5; color: #9A9DA3; margin-top: 12px;">
+      <span class="mono" style="font-size: 14px; color: #EDEDEA;">HP5 400</span> is
+      <span class="mono" style="font-size: 14px; color: #C4392F;">0.9 stops</span> short here. Nothing on the M6&rsquo;s dial reaches it hand-held.
+    </div>
+    <div class="mono" style="font-size: 11px; color: #62666C; margin-top: 12px;">EV 5.00 ±1.5 &nbsp;·&nbsp; sun −8.2° &nbsp;·&nbsp; lit street &nbsp;·&nbsp; 21:14</div>
+  </div>
+
+  <div style="height: 1px; background: #2A2E34; flex-shrink: 0;"></div>
+
+  <div style="padding: 18px 20px 0; flex-shrink: 0;">
+    <div class="lbl">What would work</div>
+
+    <div style="display: flex; align-items: center; gap: 14px; border: 1px solid #E8A64A; background: #191B1E; border-radius: 8px; padding: 14px; margin-top: 12px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E8A64A" stroke-width="1.6" stroke-linecap="round"><path d="M12 19V5M12 5 6.5 10.5M12 5l5.5 5.5"/></svg>
+      <div style="flex-grow: 1;">
+        <div class="sans" style="font-size: 14px; font-weight: 600;">Push the roll to 1600</div>
+        <div class="sans" style="font-size: 11px; color: #62666C; margin-top: 3px; line-height: 1.45;">+2 stops · coarse grain, blocked shadows · applies to the whole roll</div>
+      </div>
+      <div style="text-align: right; flex-shrink: 0;">
+        <div class="mono" style="font-size: 14px; color: #E8A64A;">f/2</div>
+        <div class="mono" style="font-size: 12px; color: #9A9DA3; margin-top: 2px;">1/125</div>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 14px; border: 1px solid #2A2E34; background: #16181B; border-radius: 8px; padding: 14px; margin-top: 8px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9A9DA3" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+      <div style="flex-grow: 1;">
+        <div class="sans" style="font-size: 14px; font-weight: 600; color: #C8CBCF;">Drop to 1/30</div>
+        <div class="sans" style="font-size: 11px; color: #62666C; margin-top: 3px; line-height: 1.45;">Below the 1/35 floor · moving subjects will smear</div>
+      </div>
+      <div style="text-align: right; flex-shrink: 0;">
+        <div class="mono" style="font-size: 14px; color: #C8CBCF;">f/2</div>
+        <div class="mono" style="font-size: 12px; color: #62666C; margin-top: 2px;">1/30</div>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 14px; border: 1px solid #2A2E34; background: #16181B; border-radius: 8px; padding: 14px; margin-top: 8px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9A9DA3" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 3.2v2.4M12 18.4v2.4M3.2 12h2.4M18.4 12h2.4"/></svg>
+      <div style="flex-grow: 1;">
+        <div class="sans" style="font-size: 14px; font-weight: 600; color: #C8CBCF;">Wait 20 minutes</div>
+        <div class="sans" style="font-size: 11px; color: #62666C; margin-top: 3px; line-height: 1.45;">The street lights come up — EV 5.0 → 6.2 by 21:34</div>
+      </div>
+      <svg width="11" height="11" viewBox="0 0 10 10" fill="none" stroke="#62666C" stroke-width="1.5" style="flex-shrink: 0;"><path d="M3.5 1.5 L7 5 L3.5 8.5"/></svg>
+    </div>
+  </div>
+
+  <div style="padding: 18px 20px 0; flex-shrink: 0;">
+    <div class="sans" style="font-size: 12px; line-height: 1.55; color: #62666C; border-left: 1px solid #2A2E34; padding-left: 12px;">
+      Under two stops short, so the roll is salvageable. Past two, the honest answer is that this is the wrong film for this light — and that is worth knowing before you burn the frame.
+    </div>
+  </div>
+
+  <div style="flex-grow: 1;"></div>
+
+  <div style="display: flex; border-top: 1px solid #2A2E34; background: #131417; padding: 10px 0 24px; flex-shrink: 0;">
+    <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#62666C" stroke-width="1.5" stroke-linejoin="round"><path d="M9 4 L3 6.5 v13.5 L9 17.5 15 20 21 17.5 V4 L15 6.5 Z"/><path d="M9 4 v13.5"/><path d="M15 6.5 V20"/></svg>
+      <span class="sans" style="font-size: 10px; color: #62666C;">Map</span>
+    </div>
+    <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E8A64A" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.4v3M12 18.6v3M2.4 12h3M18.6 12h3M5.2 5.2l2.1 2.1M16.7 16.7l2.1 2.1M18.8 5.2l-2.1 2.1M7.3 16.7l-2.1 2.1"/></svg>
+      <span class="sans" style="font-size: 10px; color: #E8A64A; font-weight: 600;">Light</span>
+    </div>
+    <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#62666C" stroke-width="1.5" stroke-linecap="round"><circle cx="9" cy="8.5" r="3.3"/><path d="M2.8 19.5c0-3.2 2.8-5.2 6.2-5.2s6.2 2 6.2 5.2"/><path d="M16.2 5.6a3.3 3.3 0 0 1 0 5.9"/><path d="M17.6 14.8c2.2.6 3.6 2.3 3.6 4.7"/></svg>
+      <span class="sans" style="font-size: 10px; color: #62666C;">Community</span>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

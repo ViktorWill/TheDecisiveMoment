@@ -213,6 +213,13 @@ Acceptance:
 Build the Light tab per docs/SPEC-light.md, plus Packages/TDMWeather and the
 gear-profile storage in Packages/TDMPersistence.
 
+The visual design is specified. Read design/Tokens.dc.html for the palette,
+type scale, spacing and glyphs, and design/Main.dc.html, design/SunPanel.dc.html
+and design/Gear.dc.html for the three screens you are building. They are plain
+HTML — lift the exact hex values, sizes, weights, paddings and radii rather than
+approximating them, and add no colour that is not in Tokens. design/README.md
+explains the two details that are load-bearing rather than decorative.
+
 TDMWeather:
   - WeatherProvider protocol exposing only what the model consumes:
     cloud cover, condition, precipitation intensity, visibility —
@@ -253,8 +260,68 @@ Dark-first. Everything except weather works in airplane mode; without weather,
 fall back to clear sky, widen uncertainty by 0.7 EV in quadrature, and show it.
 
 Acceptance: on a device, the screen gives a sane reading for the current street,
-the zone scale shows only real marks, and airplane mode degrades exactly as
-described rather than blocking.
+the zone scale shows only real marks AND is spaced linearly in 1/distance, the
+rendered screen matches design/Main.dc.html side by side, and airplane mode
+degrades exactly as described rather than blocking.
+```
+
+---
+
+## M4a — Analog and digital modes
+
+```text
+Run this AFTER M4 has landed. It adds the dimension M4 does not have: the
+difference between a loaded roll and a digital sensor. Read the new
+docs/EXPOSURE-MODEL.md sections 7a–7d and docs/SPEC-light.md "Two modes"
+and "When nothing works" before changing anything.
+
+TDMCore — add:
+  - Medium: .blackAndWhiteNegative, .colourNegative, .slide, .digital
+  - FilmStock: name, boxSpeed, medium, note. Seed the eight stocks listed
+    in docs/SPEC-light.md.
+  - Latitude (over/under stops) and bias, derived from Medium per the table
+    in EXPOSURE-MODEL 7a. Do not hardcode these at the call site.
+  - LoadedRoll: stock + ratedAt (the push/pull speed), with computed
+    pushStops. ISOMode gains .fixed(LoadedRoll) alongside
+    .range(min, max, ceiling).
+
+TDMLight — change the solver:
+  - Tolerance is asymmetric and comes from the medium, not a constant. A
+    candidate 1.1 stops OVER is valid on HP5 and a discard on Provia.
+  - Aim at EV_target = EV_scene − bias, so negative film is deliberately
+    given more light than a meter would suggest.
+  - Return a result type that can express NO SOLUTION, carrying the
+    shortfall in stops and the applicable levers (push, floor, ND, other
+    roll). An empty array is not acceptable — the reason IS the answer.
+  - Digital: solve for ISO subject to the ceiling, rank by lowest ISO that
+    satisfies the strategy (not lowest outright), and round UP to the
+    body's next real step, never down.
+
+TDMUI — the Light tab becomes two modes, switched on the body's medium:
+  - Analog: ISO renders dimmed as context, not a control. Film picker over
+    real stocks; a rated-at push/pull control showing "HP5 400 @ 1600 (+2)"
+    wherever the ISO appears, with the cost stated.
+  - Digital: ISO renders at full weight as a solved value, labelled as a
+    change ("raise ISO to 1600"), with a ceiling slider. Mockup:
+    design/Digital.dc.html.
+  - No-solution is a designed screen, not an empty list, with tappable
+    levers that re-solve. Mockup: design/NoSolution.dc.html.
+  - Film block on the gear screen: design/Gear.dc.html (updated).
+
+Tests — these are verified, do not adjust them:
+  - EV100 15.10, 35mm, M6, floor 1/125, HP5 400 fixed
+      → exactly 2 solutions: f/16 · 1/500 and f/11 · 1/1000
+  - same scene, Ektar 100 → 4 solutions, f/16 · 1/125 through f/5.6 · 1/1000
+  - EV100 5.0, floor 1/35, HP5 400 fixed → NO solution, shortfall 0.9 stops
+  - same scene, HP5 rated 1600 → 2 solutions: f/2.8 · 1/60, f/2 · 1/125
+  - same scene, Delta 3200 → 3 solutions
+  - EV100 5.0, M10, f/2 · 1/125 → ISO 1600 (1562 exact, rounded up)
+  - EV100 5.0, M10, f/2 · 1/60 → ISO 800 (750 exact, rounded up)
+  - f/2 at EV100 15.10 on ISO 400 needs 1/35120 s → impossible on M6 AND
+    M10; the result must say so rather than degrading to a narrower aperture
+
+docs/reference/film-vectors.py generated all of the above; run it to
+regenerate them.
 ```
 
 ---
@@ -264,6 +331,12 @@ described rather than blocking.
 ```text
 Build the Map tab per docs/SPEC-map.md, plus bundle storage in
 Packages/TDMPersistence.
+
+The visual design is specified: design/Tokens.dc.html for the system,
+design/Map.dc.html and design/SpotDetail.dc.html for these two screens. Lift
+exact values. Note that the map canvas uses a darker ground (#0B0C0E) than the
+rest of the app (#101113) so markers separate against it, and that marker radius
+and opacity scale with score — which is why there is no legend.
 
 TDMPersistence:
   - SwiftData models for cached bundles and user pins. Store spots as rows, not

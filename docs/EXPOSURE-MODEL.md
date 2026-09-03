@@ -299,9 +299,14 @@ EV_S = EV100 + log2(S / 100)
 
 A setting `(N, t)` is correct when `log2(N² / t) = EV_S`.
 
-Enumerate the body's real shutter ladder × the lens's real aperture stops × available ISO (a fixed
-roll speed for film, a range for digital). Keep candidates within **±1/3 stop**, then filter by
-strategy and rank.
+Enumerate the body's real shutter ladder × the lens's real aperture stops × available ISO, keep
+candidates within the medium's tolerance (§7a), then filter by strategy and rank.
+
+**The available ISO is where the two cameras diverge, and it is not a detail.** On a film M the ISO
+is a property of the roll you loaded three days ago; the solver has two degrees of freedom and can
+legitimately find *none*. On a digital M it is a third variable the solver picks, and it almost
+always finds a solution. These are different problems and the app answers them differently — see
+§7b and §7c.
 
 ### Strategies
 
@@ -334,6 +339,99 @@ Expected candidates, ranked:
 
 Under the zone-focus strategy the app recommends **f/16 · 1/250, scale to 3 m — sharp from 1.4 m to
 infinity**, and offers the others. That is the sentence the user acts on.
+
+---
+
+## 7a. Tolerance and bias depend on the medium
+
+The ±1/3 stop above is right for a digital sensor and for slide film. It is needlessly strict for
+negative film, which is where most of this app's users are.
+
+Every gear profile carries a **medium**, and the medium sets two numbers: how far off a candidate
+may be before it is discarded (`latitude`), and where inside that band the solver aims (`bias`).
+
+| Medium | Latitude over / under | Bias | Why |
+|---|---|---|---|
+| B&W negative — HP5, Tri-X, FP4 | +3.0 / −1.0 | **+0.33** | Expose for the shadows; highlights hold on. |
+| Colour negative — Portra, Gold | +3.0 / −1.0 | **+0.66** | Rated conservatively; +1 is common practice. |
+| Slide — Velvia, Provia | +0.5 / −1.0 | **−0.33** | No highlight recovery at all. Protect them. |
+| Digital raw | +1.0 / −2.0 | **−0.33** | Clipped highlights are gone; shadows lift. |
+
+Two consequences the UI must reflect:
+
+- A candidate 1.1 stops **over** on HP5 is fine and should be offered. The same candidate on Velvia
+  is a discard. The solver's tolerance is asymmetric and film-specific, not a flat ±1/3.
+- The recommendation is centred on `EV_target = EV_scene − bias`, so on Portra the app deliberately
+  suggests two thirds of a stop more light than a meter would. That is correct, and the UI should
+  say so once rather than looking like a bug.
+
+## 7b. Analog: the solver may legitimately find nothing
+
+With ISO fixed, whole scenes fall outside what a roll can do. This is not an error state — it is the
+most useful thing the app can tell a film photographer, and it must be a first-class result rather
+than an empty list.
+
+Verified cases, 35 mm on an M6 (1 s – 1/1000), handheld floor as noted:
+
+| Scene | Roll | Result |
+|---|---|---|
+| Bright sun, EV100 15.10, floor 1/125 | HP5 400 | **2 settings only** — f/16 · 1/500, f/11 · 1/1000 |
+| Bright sun, EV100 15.10, floor 1/125 | Ektar 100 | 4 settings — f/16 · 1/125 through f/5.6 · 1/1000 |
+| Dim street, EV100 5.0, floor 1/35 | HP5 400 | **none** |
+| Dim street, EV100 5.0, floor 1/35 | HP5 pushed to 1600 | 2 — f/2.8 · 1/60, f/2 · 1/125 |
+| Dim street, EV100 5.0, floor 1/35 | Delta 3200 | 3 — f/4 · 1/60 through f/2 · 1/250 |
+
+And the case that catches people out: **f/2 for subject isolation in bright sun on ISO 400 needs
+1/35 120 s.** The M6 stops at 1/1000 and even the M10 stops at 1/4000, so it is impossible on any M
+at any ISO the roll offers. The honest answer is an ND filter or a slower film, and the app should
+say that instead of quietly offering f/5.6.
+
+When there is no solution, name the shortfall in stops and offer the levers that exist, in this
+order:
+
+1. **Push or pull the roll** (§7c) — free, decided in development, costs contrast and grain.
+2. **Change the handheld floor or the strategy** — accept 1/30 and some blur, or give up depth.
+3. **An ND filter** — when the roll is too fast, which is the bright-sun case.
+4. **A different roll** — the honest answer when the gap is more than two stops.
+
+The shortfall is computable and should be stated: at EV100 5.0 an ISO 100 roll is **2.9 stops
+short**, ISO 400 is **0.9 short**, and ISO 1600 lands on it.
+
+## 7c. Push and pull
+
+Rating a roll away from box speed is a real field decision and belongs in the app. Pushing HP5 to
+1600 is `+2` stops: the solver treats the roll as ISO 1600 and the UI carries the cost.
+
+| Rating | Effect | Cost to state |
+|---|---|---|
+| Pull 1 stop | Lower contrast, finer grain | Flat negatives; rarely worth it in the street |
+| Box speed | — | — |
+| Push 1 stop | +1 stop of light | Slightly more contrast and grain |
+| Push 2 stops | +2 stops | Noticeably coarse grain, blocked shadows |
+| Push 3 stops | +3 stops | Heavy grain, shadows gone — a look, not a fix |
+
+Push applies to the **whole roll**, not the frame, so it is set once alongside the loaded film and
+the app must show it wherever the ISO appears: `HP5 400 @ 1600 (+2)`.
+
+## 7d. Digital: ISO is a solved variable
+
+On a digital M the solver picks the ISO, subject to a user-set **ceiling** — the point past which
+the user does not want the file. Rank by lowest ISO that satisfies the strategy, not by lowest ISO
+outright: a clean frame at 1/30 that is blurred is worse than a noisy one at 1/125.
+
+Verified, dim street at EV100 5.0 on an M10:
+
+| Want | Answer |
+|---|---|
+| f/2 · 1/125 — freeze a walking subject | **ISO 1600** (1562 exact) |
+| f/2 · 1/60 | ISO 800 (750 exact) |
+
+Round the computed ISO **up** to the body's next real step, never down — down means underexposure,
+and on digital that is the direction with the least latitude for shadows but the answer people
+reach for by habit.
+
+When even the ceiling is not enough, say so with the same shortfall language as §7b rather than
+silently exceeding it.
 
 ---
 

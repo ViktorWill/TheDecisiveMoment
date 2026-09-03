@@ -1,0 +1,156 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #E8A64A; } a:hover { color: #F2BB6E; }
+    .mono { font-family: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace; font-variant-numeric: tabular-nums; }
+    .sans { font-family: 'IBM Plex Sans', -apple-system, system-ui, sans-serif; }
+    .lbl { font-family: 'IBM Plex Sans', -apple-system, system-ui, sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #62666C; }
+  </style>
+</helmet>
+
+<div style="width: 393px; height: 852px; background: #101113; color: #EDEDEA; display: flex; flex-direction: column; overflow: hidden;">
+
+  <div style="height: 59px; flex-shrink: 0;"></div>
+
+  <div style="display: flex; align-items: center; justify-content: space-between; height: 44px; padding: 0 20px; flex-shrink: 0;">
+    <div class="lbl" style="color: #EDEDEA;">Light · planning</div>
+    <div class="mono" style="font-size: 12px; color: #62666C;">21 Jun</div>
+  </div>
+
+  <div style="height: 1px; background: #2A2E34; flex-shrink: 0;"></div>
+
+  <div style="padding: 18px 20px 0; flex-shrink: 0;">
+    <div style="display: flex; align-items: baseline; justify-content: space-between;">
+      <div class="lbl">Next 12 hours</div>
+      <div class="mono" style="font-size: 11px; color: #E8A64A;">19:00</div>
+    </div>
+
+    <svg width="353" height="150" viewBox="0 0 353 150" style="margin-top: 12px;">
+      <rect x="231" y="0" width="31" height="124" fill="rgba(232,166,74,0.10)"/>
+      <rect x="262" y="0" width="12" height="124" fill="rgba(74,120,190,0.14)"/>
+      <line x1="0" y1="124" x2="353" y2="124" stroke="#2A2E34" stroke-width="1"/>
+      <line x1="0" y1="62" x2="353" y2="62" stroke="#1C2025" stroke-width="1" stroke-dasharray="2 3"/>
+
+      <polyline points="0,36 29,30 59,38 88,50 118,62 147,74 177,86 206,97 236,112 250,118 265,120 294,121 324,121 353,121"
+                fill="none" stroke="#4E5257" stroke-width="1.5"/>
+
+      <polyline points="0,30 29,24 59,20 88,18 118,17 147,17 177,20 206,26 236,58 250,86 265,104 294,108 324,108 353,108"
+                fill="none" stroke="#E8A64A" stroke-width="2"/>
+
+      <line x1="206" y1="4" x2="206" y2="124" stroke="#EDEDEA" stroke-width="1.5"/>
+      <circle cx="206" cy="26" r="4" fill="#E8A64A" stroke="#101113" stroke-width="1.5"/>
+
+      <text x="0"   y="140" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#4E5257">12</text>
+      <text x="88"  y="140" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#4E5257">15</text>
+      <text x="177" y="140" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#4E5257">18</text>
+      <text x="240" y="140" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#E8A64A">20:31</text>
+      <text x="335" y="140" font-family="'IBM Plex Mono', monospace" font-size="9" fill="#4E5257">24</text>
+    </svg>
+
+    <div style="display: flex; gap: 16px; margin-top: 2px;">
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <div style="width: 14px; height: 2px; background: #E8A64A;"></div>
+        <span class="sans" style="font-size: 10px; color: #62666C;">EV100</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <div style="width: 14px; height: 2px; background: #4E5257;"></div>
+        <span class="sans" style="font-size: 10px; color: #62666C;">Sun elevation</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <div style="width: 10px; height: 10px; background: rgba(232,166,74,0.22);"></div>
+        <span class="sans" style="font-size: 10px; color: #62666C;">Golden</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <div style="width: 10px; height: 10px; background: rgba(74,120,190,0.28);"></div>
+        <span class="sans" style="font-size: 10px; color: #62666C;">Blue</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="height: 1px; background: #2A2E34; margin-top: 18px; flex-shrink: 0;"></div>
+
+  <div style="padding: 16px 20px 0; flex-shrink: 0;">
+    <div class="lbl">Sun</div>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; margin-top: 11px; background: #2A2E34; border: 1px solid #2A2E34; border-radius: 8px; overflow: hidden;">
+      <div style="background: #191B1E; padding: 12px 14px;">
+        <div class="lbl" style="font-size: 9px;">Elevation</div>
+        <div class="mono" style="font-size: 20px; margin-top: 5px;">14.7°</div>
+      </div>
+      <div style="background: #191B1E; padding: 12px 14px;">
+        <div class="lbl" style="font-size: 9px;">Azimuth</div>
+        <div class="mono" style="font-size: 20px; margin-top: 5px;">71.5°</div>
+      </div>
+      <div style="background: #191B1E; padding: 12px 14px;">
+        <div class="lbl" style="font-size: 9px;">Golden hour ends</div>
+        <div class="mono" style="font-size: 20px; margin-top: 5px; color: #E8A64A;">19:34</div>
+      </div>
+      <div style="background: #191B1E; padding: 12px 14px;">
+        <div class="lbl" style="font-size: 9px;">Sunset</div>
+        <div class="mono" style="font-size: 20px; margin-top: 5px;">20:31</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding: 16px 20px 0; flex-shrink: 0;">
+    <div class="lbl">Which side is lit</div>
+    <div style="display: flex; align-items: center; gap: 16px; margin-top: 11px; background: #191B1E; border: 1px solid #2A2E34; border-radius: 8px; padding: 14px;">
+      <svg width="96" height="76" viewBox="0 0 96 76">
+        <rect x="10" y="8" width="24" height="60" fill="#2C3138"/>
+        <rect x="62" y="8" width="24" height="60" fill="#191B1E" stroke="#3A3F46" stroke-width="1"/>
+        <rect x="34" y="8" width="28" height="60" fill="#141518"/>
+        <path d="M34 8 L34 68" stroke="#E8A64A" stroke-width="2.5"/>
+        <path d="M92 20 L40 34" stroke="#E8A64A" stroke-width="1.4" stroke-dasharray="3 3"/>
+        <path d="M40 34 l7 -5 l-1 8 Z" fill="#E8A64A"/>
+      </svg>
+      <div style="flex-grow: 1;">
+        <div class="sans" style="font-size: 13px; line-height: 1.5; color: #C8CBCF;">
+          Street runs <span class="mono" style="color: #EDEDEA;">15°</span>, sun at <span class="mono" style="color: #EDEDEA;">71°</span> —
+          the <span style="color: #E8A64A; font-weight: 600;">west façade</span> is lit for another <span class="mono" style="color: #EDEDEA;">34 min</span>.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="flex-grow: 1;"></div>
+
+  <div style="padding: 0 20px 16px; flex-shrink: 0;">
+    <div style="display: flex; align-items: center; justify-content: space-between; height: 52px; border: 1px solid #2A2E34; background: #191B1E; border-radius: 8px; padding: 0 14px;">
+      <div style="display: flex; align-items: center; gap: 11px;">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#E8A64A" stroke-width="1.6"><rect x="2.5" y="6" width="19" height="14" rx="2.5"/><circle cx="12" cy="13" r="3.6"/><path d="M8.5 6l1.4-2.2h4.2L15.5 6"/></svg>
+        <div>
+          <div class="sans" style="font-size: 13px; font-weight: 600;">Check against the light</div>
+          <div class="sans" style="font-size: 11px; color: #62666C; margin-top: 1px;">Model reads 14.05 · measure and calibrate</div>
+        </div>
+      </div>
+      <svg width="11" height="11" viewBox="0 0 10 10" fill="none" stroke="#62666C" stroke-width="1.5"><path d="M3.5 1.5 L7 5 L3.5 8.5"/></svg>
+    </div>
+  </div>
+
+  <div style="display: flex; border-top: 1px solid #2A2E34; background: #131417; padding: 10px 0 24px; flex-shrink: 0;">
+    <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#62666C" stroke-width="1.5" stroke-linejoin="round"><path d="M9 4 L3 6.5 v13.5 L9 17.5 15 20 21 17.5 V4 L15 6.5 Z"/><path d="M9 4 v13.5"/><path d="M15 6.5 V20"/></svg>
+      <span class="sans" style="font-size: 10px; color: #62666C;">Map</span>
+    </div>
+    <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E8A64A" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.4v3M12 18.6v3M2.4 12h3M18.6 12h3M5.2 5.2l2.1 2.1M16.7 16.7l2.1 2.1M18.8 5.2l-2.1 2.1M7.3 16.7l-2.1 2.1"/></svg>
+      <span class="sans" style="font-size: 10px; color: #E8A64A; font-weight: 600;">Light</span>
+    </div>
+    <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#62666C" stroke-width="1.5" stroke-linecap="round"><circle cx="9" cy="8.5" r="3.3"/><path d="M2.8 19.5c0-3.2 2.8-5.2 6.2-5.2s6.2 2 6.2 5.2"/><path d="M16.2 5.6a3.3 3.3 0 0 1 0 5.9"/><path d="M17.6 14.8c2.2.6 3.6 2.3 3.6 4.7"/></svg>
+      <span class="sans" style="font-size: 10px; color: #62666C;">Community</span>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,229 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #E8A64A; } a:hover { color: #F2BB6E; }
+    .mono { font-family: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace; font-variant-numeric: tabular-nums; }
+    .sans { font-family: 'IBM Plex Sans', -apple-system, system-ui, sans-serif; }
+    .lbl { font-family: 'IBM Plex Sans', -apple-system, system-ui, sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #62666C; }
+    .sw { height: 56px; border-radius: 5px; border: 1px solid #2A2E34; }
+    .swname { font-family: 'IBM Plex Sans', sans-serif; font-size: 11px; font-weight: 600; color: #C8CBCF; margin-top: 8px; }
+    .swhex { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #62666C; margin-top: 2px; }
+    .swuse { font-family: 'IBM Plex Sans', sans-serif; font-size: 10px; color: #4E5257; margin-top: 4px; line-height: 1.4; }
+  </style>
+</helmet>
+
+<div style="width: 780px; height: 1020px; background: #101113; color: #EDEDEA; padding: 36px 40px; box-sizing: border-box; overflow: hidden;">
+
+  <div style="display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid #2A2E34; padding-bottom: 16px;">
+    <div>
+      <div class="sans" style="font-size: 22px; font-weight: 600;">The Decisive Moment — design system</div>
+      <div class="sans" style="font-size: 13px; color: #62666C; margin-top: 5px;">Instrument. Dark-first, hairline rules, tabular figures, one accent. The numbers are the interface.</div>
+    </div>
+    <div class="mono" style="font-size: 11px; color: #4E5257;">v1 · TDMUI</div>
+  </div>
+
+  <div style="margin-top: 26px;">
+    <div class="lbl">Ground and surface</div>
+    <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; margin-top: 12px;">
+      <div>
+        <div class="sw" style="background: #0B0C0E;"></div>
+        <div class="swname">mapGround</div><div class="swhex">#0B0C0E</div>
+        <div class="swuse">Map canvas only — darker than the app so markers separate.</div>
+      </div>
+      <div>
+        <div class="sw" style="background: #101113;"></div>
+        <div class="swname">background</div><div class="swhex">#101113</div>
+        <div class="swuse">Every screen behind content.</div>
+      </div>
+      <div>
+        <div class="sw" style="background: #191B1E;"></div>
+        <div class="swname">surface</div><div class="swhex">#191B1E</div>
+        <div class="swuse">Cards, sheets, segmented controls.</div>
+      </div>
+      <div>
+        <div class="sw" style="background: #23272D;"></div>
+        <div class="swname">surfaceRaised</div><div class="swhex">#23272D</div>
+        <div class="swuse">Chips and inset values on a surface.</div>
+      </div>
+      <div>
+        <div class="sw" style="background: #2A2E34;"></div>
+        <div class="swname">hairline</div><div class="swhex">#2A2E34</div>
+        <div class="swuse">1px rules and borders. Never thicker.</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 24px;">
+    <div class="lbl">Text and accent</div>
+    <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; margin-top: 12px;">
+      <div>
+        <div class="sw" style="background: #EDEDEA;"></div>
+        <div class="swname">textPrimary</div><div class="swhex">#EDEDEA</div>
+        <div class="swuse">Warm off-white. The recommended numbers.</div>
+      </div>
+      <div>
+        <div class="sw" style="background: #9A9DA3;"></div>
+        <div class="swname">textSecondary</div><div class="swhex">#9A9DA3</div>
+        <div class="swuse">Supporting prose, inactive segments.</div>
+      </div>
+      <div>
+        <div class="sw" style="background: #62666C;"></div>
+        <div class="swname">textTertiary</div><div class="swhex">#62666C</div>
+        <div class="swuse">Labels, conditions line, tick marks.</div>
+      </div>
+      <div>
+        <div class="sw" style="background: #E8A64A;"></div>
+        <div class="swname">accent</div><div class="swhex">#E8A64A</div>
+        <div class="swuse">Light, sun, the active state, the chosen mark. One accent only.</div>
+      </div>
+      <div>
+        <div class="sw" style="background: #C4392F;"></div>
+        <div class="swname">curated</div><div class="swhex">#C4392F</div>
+        <div class="swuse">Signal, not decoration: curated spots and nothing else.</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 34px; margin-top: 28px;">
+
+    <div>
+      <div class="lbl">Type</div>
+      <div style="border: 1px solid #2A2E34; border-radius: 8px; margin-top: 12px;">
+        <div style="display: flex; align-items: baseline; gap: 16px; padding: 13px 16px;">
+          <div class="mono" style="font-size: 34px; font-weight: 500; line-height: 1;">f/16</div>
+          <div style="flex-grow: 1;">
+            <div class="sans" style="font-size: 12px; color: #C8CBCF;">Readout — Plex Mono 34 / 500</div>
+            <div class="sans" style="font-size: 10px; color: #4E5257; margin-top: 2px;">tabular-nums always. The one thing read at arm's length.</div>
+          </div>
+        </div>
+        <div style="height: 1px; background: #2A2E34;"></div>
+        <div style="display: flex; align-items: baseline; gap: 16px; padding: 13px 16px;">
+          <div class="mono" style="font-size: 20px; line-height: 1;">14.7°</div>
+          <div style="flex-grow: 1;">
+            <div class="sans" style="font-size: 12px; color: #C8CBCF;">Stat — Plex Mono 20 / 400</div>
+            <div class="sans" style="font-size: 10px; color: #4E5257; margin-top: 2px;">Sun panel cells, spot distance.</div>
+          </div>
+        </div>
+        <div style="height: 1px; background: #2A2E34;"></div>
+        <div style="display: flex; align-items: baseline; gap: 16px; padding: 13px 16px;">
+          <div class="sans" style="font-size: 15px; line-height: 1;">Scale to 3 m</div>
+          <div style="flex-grow: 1;">
+            <div class="sans" style="font-size: 12px; color: #C8CBCF;">Body — Plex Sans 15 / 400</div>
+            <div class="sans" style="font-size: 10px; color: #4E5257; margin-top: 2px;">Sentences. Figures inside switch to mono.</div>
+          </div>
+        </div>
+        <div style="height: 1px; background: #2A2E34;"></div>
+        <div style="display: flex; align-items: baseline; gap: 16px; padding: 13px 16px;">
+          <div class="lbl" style="line-height: 1;">Zone focus</div>
+          <div style="flex-grow: 1;">
+            <div class="sans" style="font-size: 12px; color: #C8CBCF;">Label — Plex Sans 10 / 600 · 0.12em · upper</div>
+            <div class="sans" style="font-size: 10px; color: #4E5257; margin-top: 2px;">Every section header in the app.</div>
+          </div>
+        </div>
+        <div style="height: 1px; background: #2A2E34;"></div>
+        <div style="display: flex; align-items: baseline; gap: 16px; padding: 13px 16px;">
+          <div class="mono" style="font-size: 11px; color: #62666C; line-height: 1;">EV 14.05</div>
+          <div style="flex-grow: 1;">
+            <div class="sans" style="font-size: 12px; color: #C8CBCF;">Caption — Plex Mono 11 / 400</div>
+            <div class="sans" style="font-size: 10px; color: #4E5257; margin-top: 2px;">Conditions, attribution, tick labels.</div>
+          </div>
+        </div>
+      </div>
+      <div class="sans" style="font-size: 11px; color: #4E5257; margin-top: 10px; line-height: 1.5;">
+        Fallbacks: <span class="mono">SF Mono, Menlo</span> and <span class="mono">-apple-system</span>. On device, prefer <span class="mono">SF Mono</span> with <span class="mono">.monospacedDigit()</span> rather than shipping a webfont.
+      </div>
+    </div>
+
+    <div>
+      <div class="lbl">Spacing and shape</div>
+      <div style="display: flex; align-items: flex-end; gap: 8px; margin-top: 14px;">
+        <div style="width: 4px; height: 4px; background: #E8A64A;"></div>
+        <div style="width: 8px; height: 8px; background: #E8A64A;"></div>
+        <div style="width: 12px; height: 12px; background: #E8A64A;"></div>
+        <div style="width: 16px; height: 16px; background: #E8A64A;"></div>
+        <div style="width: 20px; height: 20px; background: #E8A64A;"></div>
+        <div style="width: 24px; height: 24px; background: #E8A64A;"></div>
+      </div>
+      <div class="mono" style="font-size: 10px; color: #62666C; margin-top: 7px;">4 · 8 · 12 · 16 · 20 · 24</div>
+      <div class="sans" style="font-size: 11px; color: #4E5257; margin-top: 5px; line-height: 1.5;">Screen gutter 20. Section padding 14–18 vertical.</div>
+
+      <div style="display: flex; gap: 10px; margin-top: 18px;">
+        <div style="flex: 1;">
+          <div style="height: 40px; background: #23272D; border: 1px solid #2A2E34; border-radius: 4px;"></div>
+          <div class="mono" style="font-size: 10px; color: #62666C; margin-top: 6px;">4 — chips</div>
+        </div>
+        <div style="flex: 1;">
+          <div style="height: 40px; background: #23272D; border: 1px solid #2A2E34; border-radius: 6px;"></div>
+          <div class="mono" style="font-size: 10px; color: #62666C; margin-top: 6px;">6 — controls</div>
+        </div>
+        <div style="flex: 1;">
+          <div style="height: 40px; background: #23272D; border: 1px solid #2A2E34; border-radius: 8px;"></div>
+          <div class="mono" style="font-size: 10px; color: #62666C; margin-top: 6px;">8 — cards</div>
+        </div>
+        <div style="flex: 1;">
+          <div style="height: 40px; background: #23272D; border: 1px solid #2A2E34; border-radius: 16px 16px 0 0;"></div>
+          <div class="mono" style="font-size: 10px; color: #62666C; margin-top: 6px;">16 — sheets</div>
+        </div>
+      </div>
+
+      <div class="lbl" style="margin-top: 24px;">Marker kinds</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 14px; margin-top: 13px;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+          <svg width="30" height="30" viewBox="0 0 30 30"><circle cx="15" cy="15" r="14" fill="#C4392F"/><path d="M9 21v-10 M9 11h5a2.9 2.9 0 0 1 0 5.6h-5 M19 11v10 M22.5 14.5v6.5" stroke="#101113" stroke-width="1.7" fill="none" stroke-linecap="round"/></svg>
+          <span class="sans" style="font-size: 9px; color: #62666C;">curated</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+          <svg width="30" height="30" viewBox="0 0 30 30"><circle cx="15" cy="15" r="13" fill="#4B5563"/><path d="M9 12h12 M11 12l1.7 8h6.6l1.7-8" stroke="#EDEDEA" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+          <span class="sans" style="font-size: 9px; color: #62666C;">market</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+          <svg width="30" height="30" viewBox="0 0 30 30"><circle cx="15" cy="15" r="13" fill="#4B5563"/><path d="M8 21v-4h3.5v-4H15V9h4v4h3v4h3" stroke="#EDEDEA" stroke-width="1.5" fill="none" stroke-linejoin="round"/></svg>
+          <span class="sans" style="font-size: 9px; color: #62666C;">stairs</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+          <svg width="30" height="30" viewBox="0 0 30 30"><circle cx="15" cy="15" r="13" fill="#4B5563"/><path d="M8 11h14 M10.5 11v9 M19.5 11v9" stroke="#EDEDEA" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+          <span class="sans" style="font-size: 9px; color: #62666C;">transit</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+          <svg width="30" height="30" viewBox="0 0 30 30"><circle cx="15" cy="15" r="11" fill="#3E444C"/><circle cx="15" cy="15" r="2.6" fill="#B9BCC0"/></svg>
+          <span class="sans" style="font-size: 9px; color: #62666C;">low score</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+          <svg width="30" height="30" viewBox="0 0 30 30"><circle cx="15" cy="15" r="14" fill="#191B1E" stroke="#3E444C" stroke-width="1.5"/><text x="15" y="19.5" text-anchor="middle" font-family="'IBM Plex Mono', monospace" font-size="11" font-weight="600" fill="#9A9DA3">14</text></svg>
+          <span class="sans" style="font-size: 9px; color: #62666C;">cluster</span>
+        </div>
+      </div>
+      <div class="sans" style="font-size: 11px; color: #4E5257; margin-top: 12px; line-height: 1.5;">
+        Radius and opacity scale with score — the good spots are visibly bigger, so no legend is needed.
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 26px; border-top: 1px solid #2A2E34; padding-top: 18px;">
+    <div class="lbl">Rules that are design decisions, not polish</div>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; margin-top: 12px;">
+      <div class="sans" style="font-size: 12px; line-height: 1.55; color: #9A9DA3;">
+        <span style="color: #E8A64A; font-weight: 600;">Uncertainty is part of the answer.</span> Every EV carries its ± and every recommendation is rounded to what the model supports. No 1/243.
+      </div>
+      <div class="sans" style="font-size: 12px; line-height: 1.55; color: #9A9DA3;">
+        <span style="color: #E8A64A; font-weight: 600;">Scores are prose, never numbers.</span> &ldquo;137 photos nearby · plaza · curated&rdquo; tells you something. &ldquo;0.87&rdquo; does not.
+      </div>
+      <div class="sans" style="font-size: 12px; line-height: 1.55; color: #9A9DA3;">
+        <span style="color: #E8A64A; font-weight: 600;">Only real marks.</span> The barrel scale renders the engraved marks of the selected lens. A distance you cannot physically set is worse than no advice.
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>
