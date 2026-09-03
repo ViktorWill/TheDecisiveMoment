@@ -1,4 +1,5 @@
 import Foundation
+import Synchronization
 import Testing
 import TDMCore
 import TDMLight
@@ -6,29 +7,34 @@ import TDMLight
 
 /// A provider that counts calls, so the cache can be shown to work rather than
 /// assumed to.
-private final class CountingProvider: WeatherProvider, @unchecked Sendable {
-    private let lock = NSLock()
-    private var _currentCalls = 0
-    private var _hourlyCalls = 0
-    private var _failure: WeatherProviderError?
+private final class CountingProvider: WeatherProvider, Sendable {
+    /// Call counts and the scripted failure, behind a `Mutex` so the type is
+    /// genuinely `Sendable` rather than asserted to be.
+    private struct State {
+        var currentCalls = 0
+        var hourlyCalls = 0
+        var failure: WeatherProviderError?
+    }
+
+    private let state: Mutex<State>
     private let observation: WeatherObservation
 
     init(observation: WeatherObservation, failure: WeatherProviderError? = nil) {
         self.observation = observation
-        self._failure = failure
+        self.state = Mutex(State(failure: failure))
     }
 
-    var currentCalls: Int { lock.withLock { _currentCalls } }
-    var hourlyCalls: Int { lock.withLock { _hourlyCalls } }
+    var currentCalls: Int { state.withLock { $0.currentCalls } }
+    var hourlyCalls: Int { state.withLock { $0.hourlyCalls } }
 
     func startFailing(_ failure: WeatherProviderError) {
-        lock.withLock { _failure = failure }
+        state.withLock { $0.failure = failure }
     }
 
     func current(at coordinate: Coordinate) async throws -> WeatherObservation {
-        let failure: WeatherProviderError? = lock.withLock {
-            _currentCalls += 1
-            return _failure
+        let failure: WeatherProviderError? = state.withLock {
+            $0.currentCalls += 1
+            return $0.failure
         }
         if let failure { throw failure }
         return observation
@@ -39,9 +45,9 @@ private final class CountingProvider: WeatherProvider, @unchecked Sendable {
         from start: Date,
         through end: Date
     ) async throws -> [WeatherObservation] {
-        let failure: WeatherProviderError? = lock.withLock {
-            _hourlyCalls += 1
-            return _failure
+        let failure: WeatherProviderError? = state.withLock {
+            $0.hourlyCalls += 1
+            return $0.failure
         }
         if let failure { throw failure }
         let hour: TimeInterval = 3_600
@@ -57,18 +63,19 @@ private final class CountingProvider: WeatherProvider, @unchecked Sendable {
 }
 
 /// A clock the tests move by hand; nothing here waits on wall time.
-private final class TestClock: @unchecked Sendable {
-    private let lock = NSLock()
-    private var now: Date
+private final class TestClock: Sendable {
+    private let now: Mutex<Date>
 
-    init(_ start: Date) { now = start }
+    init(_ start: Date) { now = Mutex(start) }
 
     func advance(by interval: TimeInterval) {
-        lock.withLock { now = now.addingTimeInterval(interval) }
+        now.withLock { $0 = $0.addingTimeInterval(interval) }
     }
 
+    /// `WeatherService` wants a synchronous clock, which is why this is a mutex
+    /// rather than an actor.
     var date: @Sendable () -> Date {
-        { [self] in lock.withLock { now } }
+        { [self] in now.withLock { $0 } }
     }
 }
 

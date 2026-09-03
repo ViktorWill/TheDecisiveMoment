@@ -57,7 +57,6 @@ public struct LightView: View {
                         if !viewModel.alternatives.isEmpty {
                             AlternativesRowView(
                                 alternatives: viewModel.alternatives,
-                                markMetres: viewModel.selectedMarkMetres,
                                 onPromote: viewModel.promote
                             )
                             .panel("Alternatives")

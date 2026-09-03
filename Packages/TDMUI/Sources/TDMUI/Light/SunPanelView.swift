@@ -92,20 +92,23 @@ struct SunPanelView: View {
             .map { $0 }
     }
 
-    /// Which side of a street is lit, from its bearing and the sun's azimuth.
+    /// Which façade is lit, from the street's bearing and the sun's azimuth.
     ///
-    /// Both are degrees clockwise from north. The sun lights the side of the
-    /// street it is on, so the answer is which side of the street's axis the
-    /// azimuth falls.
+    /// Both are degrees clockwise from north. The lit façade is the one on the
+    /// far side of the street from the sun, so it *faces* the sun: its normal is
+    /// the street bearing turned 90° towards the sun's side. Naming that
+    /// direction — rather than guessing "east" — is the only version of this
+    /// sentence that is true for a street of any orientation.
     private var litSide: String? {
         guard let streetBearingDegrees, sun.elevationDegrees > 0 else { return nil }
-        let difference = ((sun.azimuthDegrees - streetBearingDegrees) + 360).truncatingRemainder(dividingBy: 360)
+        let difference = ((sun.azimuthDegrees - streetBearingDegrees) + 360)
+            .truncatingRemainder(dividingBy: 360)
         if difference < 20 || difference > 340 || abs(difference - 180) < 20 {
             return "Sun along the street — both façades are edge-lit"
         }
-        return difference < 180
-            ? "Light on the east-facing façade — shoot with it behind you"
-            : "Light on the west-facing façade — shoot with it behind you"
+        let normal = difference < 180 ? streetBearingDegrees + 90 : streetBearingDegrees - 90
+        let facing = compassPoint((normal + 360).truncatingRemainder(dividingBy: 360))
+        return "Light on the \(facing)-facing façade — shoot with the sun behind you"
     }
 
     private func format(_ degrees: Double) -> String {

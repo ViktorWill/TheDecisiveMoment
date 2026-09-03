@@ -3,12 +3,11 @@ import TDMLight
 
 /// Neighbouring solutions, as cards. Tapping one promotes it to the top.
 ///
-/// Every card reports its zone at the *same* engraved mark, which is what makes
-/// the depth collapse visible as the aperture opens — the thing that teaches the
-/// tradeoff.
+/// Each card carries the zone the solver worked out for it, so opening up a stop
+/// visibly collapses the sharp range — which is the tradeoff the screen is
+/// trying to teach.
 struct AlternativesRowView: View {
     let alternatives: [ExposureRecommendation]
-    let markMetres: Double?
     let onPromote: (ExposureRecommendation) -> Void
 
     var body: some View {
