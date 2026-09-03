@@ -24,6 +24,7 @@ struct SpotDetailView: View {
     @State private var isSaved = false
     @State private var isVisited = false
     @State private var personalNote = ""
+    @State private var personalNoteDisplay: String?
     @State private var isEditingNote = false
     private let now = Date()
 
@@ -41,7 +42,7 @@ struct SpotDetailView: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
-                if let personal = marks.note(spot.id) {
+                if let personal = personalNoteDisplay {
                     section("Your note") {
                         Text(personal)
                             .font(MapTheme.noteFont)
@@ -68,11 +69,13 @@ struct SpotDetailView: View {
         .onAppear {
             isSaved = marks.isSaved(spot.id)
             isVisited = marks.isVisited(spot.id)
-            personalNote = marks.note(spot.id) ?? ""
+            personalNoteDisplay = marks.note(spot.id)
+            personalNote = personalNoteDisplay ?? ""
         }
         .sheet(isPresented: $isEditingNote) {
             NoteEditorView(text: $personalNote) {
                 marks.setNote(personalNote, for: spot.id)
+                personalNoteDisplay = marks.note(spot.id)
             }
         }
     }

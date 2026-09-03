@@ -180,7 +180,9 @@ struct MapSheetView: View {
             }
         } label: {
             pillLabel(
-                Self.floorLabel(model.filters.minimumScore) + "+",
+                model.filters.minimumScore == 0
+                    ? "Everything"
+                    : Self.floorLabel(model.filters.minimumScore) + "+",
                 systemImage: nil,
                 isOn: model.filters.minimumScore != MapFilters.defaultMinimumScore,
                 tint: MapTheme.accent
