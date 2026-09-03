@@ -22,6 +22,10 @@ public struct SpotQuery: Sendable, Hashable {
     /// Curated spots are never dropped by a filter that only wanted the good
     /// stuff — they *are* the good stuff.
     public var alwaysIncludeCurated: Bool
+    /// The *lit now* pill: the sun as it is at this instant, or `nil` for no
+    /// constraint. The caller computes it once per refresh from `TDMLight`;
+    /// see ``SunFilter``.
+    public var sunlight: SunFilter?
 
     public init(
         boundingBox: BoundingBox? = nil,
@@ -30,7 +34,8 @@ public struct SpotQuery: Sendable, Hashable {
         sources: Set<SpotSource> = [],
         minimumScore: Double = 0,
         searchText: String = "",
-        alwaysIncludeCurated: Bool = false
+        alwaysIncludeCurated: Bool = false,
+        sunlight: SunFilter? = nil
     ) {
         self.boundingBox = boundingBox
         self.kinds = kinds
@@ -39,6 +44,7 @@ public struct SpotQuery: Sendable, Hashable {
         self.minimumScore = minimumScore
         self.searchText = searchText
         self.alwaysIncludeCurated = alwaysIncludeCurated
+        self.sunlight = sunlight
     }
 }
 
@@ -62,6 +68,9 @@ public enum SpotFilter {
         if !query.openness.isEmpty && !query.openness.contains(spot.openness) { return false }
         if !query.sources.isEmpty && query.sources.isDisjoint(with: spot.sources) { return false }
         if !matchesSearch(query.searchText, spot) { return false }
+        // Shade is a fact about the place, not a measure of it: a curated spot
+        // standing in shadow is still in shadow, so this one is not waived.
+        if let sunlight = query.sunlight, !sunlight.isLit(spot) { return false }
 
         // The score floor is the one filter curation overrides: a hand-written
         // entry that scored low is still the entry someone chose to write.
