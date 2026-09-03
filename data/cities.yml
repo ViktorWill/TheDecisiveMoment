@@ -3,15 +3,45 @@
 # Districts exist so Overpass queries stay under the server timeout on large
 # cities, and so the UI can say "12 new spots in Brooklyn" rather than treating
 # a city as one undifferentiated blob.
+#
+# ---------------------------------------------------------------------------
+# TEMPORARILY SCOPED TO MANHATTAN.
+#
+# All five boroughs were declared here, and the first real run showed why that
+# does not work yet:
+#
+#   - The Commons sweep samples a 500 m lattice per district. Five boroughs is
+#     ~7,200 sample points, and the shared RequestRunner serialises every source
+#     at one request at a time. Measured rate was ~30 requests/minute, so the
+#     sweep alone took about four hours.
+#   - SpotMerger.merge is O(n^2) with no spatial index. With five boroughs of
+#     OSM features the candidate set runs to the hundreds of thousands, and the
+#     merge was still burning 99.8% of a core an hour after the sweep finished.
+#
+# Manhattan alone is ~770 samples and a far smaller candidate set, which is
+# enough to prove the pipeline end to end and produce a bundle worth testing
+# against. Restore the other four boroughs once the batching, spatial-index and
+# progress-output work lands, and let the monthly workflow do the long run on a
+# runner rather than on someone's laptop.
+#
+# To restore: put the four commented districts back and widen `bbox` to the
+# full-city extent noted beside it.
+# ---------------------------------------------------------------------------
 
 - id: us-nyc
   name: New York City
   country: US
-  center: { lat: 40.7128, lon: -74.0060 }
-  bbox:   { minLat: 40.4774, minLon: -74.2591, maxLat: 40.9176, maxLon: -73.7004 }
+  center: { lat: 40.7736, lon: -73.9712 }
+  # Manhattan's extent, not the whole city: the bbox is what the app uses to
+  # decide whether it has data for where you are standing, so claiming all five
+  # boroughs while shipping one would tell the map it covers Brooklyn when it
+  # does not.
+  # Full-city extent, for when the other districts come back:
+  #   bbox: { minLat: 40.4774, minLon: -74.2591, maxLat: 40.9176, maxLon: -73.7004 }
+  bbox:   { minLat: 40.6980, minLon: -74.0200, maxLat: 40.8800, maxLon: -73.9070 }
   districts:
     - { name: Manhattan,     bbox: { minLat: 40.6980, minLon: -74.0200, maxLat: 40.8800, maxLon: -73.9070 } }
-    - { name: Brooklyn,      bbox: { minLat: 40.5700, minLon: -74.0420, maxLat: 40.7395, maxLon: -73.8330 } }
-    - { name: Queens,        bbox: { minLat: 40.5400, minLon: -73.9630, maxLat: 40.8010, maxLon: -73.7004 } }
-    - { name: The Bronx,     bbox: { minLat: 40.7855, minLon: -73.9340, maxLat: 40.9176, maxLon: -73.7654 } }
-    - { name: Staten Island, bbox: { minLat: 40.4774, minLon: -74.2591, maxLat: 40.6514, maxLon: -74.0345 } }
+    # - { name: Brooklyn,      bbox: { minLat: 40.5700, minLon: -74.0420, maxLat: 40.7395, maxLon: -73.8330 } }
+    # - { name: Queens,        bbox: { minLat: 40.5400, minLon: -73.9630, maxLat: 40.8010, maxLon: -73.7004 } }
+    # - { name: The Bronx,     bbox: { minLat: 40.7855, minLon: -73.9340, maxLat: 40.9176, maxLon: -73.7654 } }
+    # - { name: Staten Island, bbox: { minLat: 40.4774, minLon: -74.2591, maxLat: 40.6514, maxLon: -74.0345 } }
