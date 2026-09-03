@@ -90,6 +90,10 @@ swift test --package-path Packages/TDMSpots
 This is how you check M1 and M2. No simulator, no signing, no account — and it is the fastest way to
 find out whether the agents got the exposure maths right.
 
+There is no `Package.swift` at the repo root — each package under `Packages/` and `Tools/` has its
+own, which is why every command above names `--package-path` explicitly rather than assuming you are
+sitting inside the package's own directory.
+
 ---
 
 ## The Apple Developer account
@@ -219,7 +223,7 @@ no connection, and the only honest test of that is a phone in airplane mode on a
 | **M0** scaffold | Xcode, XcodeGen | `xcodegen generate`, app launches to three empty tabs |
 | **M1** light maths | nothing else | `swift test --package-path Packages/TDMLight` — the four vectors in EXPOSURE-MODEL.md pass |
 | **M2** models, bundles | nothing else | `swift test` on TDMCore and TDMSpots |
-| **M3** spotforge | network | `swift run spotforge build --city us-nyc --out bundles/v1`, then open the JSON and look at it |
+| **M3** spotforge | network | `swift run --package-path Tools/spotforge spotforge build --city us-nyc --out bundles/v1`, then open the JSON and look at it |
 | **M4** Light screen | an Apple ID and an iPhone; a paid account only if you want WeatherKit | take it outside and compare against your meter |
 | **M5** Map screen | same | airplane mode, relaunch, spots still there |
 | **M6** TestFlight | App Store Connect record | someone else installs it |
