@@ -1,4 +1,5 @@
 import SwiftUI
+import TDMCore
 import TDMLight
 
 /// Neighbouring solutions, as cards. Tapping one promotes it to the top.
@@ -8,6 +9,9 @@ import TDMLight
 /// trying to teach.
 struct AlternativesRowView: View {
     let alternatives: [ExposureRecommendation]
+    /// The loaded roll, when there is one: on film the ISO is context, on a
+    /// sensor it is the price of the card, §7c–7d.
+    let roll: LoadedRoll?
     let onPromote: (ExposureRecommendation) -> Void
 
     var body: some View {
@@ -17,7 +21,7 @@ struct AlternativesRowView: View {
                     Button {
                         onPromote(alternative)
                     } label: {
-                        AlternativeCard(recommendation: alternative)
+                        AlternativeCard(recommendation: alternative, roll: roll)
                     }
                     .buttonStyle(.plain)
                 }
@@ -30,6 +34,7 @@ struct AlternativesRowView: View {
 
 private struct AlternativeCard: View {
     let recommendation: ExposureRecommendation
+    let roll: LoadedRoll?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -43,9 +48,11 @@ private struct AlternativeCard: View {
                     .foregroundStyle(LightTheme.secondaryText)
             }
 
-            Text(ExposurePhrasing.iso(recommendation.iso))
-                .font(.system(size: 12, weight: .regular, design: .rounded))
-                .foregroundStyle(LightTheme.secondaryText.opacity(0.8))
+            Text(roll.map(ExposurePhrasing.loadedRoll) ?? ExposurePhrasing.iso(recommendation.iso))
+                .font(.system(size: 12, weight: .regular, design: .rounded).monospacedDigit())
+                // Dimmed on film — the roll is not a choice this card offers —
+                // and in the accent on a sensor, where it is what changes.
+                .foregroundStyle(roll == nil ? LightTheme.accent : LightTheme.secondaryText.opacity(0.6))
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)

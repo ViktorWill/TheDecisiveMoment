@@ -30,7 +30,9 @@ public struct LightView: View {
                         AnswerHeaderView(
                             advice: advice,
                             recommendation: viewModel.recommendation,
-                            solverError: advice.solverError,
+                            roll: viewModel.loadedRoll,
+                            handheldFloorSeconds: viewModel.handheldFloorSeconds,
+                            onApplyLever: viewModel.apply,
                             cloudCover: viewModel.activeWeatherReading?.cloudCover,
                             isStaleWeather: viewModel.activeWeatherReading?.freshness == .stale,
                             isScrubbing: viewModel.isScrubbing,
@@ -57,9 +59,24 @@ public struct LightView: View {
                         if !viewModel.alternatives.isEmpty {
                             AlternativesRowView(
                                 alternatives: viewModel.alternatives,
+                                roll: viewModel.loadedRoll,
                                 onPromote: viewModel.promote
                             )
-                            .panel("Alternatives")
+                            .panel(viewModel.isAnalog ? "Alternatives" : "Trade depth for a cleaner file")
+                        }
+
+                        if let ceiling = viewModel.isoCeiling, viewModel.isoLadder.count > 1 {
+                            ISOCeilingView(
+                                ladder: viewModel.isoLadder,
+                                ceiling: ceiling,
+                                onChange: viewModel.setISOCeiling
+                            )
+                            .panel()
+                        }
+
+                        if let roll = viewModel.loadedRoll {
+                            FilmBlockView(roll: roll, onChange: viewModel.setLoadedRoll)
+                                .panel("Film")
                         }
 
                         SunPanelView(

@@ -11,10 +11,11 @@ import TDMCore
 /// that when a closer one exists is noise rather than choice.
 ///
 /// So the tolerance is the tighter of the two, taken separately on each side of
-/// the aim. On negative film the ladder binds and the band is the familiar ±1/3
-/// around the meter; on slide and on digital the medium's over-side binds and
-/// the band closes up on the highlights. The bias moves the aim, not the width:
-/// see ``ExposureSolver`` for where `EV_target = EV_scene − bias` is applied.
+/// the aim. On negative film and on digital the ladder binds and the band works
+/// out at the familiar ±1/3 around the meter; on slide the medium's over side
+/// binds first and the band closes up on the highlights. The bias moves the aim,
+/// not the width: see ``ExposureSolver`` for where `EV_target = EV_scene − bias`
+/// is applied.
 public struct ExposureTolerance: Sendable, Equatable {
     /// The medium's own limits, before the ladder is taken into account.
     public let latitude: Latitude

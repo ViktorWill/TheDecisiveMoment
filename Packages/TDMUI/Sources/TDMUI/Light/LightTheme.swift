@@ -24,6 +24,12 @@ public enum LightTheme {
     public static let blue = Color(red: 0.36, green: 0.52, blue: 0.86)
     /// Something the app is unsure about, or is warning against.
     public static let caution = Color(red: 0.92, green: 0.45, blue: 0.36)
+    /// Hairline rules between sections, `design/Tokens.dc.html` #2A2E34.
+    public static let hairline = Color(red: 0.165, green: 0.180, blue: 0.204)
+    /// Captions and tick labels, #62666C.
+    public static let tertiaryText = Color(red: 0.384, green: 0.400, blue: 0.424)
+    /// The second accent, #C4392F. Used where the answer is "not with this".
+    public static let curated = Color(red: 0.769, green: 0.224, blue: 0.184)
 
     /// The one line the screen exists for. Monospaced digits so the numbers do
     /// not dance as the model updates.
@@ -33,6 +39,14 @@ public enum LightTheme {
     public static let conditionsFont = Font.system(size: 15, weight: .regular, design: .rounded)
         .monospacedDigit()
     public static let labelFont = Font.system(size: 12, weight: .semibold, design: .rounded)
+    /// A section label: 10 / 600, 0.12 em, upper case in `design/Tokens.dc.html`.
+    public static let sectionLabelFont = Font.system(size: 10, weight: .semibold, design: .rounded)
+    /// The big readout figures of `design/Digital.dc.html`: 34 / 500, tabular.
+    public static let readoutFont = Font.system(size: 34, weight: .medium, design: .rounded)
+        .monospacedDigit()
+    /// A caption under a readout, 11 / 400, tabular.
+    public static let captionFont = Font.system(size: 11, weight: .regular, design: .rounded)
+        .monospacedDigit()
 }
 
 /// A panel: rounded, raised a little off the page, dark.
