@@ -59,7 +59,14 @@ public struct BuildCommand: Sendable {
         public var hasWarnings: Bool { reports.contains { !$0.warnings.isEmpty } }
     }
 
-    public func run(now: Date = Date(), log: @Sendable (String) -> Void = { print($0) }) async throws -> Outcome {
+    /// Unconditional progress, one line per notable event — issue #17: a
+    /// multi-hour run and a genuine hang look identical without this. Writes
+    /// to stderr by default so `--report`'s summary on stdout stays clean.
+    public func run(
+        now: Date = Date(),
+        log: @Sendable (String) -> Void = { print($0) },
+        progress: @escaping @Sendable (String) -> Void = { FileHandle.standardError.write(Data(($0 + "\n").utf8)) }
+    ) async throws -> Outcome {
         let catalog = try CityCatalog.load(contentsOf: request.citiesPath)
         let cities: [CityDefinition] = switch request.scope {
         case .allCities: catalog.cities
@@ -100,17 +107,22 @@ public struct BuildCommand: Sendable {
                 ],
                 commons: commons,
                 runner: runner,
-                options: PipelineOptions(fetchesPhotos: request.fetchesPhotos)
+                options: PipelineOptions(fetchesPhotos: request.fetchesPhotos),
+                progress: progress
             )
 
+            progress("\(city.id): starting")
             let output = await pipeline.run(
                 bundleVersion: writer.nextBundleVersion(for: city.id),
                 generatedAt: now
             )
+            progress("write: \(output.city.spots.count) spots")
+            let writeStarted = Date()
             let written = try writer.write(output.city)
             var report = output.report
             report.jsonBytes = written.jsonBytes
             report.compressedBytes = written.compressedBytes
+            report.recordStage("write", since: writeStarted)
             entries.append(written.entry)
             outcome.reports.append(report)
 

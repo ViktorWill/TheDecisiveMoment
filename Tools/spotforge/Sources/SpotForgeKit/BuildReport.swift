@@ -14,6 +14,14 @@ public struct BuildReport: Sendable {
         public var failure: String?
     }
 
+    /// How long one named stage of the pipeline took. An array, not a
+    /// dictionary keyed by name, so the report reads in the order the stages
+    /// actually ran rather than however a dictionary happens to iterate.
+    public struct StageDuration: Sendable {
+        public var stage: String
+        public var seconds: Double
+    }
+
     public var cityId: String
     public var sources: [SourceTally] = []
     public var candidateCount = 0
@@ -27,9 +35,18 @@ public struct BuildReport: Sendable {
     public var compressedBytes = 0
     public var requestCount = 0
     public var cacheHitCount = 0
+    public var stageDurations: [StageDuration] = []
 
     public init(cityId: String) {
         self.cityId = cityId
+    }
+
+    /// Records how long a stage took, measured from `since` to now. Called
+    /// once per stage so the final report can say where the time actually
+    /// went — issue #17: an hour-long merge and a genuine hang looked
+    /// identical without this.
+    public mutating func recordStage(_ stage: String, since started: Date) {
+        stageDurations.append(StageDuration(stage: stage, seconds: Date().timeIntervalSince(started)))
     }
 
     /// Merges performed: how many candidates the dedupe pass collapsed.
@@ -73,6 +90,10 @@ public struct BuildReport: Sendable {
         }
         lines.append("  written    \(spotCount) spots, \(compressedBytes) B gz (\(jsonBytes) B json)")
         lines.append("  network    \(requestCount) requests, \(cacheHitCount) cache hits")
+        if !stageDurations.isEmpty {
+            let stages = stageDurations.map { "\($0.stage) \(String(format: "%.1f", $0.seconds))s" }.joined(separator: ", ")
+            lines.append("  elapsed    \(stages)")
+        }
         for warning in warnings {
             lines.append("  ! \(warning)")
         }

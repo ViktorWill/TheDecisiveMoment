@@ -1,4 +1,5 @@
 import Foundation
+import Synchronization
 import Testing
 import TDMCore
 import TDMSpots
@@ -280,5 +281,77 @@ struct RequestRunnerTests {
 
         let posted = HTTPRequest(url: base.url, method: "POST", body: Data("query".utf8))
         #expect(posted.cacheKey != base.cacheKey)
+    }
+
+    /// A transport that reports how many calls were ever simultaneously
+    /// in-flight, so a namespace policy's `concurrency` can be checked
+    /// directly rather than inferred from timing.
+    private final class ActivityCounter: Sendable {
+        private let state = Mutex((active: 0, maxActive: 0))
+
+        var maxActive: Int { state.withLock(\.maxActive) }
+
+        func enter() { state.withLock { $0.active += 1; $0.maxActive = max($0.maxActive, $0.active) } }
+        func leave() { state.withLock { $0.active -= 1 } }
+    }
+
+    private struct ConcurrencyProbeTransport: Transport {
+        let counter: ActivityCounter
+
+        func send(_ request: HTTPRequest) async throws -> Data {
+            counter.enter()
+            try await Task.sleep(nanoseconds: 20_000_000)
+            counter.leave()
+            return Data(#"{"ok":true}"#.utf8)
+        }
+    }
+
+    @Test("A namespace's default policy stays serial, exactly like the old global queue")
+    func defaultPolicyIsSerial() async throws {
+        let counter = ActivityCounter()
+        let runner = RequestRunner(
+            transport: ConcurrencyProbeTransport(counter: counter),
+            cacheDirectory: nil,
+            minimumInterval: 0
+        )
+
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            for index in 0..<6 {
+                group.addTask {
+                    _ = try await runner.send(
+                        HTTPRequest(url: URL(string: "https://example.org/\(index)")!),
+                        cacheNamespace: "overpass"
+                    )
+                }
+            }
+            try await group.waitForAll()
+        }
+
+        #expect(counter.maxActive == 1)
+    }
+
+    @Test("A namespace's policy can overlap requests up to its concurrency limit")
+    func namespacePolicyAllowsConcurrency() async throws {
+        let counter = ActivityCounter()
+        let runner = RequestRunner(
+            transport: ConcurrencyProbeTransport(counter: counter),
+            cacheDirectory: nil,
+            minimumInterval: 0,
+            namespacePolicies: ["commons": RequestRunner.HostPolicy(concurrency: 3, minimumInterval: 0)]
+        )
+
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            for index in 0..<9 {
+                group.addTask {
+                    _ = try await runner.send(
+                        HTTPRequest(url: URL(string: "https://example.org/\(index)")!),
+                        cacheNamespace: "commons"
+                    )
+                }
+            }
+            try await group.waitForAll()
+        }
+
+        #expect(counter.maxActive == 3)
     }
 }
