@@ -1,0 +1,92 @@
+name: Bundles
+
+# Monthly and on manual dispatch only. A build hits Overpass, WDQS and Commons
+# thousands of times; running that on every push would be an abuse of three
+# volunteer-run services, and `docs/SPOTFORGE.md` §9 forbids it.
+on:
+  schedule:
+    # 04:00 UTC on the first of the month.
+    - cron: "0 4 1 * *"
+  workflow_dispatch:
+    inputs:
+      city:
+        description: "City id to rebuild, or blank for every declared city."
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bundles
+  cancel-in-progress: false
+
+jobs:
+  regenerate:
+    name: Regenerate bundles
+    runs-on: ubuntu-latest
+    container: swift:6.0
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build bundles
+        # --strict turns a source that answered with nothing into a failed run:
+        # a bundle silently missing every Wikidata landmark is worse than no
+        # new bundle at all.
+        run: |
+          if [ -n "${{ github.event.inputs.city }}" ]; then
+            scope="--city ${{ github.event.inputs.city }}"
+          else
+            scope="--all"
+          fi
+          swift run --package-path Tools/spotforge spotforge build \
+            $scope --out bundles/v1 --report --strict
+
+      - name: Validate bundles
+        run: swift run --package-path Tools/spotforge spotforge validate bundles/v1
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bundles
+          path: bundles/v1
+          retention-days: 7
+
+  propose:
+    name: Open a pull request
+    needs: regenerate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: bundles
+          path: bundles/v1
+
+      - name: Open a pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # A data refresh lands as a reviewable diff, so a spot that vanished
+        # because someone retagged it in OSM is noticed here rather than in the
+        # field.
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- bundles/v1; then
+            echo "No bundle changes."
+            exit 0
+          fi
+          branch="bundles/$(date -u +%Y-%m-%d)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add bundles/v1
+          git commit -m "Regenerate spot bundles"
+          git push --force-with-lease origin "$branch"
+          gh pr create \
+            --title "Regenerate spot bundles" \
+            --body "Monthly regeneration by \`.github/workflows/bundles.yml\`. Review the diff: a spot that disappeared usually means an upstream retag, not a bug." \
+            --base "${{ github.ref_name }}" \
+            --head "$branch" || echo "A pull request for $branch already exists."

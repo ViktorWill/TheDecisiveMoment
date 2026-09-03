@@ -43,9 +43,10 @@ order-independent; scoring reproduces the worked example in [SPOTFORGE.md](SPOTF
 
 The pipeline, and a real generated bundle for NYC committed to the repo.
 
-**Precondition:** smoke-test the Overpass, Wikidata and Commons endpoints in a browser first — the
-query URLs in [SPOTFORGE.md](SPOTFORGE.md) were written from documentation and have not been
-executed. Fix the document before writing code if anything has moved.
+**Endpoints:** the queries in [SPOTFORGE.md](SPOTFORGE.md) have been checked against the current API
+references and corrected where they disagreed, but not yet run against the live services — see the
+note at the top of that document. The first unsandboxed `spotforge build` is the real smoke test;
+fix the document in the same change if a response shape has moved.
 
 **Done when:** `swift run spotforge build --city us-nyc` produces a bundle that `TDMSpots` decodes
 and that contains a plausible number of spots per source; pipeline tests run against fixtures with

@@ -26,6 +26,17 @@ jobs:
       - name: swift test
         run: swift test --package-path Packages/${{ matrix.package }}
 
+  spotforge:
+    name: swift test (spotforge)
+    runs-on: ubuntu-latest
+    container: swift:6.0
+    steps:
+      - uses: actions/checkout@v4
+      # The pipeline's tests read recorded fixtures, so this job needs no
+      # network access to any of the four data sources.
+      - name: swift test
+        run: swift test --package-path Tools/spotforge
+
   app:
     name: xcodegen + build app
     runs-on: macos-15
