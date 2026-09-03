@@ -5,17 +5,31 @@ import Foundation
 /// Film is a real constraint rather than a nicety: the roll speed is fixed for
 /// the whole roll, so the solver has one degree of freedom fewer.
 public enum ISOMode: Sendable, Hashable, Codable {
-    /// A loaded roll of film.
-    case fixed(Int)
-    /// A sensor's usable range, in full stops from `minimum`.
-    case range(minimum: Int, maximum: Int)
+    /// A loaded roll of film, at the speed it is rated at.
+    case fixed(LoadedRoll)
+    /// A sensor's usable range, in full stops from `minimum`, with the ceiling
+    /// past which the user does not want the file, §7d.
+    case range(minimum: Int, maximum: Int, ceiling: Int)
 
-    /// The values a solver may choose from, ascending.
+    /// A roll whose stock the photographer has not named — just a speed.
+    public static func fixed(_ speed: Int) -> ISOMode {
+        .fixed(LoadedRoll(speed: speed))
+    }
+
+    /// A sensor whose ceiling is its maximum: the user has not said where the
+    /// file stops being worth having, so nothing is ruled out.
+    public static func range(minimum: Int, maximum: Int) -> ISOMode {
+        .range(minimum: minimum, maximum: maximum, ceiling: maximum)
+    }
+
+    /// The values a solver may choose from, ascending. The ceiling does not
+    /// appear here — it is a preference, not a limit of the body — so
+    /// ``solvableValues`` is what the solver enumerates.
     public var availableValues: [Int] {
         switch self {
-        case let .fixed(value):
-            return value > 0 ? [value] : []
-        case let .range(minimum, maximum):
+        case let .fixed(roll):
+            return roll.ratedAt > 0 ? [roll.ratedAt] : []
+        case let .range(minimum, maximum, _):
             guard minimum > 0, maximum >= minimum else { return [] }
             var values: [Int] = []
             var value = Double(minimum)
@@ -27,6 +41,35 @@ public enum ISOMode: Sendable, Hashable, Codable {
         }
     }
 
+    /// What the solver may actually choose: the ladder, capped at the ceiling.
+    ///
+    /// Empty when the ceiling sits below the body's slowest ISO, which the UI
+    /// reports as a shortfall rather than quietly exceeding.
+    public var solvableValues: [Int] {
+        guard let ceiling else { return availableValues }
+        return availableValues.filter { $0 <= ceiling }
+    }
+
+    /// The user's ISO ceiling, `nil` on film.
+    public var ceiling: Int? {
+        if case let .range(_, _, ceiling) = self { return ceiling }
+        return nil
+    }
+
+    /// What the light lands on, which sets the tolerance and the bias, §7a.
+    public var medium: Medium {
+        switch self {
+        case let .fixed(roll): roll.medium
+        case .range: .digital
+        }
+    }
+
+    /// The loaded roll, `nil` on a digital body.
+    public var loadedRoll: LoadedRoll? {
+        if case let .fixed(roll) = self { return roll }
+        return nil
+    }
+
     public var isFilm: Bool {
         if case .fixed = self { return true }
         return false
@@ -34,9 +77,12 @@ public enum ISOMode: Sendable, Hashable, Codable {
 
     // Hand-written so the persisted shape is `{"mode":"fixed","value":400}`
     // rather than the synthesised `{"fixed":{"_0":400}}`, which is unreadable in
-    // a diff and awkward to write by hand in a seed profile.
+    // a diff and awkward to write by hand in a seed profile. The film stock, the
+    // rating and the ISO ceiling are written only where they say something the
+    // speed does not, so an unnamed roll and an uncapped sensor keep the shape
+    // they had before the roll was modelled.
     private enum CodingKeys: String, CodingKey {
-        case mode, value, minimum, maximum
+        case mode, value, minimum, maximum, ceiling, stock, ratedAt
     }
 
     private enum Mode: String, Codable {
@@ -47,11 +93,18 @@ public enum ISOMode: Sendable, Hashable, Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         switch try container.decode(Mode.self, forKey: .mode) {
         case .fixed:
-            self = .fixed(try container.decode(Int.self, forKey: .value))
+            let boxSpeed = try container.decode(Int.self, forKey: .value)
+            let stock = try container.decodeIfPresent(String.self, forKey: .stock)
+                .flatMap(FilmStock.stock(id:)) ?? .unnamed(boxSpeed: boxSpeed)
+            let ratedAt = try container.decodeIfPresent(Int.self, forKey: .ratedAt) ?? boxSpeed
+            self = .fixed(LoadedRoll(stock: stock, ratedAt: ratedAt))
         case .range:
+            let minimum = try container.decode(Int.self, forKey: .minimum)
+            let maximum = try container.decode(Int.self, forKey: .maximum)
             self = .range(
-                minimum: try container.decode(Int.self, forKey: .minimum),
-                maximum: try container.decode(Int.self, forKey: .maximum)
+                minimum: minimum,
+                maximum: maximum,
+                ceiling: try container.decodeIfPresent(Int.self, forKey: .ceiling) ?? maximum
             )
         }
     }
@@ -59,13 +112,22 @@ public enum ISOMode: Sendable, Hashable, Codable {
     public func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         switch self {
-        case let .fixed(value):
+        case let .fixed(roll):
             try container.encode(Mode.fixed, forKey: .mode)
-            try container.encode(value, forKey: .value)
-        case let .range(minimum, maximum):
+            try container.encode(roll.stock.boxSpeed, forKey: .value)
+            if roll.stock.isNamed {
+                try container.encode(roll.stock.id, forKey: .stock)
+            }
+            if roll.ratedAt != roll.stock.boxSpeed {
+                try container.encode(roll.ratedAt, forKey: .ratedAt)
+            }
+        case let .range(minimum, maximum, ceiling):
             try container.encode(Mode.range, forKey: .mode)
             try container.encode(minimum, forKey: .minimum)
             try container.encode(maximum, forKey: .maximum)
+            if ceiling != maximum {
+                try container.encode(ceiling, forKey: .ceiling)
+            }
         }
     }
 }
@@ -102,7 +164,9 @@ public struct CameraBody: Sendable, Hashable, Codable, Identifiable {
     /// Whether the body meters at all — an M4 does not, and the app is the
     /// meter in that case.
     public var hasMeter: Bool
-    /// What is loaded, when film is loaded. Set once when the roll goes in.
+    /// What is loaded, when the roll is not one of the catalogue stocks. The
+    /// roll itself — stock, medium and rating — travels in ``iso``; this is the
+    /// free-text name for a roll the catalogue has not got.
     public var loadedFilm: String?
 
     public init(
@@ -125,6 +189,24 @@ public struct CameraBody: Sendable, Hashable, Codable, Identifiable {
 
     /// Ascending, which is the order every ladder-walking algorithm assumes.
     public var sortedShutterSpeeds: [TimeInterval] { shutterSpeeds.sorted() }
+
+    /// What the light lands on: the loaded roll's medium, or digital raw.
+    public var medium: Medium { iso.medium }
+
+    /// The loaded roll, `nil` on a digital body.
+    public var loadedRoll: LoadedRoll? { iso.loadedRoll }
+
+    /// How the ISO reads on screen: `HP5 400 @ 1600 (+2)` on film, `ISO 1600`
+    /// on a sensor. On film the rating is shown wherever the ISO appears, §7c.
+    public var isoDescription: String {
+        if let roll = loadedRoll {
+            return roll.stock.isNamed ? roll.displayName : "ISO \(roll.ratedAt)"
+        }
+        return "ISO \(iso.availableValues.first ?? 100)"
+    }
+
+    /// The fastest speed on the dial, seconds. `1/1000` on an M6.
+    public var fastestShutter: TimeInterval? { shutterSpeeds.filter { $0 > 0 }.min() }
 
     public var isValid: Bool {
         !name.isEmpty

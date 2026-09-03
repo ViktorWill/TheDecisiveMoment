@@ -21,8 +21,9 @@ extension CameraBodyProfile {
 extension ISOAvailability {
     public init(_ mode: ISOMode) {
         switch mode {
-        case let .fixed(value): self = .fixed(value)
-        case let .range(minimum, maximum): self = .range(minimum: minimum, maximum: maximum)
+        case let .fixed(roll): self = .fixed(roll)
+        case let .range(minimum, maximum, ceiling):
+            self = .range(minimum: minimum, maximum: maximum, ceiling: ceiling)
         }
     }
 }
