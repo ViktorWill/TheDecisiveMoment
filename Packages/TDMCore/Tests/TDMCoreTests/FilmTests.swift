@@ -90,6 +90,8 @@ struct FilmTests {
         #expect(sensor.medium == .digital)
         #expect(sensor.solvableValues == [100, 200, 400, 800, 1_600])
         #expect(sensor.ceiling == 1_600)
+        #expect(sensor.sensorRange?.minimum == 100)
+        #expect(sensor.sensorRange?.maximum == 6_400)
         #expect(sensor.loadedRoll == nil)
     }
 
@@ -107,5 +109,28 @@ struct FilmTests {
         #expect(decoded.loadedRoll == roll)
         #expect(decoded.medium == .colourNegative)
         #expect(decoded.isoDescription == "Portra 400 @ 800 (+1)")
+    }
+
+    /// A body written before the M8 joined the roster has no format, no
+    /// electronic ladder and no aperture-priority flag. It must still decode,
+    /// as a full-frame body with none of those things.
+    @Test("A body stored before the roster grew still decodes")
+    func decodesWithoutTheNewFields() throws {
+        let json = """
+        {
+            "id": "6D9C2E0E-3A2A-4C25-9E5A-3E2F1A0B7C11",
+            "name": "M6",
+            "shutterSpeeds": [0.008, 0.004],
+            "iso": { "mode": "fixed", "value": 400, "stock": "hp5" },
+            "circleOfConfusionMillimetres": 0.03,
+            "hasMeter": true
+        }
+        """
+        let decoded = try JSONDecoder().decode(CameraBody.self, from: Data(json.utf8))
+        #expect(decoded.format == .fullFrame)
+        #expect(decoded.electronicShutterSpeeds.isEmpty)
+        #expect(decoded.mechanicalFallbackShutterSpeeds.isEmpty)
+        #expect(!decoded.supportsAperturePriority)
+        #expect(abs(decoded.circleOfConfusionMillimetres - 0.030) < 1e-9)
     }
 }

@@ -31,7 +31,10 @@ struct GearTests {
 
         #expect(!iso.isFilm)
         #expect(iso.availableValues == [100, 200, 400, 800, 1600, 3200, 6400])
+        #expect(iso.sensorRange?.minimum == 100)
+        #expect(iso.sensorRange?.maximum == 6400)
         #expect(ISOMode.range(minimum: 400, maximum: 100).availableValues.isEmpty)
+        #expect(ISOMode.fixed(400).sensorRange == nil)
     }
 
     /// The persisted shape has to be legible in a diff and writable by hand in

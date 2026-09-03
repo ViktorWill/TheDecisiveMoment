@@ -349,6 +349,16 @@ always finds a solution. These are different problems and the app answers them d
 | **Freeze motion** | shutter ≤ 1/250 walking, ≤ 1/500 running or close | then widest depth available |
 | **Subject isolation** | — | widest aperture; shutter only fast enough to be safe |
 | **Available light** | — | lowest ISO that keeps the shutter at the handheld floor |
+| **Aperture priority** | body must offer it (M7 only); shutter ≤ handheld floor | maximise depth, as zone focus |
+
+**Aperture priority is not a fifth ranking rule, it is a different answer.** The body's AE shutter is
+stepless, so the ±⅓ stop quantisation of a doubling dial does not apply: the exposure lands exactly
+on `EV_target`, and what the photographer sets is an aperture and a compensation dial reading. The
+compensation is the medium's bias snapped to the dial's ⅓-stop clicks and clamped to ±2 EV, so a
+black-and-white negative reads `f/8 · A · +1/3 EV`. A shortfall in AE comes from the *ends* of the
+AE range rather than from the gaps between marks — the shutter is clamped there and the error stops
+being zero. With a flat battery the strategy disappears with the electronics: an M7 then has 1/60
+and 1/125 and nothing else.
 
 Handheld floor: `1/focal` as standard, `1/(2·focal)` optionally for a rangefinder (no mirror slap,
 so it is genuinely holdable slower — offer it, default it off).

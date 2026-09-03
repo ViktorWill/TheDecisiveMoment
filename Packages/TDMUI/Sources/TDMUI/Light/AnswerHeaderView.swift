@@ -28,6 +28,11 @@ struct AnswerHeaderView: View {
     let isStaleWeather: Bool
     let isScrubbing: Bool
     let scrubbedTo: Date
+    /// The body the answer is for, so a sensor that has run out of ISO says so
+    /// in its own terms rather than a roll's.
+    let cameraBody: CameraBodyProfile?
+    /// `frames like a 47 mm` on a cropped body. Framing only.
+    let framingNote: String?
 
     var body: some View {
         VStack(spacing: 10) {
@@ -46,6 +51,13 @@ struct AnswerHeaderView: View {
                     roll: roll,
                     sigmaEV: advice.estimate.sigmaEV
                 )
+
+                if recommendation.isAutomatic {
+                    Text(ExposurePhrasing.automaticShutter(recommendation.shutter))
+                        .font(LightTheme.captionFont)
+                        .foregroundStyle(LightTheme.tertiaryText)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
 
                 if let roll, let footnote = SettingReadoutView.rollFootnote(roll) {
                     Text(footnote)
@@ -66,10 +78,17 @@ struct AnswerHeaderView: View {
                     .foregroundStyle(LightTheme.secondaryText)
                     .multilineTextAlignment(.center)
                 }
+
+                if let framingNote {
+                    Text(framingNote)
+                        .font(LightTheme.captionFont)
+                        .foregroundStyle(LightTheme.tertiaryText)
+                }
             } else if let shortfall = advice.shortfall {
                 NoSolutionView(
                     shortfall: shortfall,
                     roll: roll,
+                    cameraBody: cameraBody,
                     handheldFloorSeconds: handheldFloorSeconds,
                     sigmaEV: advice.estimate.sigmaEV,
                     onApply: onApplyLever
@@ -173,6 +192,12 @@ private struct UnsolvableView: View {
             "Nothing satisfies isolate subject here. Try another strategy."
         case .strategyConstraintsUnsatisfiable(.availableLight):
             "Nothing satisfies available light here. Try another strategy."
+        case .strategyConstraintsUnsatisfiable(.aperturePriority):
+            "Nothing satisfies aperture priority here. Try another strategy."
+        case .strategyUnavailableOnBody(.aperturePriority):
+            "This body will not pick the shutter itself. Only an M7 has A."
+        case .strategyUnavailableOnBody:
+            "This body cannot be set that way. Try another strategy."
         case .emptyGearProfile:
             "This gear profile has no shutter speeds, apertures or ISO to work with."
         case nil:

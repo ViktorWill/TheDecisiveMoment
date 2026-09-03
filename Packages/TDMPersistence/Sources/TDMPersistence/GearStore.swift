@@ -197,8 +197,14 @@ public final class GearStore {
         if let existing = try context.fetch(descriptor).first {
             existing.name = body.name
             existing.shutterSpeeds = body.sortedShutterSpeeds
+            existing.electronicShutterSpeeds = body.electronicShutterSpeeds.sorted()
+            existing.mechanicalFallbackShutterSpeeds = body.mechanicalFallbackShutterSpeeds.sorted()
+            existing.formatName = body.format.name
+            existing.formatWidthMillimetres = body.format.widthMillimetres
+            existing.formatHeightMillimetres = body.format.heightMillimetres
             existing.circleOfConfusionMillimetres = body.circleOfConfusionMillimetres
             existing.hasMeter = body.hasMeter
+            existing.supportsAperturePriority = body.supportsAperturePriority
             existing.loadedFilm = body.loadedFilm
             existing.apply(body.iso)
             return existing

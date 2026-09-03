@@ -27,10 +27,28 @@ struct InputControlsView: View {
             }
 
             labelled("Strategy") {
-                ChipPicker(values: StoredExposureStrategy.allCases, title: Self.name(of:), selection: Binding(
+                // Only the strategies this body can be set to: aperture
+                // priority is an M7 and nothing else.
+                ChipPicker(values: viewModel.availableStrategies, title: Self.name(of:), selection: Binding(
                         get: { viewModel.profile?.strategy ?? .zoneFocus },
                         set: { viewModel.setStrategy($0) }
                     ))
+            }
+
+            if viewModel.profile?.strategy == .aperturePriority, let lens = viewModel.profile?.lens {
+                labelled("Aperture") {
+                    // The photographer sets the ring; the body picks the
+                    // shutter. `nil` lets the solver choose the ring too.
+                    let rings: [Double?] = [nil] + lens.sortedApertures.map { $0 as Double? }
+                    ChipPicker(
+                        values: rings,
+                        title: { ring in ring.map(ExposurePhrasing.aperture) ?? "Any" },
+                        selection: Binding(
+                            get: { viewModel.chosenAperture },
+                            set: { viewModel.chosenAperture = $0 }
+                        )
+                    )
+                }
             }
 
             if viewModel.profile?.strategy == .freezeMotion {
@@ -101,6 +119,7 @@ struct InputControlsView: View {
         case .freezeMotion: "Freeze motion"
         case .subjectIsolation: "Isolate"
         case .availableLight: "Available light"
+        case .aperturePriority: "A mode"
         }
     }
 
@@ -120,6 +139,9 @@ struct InputControlsView: View {
 }
 
 /// Which body and lens the advice is for.
+///
+/// The body row opens the roster, `design/Bodies.dc.html`: the lens stays put,
+/// because the point of the picker is to compare bodies.
 struct GearPickerView: View {
     let profiles: [GearProfile]
     let selected: GearProfile?

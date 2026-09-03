@@ -100,6 +100,30 @@ struct ExposurePhrasingTests {
         #expect(ExposurePhrasing.sharpLimit(.infinity) == "∞")
     }
 
+    @Test("Aperture priority reads as an aperture and a dial setting")
+    func phrasesAperturePriority() {
+        #expect(
+            ExposurePhrasing.aperturePrioritySetting(aperture: 8, compensationEV: 1.0 / 3, iso: 400)
+                == "f/8 · A · +1/3 EV · ISO 400"
+        )
+        #expect(ExposurePhrasing.compensation(0) == "0 EV")
+        #expect(ExposurePhrasing.compensation(-2.0 / 3) == "−2/3 EV")
+        #expect(ExposurePhrasing.compensation(1) == "+1 EV")
+        #expect(ExposurePhrasing.compensation(4.0 / 3) == "+1 1/3 EV")
+        #expect(ExposurePhrasing.automaticShutter(1.0 / 180) == "the body will pick about 1/180")
+    }
+
+    @Test("The crop is framing information, and says so in those terms")
+    func phrasesTheCrop() {
+        #expect(ExposurePhrasing.framing(focalLengthMillimetres: 35, format: .apsH) == "frames like a 47 mm")
+        #expect(ExposurePhrasing.framing(focalLengthMillimetres: 35, format: .fullFrame) == nil)
+        #expect(
+            ExposurePhrasing.croppedFormatSentence(format: .apsH, focalLengthMillimetres: 35)
+                == "27 × 18 mm, so CoC is 0.0225 and every hyperfocal runs 1.33× longer. Your 35 mm frames like a 47 mm."
+        )
+        #expect(ExposurePhrasing.zoneComparison(near: 1.895, far: 7.163) == "1.90 – 7.16 m")
+    }
+
     @Test("The headline hedges when the estimate cannot support the digits")
     func hedgesTheHeadline() {
         #expect(

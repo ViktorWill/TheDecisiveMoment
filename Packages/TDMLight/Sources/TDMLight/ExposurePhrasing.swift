@@ -155,9 +155,104 @@ extension ExposurePhrasing {
     /// makes, so it is phrased as one, §7d.
     public static func raiseISO(to value: Int) -> String { "Raise ISO to \(value)" }
 
+    /// `f/8 · A · +1/3 EV · ISO 400` — the aperture-priority answer.
+    ///
+    /// No shutter speed: the body picks one steplessly, so quoting a speed
+    /// would be quoting a number the photographer cannot set. What they do set
+    /// is the ring and the compensation dial.
+    public static func aperturePrioritySetting(
+        aperture f: Double,
+        compensationEV: Double,
+        iso value: Int
+    ) -> String {
+        "\(aperture(f)) · A · \(compensation(compensationEV)) · \(iso(value))"
+    }
+
+    /// A compensation dial setting as it is engraved: `0 EV`, `+1/3 EV`,
+    /// `−2/3 EV`. The dial clicks in thirds, so thirds is how it is written.
+    public static func compensation(_ stops: Double) -> String {
+        let clicks = Int((stops / (1.0 / 3)).rounded())
+        guard clicks != 0 else { return "0 EV" }
+        let sign = clicks < 0 ? "−" : "+"
+        let magnitude = abs(clicks)
+        let whole = magnitude / 3
+        let thirds = magnitude % 3
+        let figure = switch (whole, thirds) {
+        case (0, _): "\(thirds)/3"
+        case (_, 0): "\(whole)"
+        default: "\(whole) \(thirds)/3"
+        }
+        return "\(sign)\(figure) EV"
+    }
+
+    /// `the body will pick about 1/180` — a prediction, not an instruction.
+    public static func automaticShutter(_ seconds: TimeInterval) -> String {
+        "the body will pick about \(shutter(seconds))"
+    }
+
+    /// `frames like a 47 mm`, and nothing at all on a full-frame body.
+    ///
+    /// Framing only: this figure must never reach the exposure or depth-of-field
+    /// maths, both of which are about the lens that is actually fitted.
+    public static func framing(focalLengthMillimetres f: Double, format: SensorFormat) -> String? {
+        guard !format.isFullFrame else { return nil }
+        let equivalent = format.equivalentFocalLengthMillimetres(f).rounded()
+        return "frames like a \(number(equivalent, decimals: 0)) mm"
+    }
+
+    /// `1.90 – 7.16 m`. Two decimals, unlike ``zoneSentence``: this is a
+    /// comparison between two bodies, and rounding hides the whole difference.
+    public static func zoneComparison(near: Double, far: Double) -> String {
+        guard far.isFinite else { return "\(number(near, decimals: 2)) m – ∞" }
+        return "\(number(near, decimals: 2)) – \(number(far, decimals: 2)) m"
+    }
+
+    /// `27 × 18 mm, so CoC is 0.0225 and every hyperfocal runs 1.33× longer.
+    /// Your 35 mm frames like a 47 mm.`
+    ///
+    /// Nothing here touches the exposure maths: the crop changes the frame and
+    /// the circle of confusion, and that is all it changes.
+    public static func croppedFormatSentence(
+        format: SensorFormat,
+        focalLengthMillimetres f: Double
+    ) -> String {
+        let size = "\(number(format.widthMillimetres, decimals: 0)) × \(number(format.heightMillimetres, decimals: 0)) mm"
+        let coc = number(format.circleOfConfusionMillimetres, decimals: 4)
+        let crop = number(format.cropFactor, decimals: 2)
+        var sentence = "\(size), so CoC is \(coc) and every hyperfocal runs \(crop)× longer."
+        if let framing = framing(focalLengthMillimetres: f, format: format) {
+            sentence += " Your \(number(f, decimals: 0)) mm \(framing)."
+        }
+        return sentence
+    }
+
     /// `HP5 400 is 0.9 stops short here.`
     public static func shortfallSentence(_ shortfall: ExposureShortfall, roll: LoadedRoll?) -> String {
         let subject = roll.map(loadedRoll) ?? "This gear"
+        switch shortfall.sense {
+        case .needsMoreLight:
+            return "\(subject) is \(stops(shortfall.stops)) short here."
+        case .needsLessLight:
+            return "\(subject) is \(stops(shortfall.stops)) over here — there is too much light for it."
+        }
+    }
+
+    /// The same sentence with the body in hand, so a sensor that has run out
+    /// says so in its own terms.
+    ///
+    /// A digital body is not exempt from this screen: an M8 stops at ISO 2500
+    /// and runs out of sensor on a dim side street exactly as a roll runs out
+    /// of film, §7d — with a different set of levers, since pushing is not one
+    /// of them.
+    public static func shortfallSentence(
+        _ shortfall: ExposureShortfall,
+        body: CameraBodyProfile
+    ) -> String {
+        if let roll = body.loadedRoll {
+            return shortfallSentence(shortfall, roll: roll)
+        }
+        let ceiling = body.iso.solvableValues.last
+        let subject = ceiling.map { "\(body.name) at ISO \($0)" } ?? body.name
         switch shortfall.sense {
         case .needsMoreLight:
             return "\(subject) is \(stops(shortfall.stops)) short here."

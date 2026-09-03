@@ -8,12 +8,22 @@ import TDMCore
 
 extension CameraBodyProfile {
     /// The solver's view of a stored body.
-    public init(_ body: CameraBody) {
+    ///
+    /// The shutter mode is the caller's, not the body's: an M11 has 1/16000
+    /// only once the photographer has switched the electronic shutter on, and
+    /// the app must not solve against a ladder the camera is not set to.
+    public init(_ body: CameraBody, shutterMode: ShutterMode = .standard) {
         self.init(
             name: body.name,
             shutterSpeeds: body.sortedShutterSpeeds,
+            electronicShutterSpeeds: body.electronicShutterSpeeds.sorted(),
+            mechanicalFallbackShutterSpeeds: body.mechanicalFallbackShutterSpeeds.sorted(),
+            shutterMode: shutterMode,
             iso: ISOAvailability(body.iso),
-            circleOfConfusionMillimetres: body.circleOfConfusionMillimetres
+            format: body.format,
+            circleOfConfusionMillimetres: body.circleOfConfusionMillimetres,
+            hasMeter: body.hasMeter,
+            supportsAperturePriority: body.supportsAperturePriority
         )
     }
 }
@@ -51,6 +61,7 @@ extension ExposureStrategy {
         case .freezeMotion: self = .freezeMotion(motion)
         case .subjectIsolation: self = .subjectIsolation
         case .availableLight: self = .availableLight
+        case .aperturePriority: self = .aperturePriority
         }
     }
 
@@ -61,6 +72,7 @@ extension ExposureStrategy {
         case .freezeMotion: .freezeMotion
         case .subjectIsolation: .subjectIsolation
         case .availableLight: .availableLight
+        case .aperturePriority: .aperturePriority
         }
     }
 }

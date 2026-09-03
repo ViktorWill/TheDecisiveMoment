@@ -58,6 +58,11 @@ them are exactly what this feature exists to know.
 | **M10** | digital | 36 × 24 | 0.030 | 8 s – 1/4000 | 100 – 50 000 | TTL |
 | **M11** | digital | 36 × 24 | 0.030 | 60 s – 1/4000 mech · 1/16 000 electronic | 64 – 50 000 | TTL |
 
+The slow end is seeded as the **engraved** mark rather than the manual's figure: an M7's AE runs
+steplessly to 32 s and an M8's to 32 s, but 30 s is the mark on the dial, and a mark is what the app
+can tell someone to set. The dial in `GearCatalogue` is engraved throughout for the same reason —
+15, 30 and 60 s, not 16, 32 and 64.
+
 These are seed values. Verify each against the manual before shipping — the app's answers are
 exactly as good as this table, and a wrong top shutter speed produces confident nonsense.
 

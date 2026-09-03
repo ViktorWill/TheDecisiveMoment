@@ -5,10 +5,61 @@ import TDMCore
 
 @Suite("Seed gear catalogue")
 struct GearCatalogueTests {
-    @Test("The three seeded bodies are the ones the spec names")
-    func seedsThreeBodies() {
-        #expect(GearCatalogue.bodies.map(\.name) == ["Leica M6", "Leica M10", "Leica M11"])
+    @Test("The roster is every M from the M6 forward, film then digital")
+    func seedsTheWholeRoster() {
+        #expect(
+            GearCatalogue.bodies.map(\.name) == [
+                "Leica M6", "Leica M7", "Leica MP", "Leica M-A",
+                "Leica M8", "Leica M9", "Leica M10", "Leica M11"
+            ]
+        )
         #expect(GearCatalogue.bodies.allSatisfy { $0.isValid })
+    }
+
+    @Test("The M-A has no meter, and it is the only body in the roster without one")
+    func onlyTheMAHasNoMeter() {
+        #expect(!GearCatalogue.mA().hasMeter)
+        #expect(GearCatalogue.bodies.filter { !$0.hasMeter }.map(\.name) == ["Leica M-A"])
+    }
+
+    @Test("The M7 has aperture priority, and nothing else does")
+    func onlyTheM7HasAperturePriority() {
+        #expect(GearCatalogue.bodies.filter(\.supportsAperturePriority).map(\.name) == ["Leica M7"])
+        // A flat battery leaves 1/60 and 1/125 mechanically, and nothing else.
+        #expect(GearCatalogue.m7().mechanicalFallbackShutterSpeeds.sorted() == [1.0 / 125, 1.0 / 60])
+        // A fully mechanical M loses nothing at all.
+        #expect(GearCatalogue.mp().mechanicalFallbackShutterSpeeds == GearCatalogue.mp().sortedShutterSpeeds)
+        // A digital body with a flat battery is a paperweight.
+        #expect(GearCatalogue.m10.mechanicalFallbackShutterSpeeds.isEmpty)
+    }
+
+    @Test("The M8 is APS-H, and it is the only body in the roster that is not full frame")
+    func onlyTheM8IsCropped() {
+        #expect(GearCatalogue.m8.format == .apsH)
+        #expect(abs(GearCatalogue.m8.circleOfConfusionMillimetres - 0.0225) < 0.0001)
+        #expect(GearCatalogue.bodies.filter { !$0.format.isFullFrame }.map(\.name) == ["Leica M8"])
+        #expect(GearCatalogue.bodies.filter(\.format.isFullFrame).allSatisfy {
+            abs($0.circleOfConfusionMillimetres - 0.030) < 0.0001
+        })
+        // 30 s – 1/8000, the fastest mechanical shutter of the roster.
+        #expect(GearCatalogue.m8.sortedShutterSpeeds.first == 1.0 / 8_000)
+        #expect(GearCatalogue.m8.iso.availableValues.first == 160)
+    }
+
+    @Test("Only the M11 has an electronic shutter, and it reaches 1/16000")
+    func onlyTheM11HasAnElectronicShutter() {
+        #expect(GearCatalogue.bodies.filter(\.hasElectronicShutter).map(\.name) == ["Leica M11"])
+        // Kept off the dial: it is a mode the photographer has to switch into.
+        #expect(GearCatalogue.m11.fastestShutter == 1.0 / 4_000)
+        #expect(GearCatalogue.m11.fastestShutterInAnyMode == 1.0 / 16_000)
+    }
+
+    @Test("The M8 and M9 top out two generations behind the M10")
+    func theOlderSensorsRunOut() {
+        #expect(GearCatalogue.m8.iso.availableValues.last ?? 0 < 2_500)
+        #expect(GearCatalogue.m9.iso.availableValues.last ?? 0 < 2_500)
+        #expect(GearCatalogue.m9.iso.availableValues.first == 80)
+        #expect(GearCatalogue.m10.iso.availableValues.last ?? 0 > 6_400)
     }
 
     @Test("The M6 is a film body: one fixed roll speed, 1 s to 1/1000")

@@ -35,7 +35,7 @@ public enum GearCatalogue {
     /// says so, and a doubling series would invent settings the camera has not
     /// got.
     public static let shutterDial: [TimeInterval] = [
-        1.0 / 4_000, 1.0 / 2_000, 1.0 / 1_000, 1.0 / 500, 1.0 / 250, 1.0 / 125,
+        1.0 / 8_000, 1.0 / 4_000, 1.0 / 2_000, 1.0 / 1_000, 1.0 / 500, 1.0 / 250, 1.0 / 125,
         1.0 / 60, 1.0 / 30, 1.0 / 15, 1.0 / 8, 1.0 / 4, 1.0 / 2,
         1, 2, 4, 8, 15, 30, 60
     ]
@@ -48,23 +48,98 @@ public enum GearCatalogue {
     }
 
     // MARK: - Bodies
+    //
+    // Every M from the M6 forward, `docs/SPEC-light.md` "The body roster". The
+    // ladders and ISO ranges are the manuals' figures: the advisor is exactly as
+    // accurate as this table, and a wrong top shutter speed produces confident
+    // nonsense.
+    //
+    // The slow end is the engraved 15, 30 and 60 s rather than 16, 32 and 64 —
+    // an M7's AE runs steplessly to 32 s, but 30 s is the mark on the dial and
+    // marks are what the app tells the user to set.
+
+    /// The default roll: HP5 400 at box speed.
+    public static var defaultRoll: LoadedRoll {
+        LoadedRoll(stock: FilmStock.stock(id: "hp5") ?? FilmStock.unnamed(boxSpeed: 400))
+    }
 
     /// Leica M6: mechanical, 1 s–1/1000, and whatever roll is loaded.
     ///
     /// The roll carries its own medium, so the solver's latitude and bias follow
     /// the film rather than a constant, `docs/EXPOSURE-MODEL.md` §7a.
     public static func m6(
-        roll: LoadedRoll = LoadedRoll(stock: FilmStock.stock(id: "hp5") ?? FilmStock.unnamed(boxSpeed: 400)),
+        roll: LoadedRoll = defaultRoll,
+        loadedFilm: String? = nil
+    ) -> CameraBody {
+        mechanicalFilmBody(name: "Leica M6", roll: roll, hasMeter: true, loadedFilm: loadedFilm)
+    }
+
+    /// Leica MP: the M6 again, built to last longer. Same dial, same meter.
+    public static func mp(
+        roll: LoadedRoll = defaultRoll,
+        loadedFilm: String? = nil
+    ) -> CameraBody {
+        mechanicalFilmBody(name: "Leica MP", roll: roll, hasMeter: true, loadedFilm: loadedFilm)
+    }
+
+    /// Leica M-A: 1 s–1/1000, and **no meter at all**.
+    ///
+    /// This is the body the app matters most to. With no meter in the camera the
+    /// phone's live meter stops being a cross-check and becomes the only meter
+    /// in the bag, `docs/EXPOSURE-MODEL.md` §8 — so the UI promotes it, and no
+    /// copy anywhere may offer to compare against a reading that does not exist.
+    public static func mA(
+        roll: LoadedRoll = defaultRoll,
+        loadedFilm: String? = nil
+    ) -> CameraBody {
+        mechanicalFilmBody(name: "Leica M-A", roll: roll, hasMeter: false, loadedFilm: loadedFilm)
+    }
+
+    /// Leica M7: 30 s–1/1000 under aperture priority, TTL meter, and 1/60 and
+    /// 1/125 mechanically once the battery is flat.
+    ///
+    /// The AE shutter is stepless, which is why aperture priority is a strategy
+    /// rather than a badge: the ±1/3 stop quantisation of a doubling dial does
+    /// not apply, and the answer is an aperture and a compensation setting.
+    public static func m7(
+        roll: LoadedRoll = defaultRoll,
         loadedFilm: String? = nil
     ) -> CameraBody {
         CameraBody(
-            name: "Leica M6",
-            shutterSpeeds: shutterLadder(slowestSeconds: 1, fastestFraction: 1_000),
+            name: "Leica M7",
+            shutterSpeeds: shutterLadder(slowestSeconds: 30, fastestFraction: 1_000),
+            // Worth knowing before the battery dies rather than after.
+            mechanicalFallbackShutterSpeeds: [1.0 / 125, 1.0 / 60],
             iso: .fixed(roll),
             hasMeter: true,
+            supportsAperturePriority: true,
             loadedFilm: loadedFilm
         )
     }
+
+    /// Leica M8: 30 s–1/8000, ISO 160–2500, and **not full frame**.
+    ///
+    /// APS-H at 27 × 18 mm, so the circle of confusion is 0.0225 mm and every
+    /// hyperfocal runs 1.333× longer than the same lens on any other M in this
+    /// list. A 35 mm frames like a 47 mm, which is worth showing and changes no
+    /// exposure maths.
+    public static let m8 = CameraBody(
+        name: "Leica M8",
+        shutterSpeeds: shutterLadder(slowestSeconds: 30, fastestFraction: 8_000),
+        // Two generations behind the M10: a dim side street at EV 3.0 wants ISO
+        // 6250 and this sensor has not got it, §7d.
+        iso: .range(minimum: 160, maximum: 2_500),
+        format: .apsH,
+        hasMeter: true
+    )
+
+    /// Leica M9: 30 s–1/4000, ISO 80 (pull) – 2500, full frame.
+    public static let m9 = CameraBody(
+        name: "Leica M9",
+        shutterSpeeds: shutterLadder(slowestSeconds: 30, fastestFraction: 4_000),
+        iso: .range(minimum: 80, maximum: 2_500),
+        hasMeter: true
+    )
 
     /// Leica M10: 8 s–1/4000, ISO 100–50000.
     public static let m10 = CameraBody(
@@ -76,20 +151,43 @@ public enum GearCatalogue {
         hasMeter: true
     )
 
-    /// Leica M11: 60 s–1/4000 on the mechanical shutter, ISO 64–50000.
+    /// Leica M11: 60 s–1/4000 on the mechanical shutter, 1/8000 and 1/16000 on
+    /// the electronic one, ISO 64–50000.
     ///
-    /// The electronic shutter goes to 1/16000, but it is not what this camera is
-    /// used with on the street and the app would be recommending a mode the
-    /// photographer has to remember to switch into.
+    /// The electronic speeds are kept apart from the dial because they are a
+    /// mode the photographer has to switch into — but they are carried, because
+    /// f/2 in bright sun is reachable on this ladder and on no other M,
+    /// including this body's own mechanical shutter, §7b.
     public static let m11 = CameraBody(
         name: "Leica M11",
         shutterSpeeds: shutterLadder(slowestSeconds: 60, fastestFraction: 4_000),
+        electronicShutterSpeeds: [1.0 / 16_000, 1.0 / 8_000],
         iso: .range(minimum: 64, maximum: 50_000, ceiling: 6_400),
         hasMeter: true
     )
 
-    /// The bodies seeded on first launch.
-    public static var bodies: [CameraBody] { [m6(), m10, m11] }
+    /// A fully mechanical film M: the whole dial keeps working with no battery,
+    /// because there is nothing in the shutter for a battery to do.
+    private static func mechanicalFilmBody(
+        name: String,
+        roll: LoadedRoll,
+        hasMeter: Bool,
+        loadedFilm: String?
+    ) -> CameraBody {
+        let ladder = shutterLadder(slowestSeconds: 1, fastestFraction: 1_000)
+        return CameraBody(
+            name: name,
+            shutterSpeeds: ladder,
+            mechanicalFallbackShutterSpeeds: ladder,
+            iso: .fixed(roll),
+            hasMeter: hasMeter,
+            loadedFilm: loadedFilm
+        )
+    }
+
+    /// The bodies seeded on first launch: film first, then digital, oldest to
+    /// newest inside each — the order of `design/Bodies.dc.html`.
+    public static var bodies: [CameraBody] { [m6(), m7(), mp(), mA(), m8, m9, m10, m11] }
 
     // MARK: - Lenses
 

@@ -1,4 +1,5 @@
 import Foundation
+import TDMCore
 
 /// The sharp range around a focus distance, `docs/EXPOSURE-MODEL.md` §6.
 ///
@@ -37,9 +38,13 @@ public struct FocusRange: Sendable, Equatable {
 
 /// Depth-of-field and zone-focus maths, `docs/EXPOSURE-MODEL.md` §6.
 public enum DepthOfField {
-    /// Full-frame circle of confusion, millimetres. 0.025 mm is the stricter
-    /// standard; both are offered per gear profile.
-    public static let fullFrameCircleOfConfusionMillimetres = 0.030
+    /// Full-frame circle of confusion, millimetres.
+    ///
+    /// The figure itself lives on ``SensorFormat`` now that one body in the
+    /// roster is not full frame: this is an alias for the 36 × 24 case, and no
+    /// call site may hardcode either it or the M8's 0.0225 mm.
+    public static let fullFrameCircleOfConfusionMillimetres =
+        SensorFormat.fullFrameCircleOfConfusionMillimetres
 
     /// Hyperfocal distance in metres.
     ///

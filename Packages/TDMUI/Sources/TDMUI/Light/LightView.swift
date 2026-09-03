@@ -12,6 +12,7 @@ import TDMWeather
 public struct LightView: View {
     @State private var viewModel: LightViewModel
     @State private var showsMeter = false
+    @State private var showsBodyPicker = false
 
     public init(
         weatherService: WeatherService,
@@ -36,8 +37,23 @@ public struct LightView: View {
                             cloudCover: viewModel.activeWeatherReading?.cloudCover,
                             isStaleWeather: viewModel.activeWeatherReading?.freshness == .stale,
                             isScrubbing: viewModel.isScrubbing,
-                            scrubbedTo: viewModel.date
+                            scrubbedTo: viewModel.date,
+                            cameraBody: viewModel.cameraBodyProfile,
+                            framingNote: viewModel.framingNote
                         )
+
+                        // A body with no meter promotes the phone's: it is not
+                        // a cross-check on an M-A, it is the reading, §8.
+                        if viewModel.isLiveMeterPrimary {
+                            LiveMeterView(
+                                modelledEV100: advice.estimate.ev100,
+                                sigmaEV: advice.estimate.sigmaEV,
+                                storedOffsetEV: viewModel.activeCalibrationEV,
+                                isOnlyMeter: true,
+                                onStore: { viewModel.storeCalibration(measuredEV100: $0) },
+                                onClear: viewModel.clearCalibration
+                            )
+                        }
 
                         if let lens = viewModel.lensProfile,
                            let cameraBody = viewModel.cameraBodyProfile,
@@ -105,7 +121,23 @@ public struct LightView: View {
                             onSelect: viewModel.select
                         )
 
-                        if showsMeter {
+                        Button {
+                            showsBodyPicker = true
+                        } label: {
+                            HStack {
+                                Text(viewModel.body?.name ?? "Pick a body")
+                                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                    .foregroundStyle(LightTheme.primaryText)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(LightTheme.tertiaryText)
+                            }
+                            .panel("Body")
+                        }
+                        .buttonStyle(.plain)
+
+                        if showsMeter, !viewModel.isLiveMeterPrimary {
                             LiveMeterView(
                                 modelledEV100: advice.estimate.ev100,
                                 sigmaEV: advice.estimate.sigmaEV,
@@ -134,6 +166,9 @@ public struct LightView: View {
             .navigationTitle("Light")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                // A body that meters keeps the phone meter behind a toggle. One
+                // that does not has it open already, so there is nothing here
+                // to toggle.
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         showsMeter.toggle()
@@ -141,8 +176,24 @@ public struct LightView: View {
                         Label("Live meter", systemImage: showsMeter ? "gauge.with.dots.needle.bottom.50percent" : "gauge")
                     }
                     .accessibilityLabel(showsMeter ? "Hide the live meter" : "Show the live meter")
+                    .disabled(viewModel.isLiveMeterPrimary)
+                    .opacity(viewModel.isLiveMeterPrimary ? 0 : 1)
                 }
             }
+        }
+        .sheet(isPresented: $showsBodyPicker) {
+            NavigationStack {
+                BodyPickerView(
+                    bodies: viewModel.bodies,
+                    selected: viewModel.body,
+                    lens: viewModel.profile?.lens,
+                    onSelect: { body in
+                        viewModel.setBody(body)
+                        showsBodyPicker = false
+                    }
+                )
+            }
+            .preferredColorScheme(.dark)
         }
         .preferredColorScheme(.dark)
         .task { await viewModel.start() }

@@ -86,6 +86,10 @@ struct LiveMeterView: View {
     let modelledEV100: Double
     let sigmaEV: Double
     let storedOffsetEV: Double
+    /// Whether this is the only meter in the bag. On an M-A there is nothing in
+    /// the camera to check the model against, so the phone stops being a
+    /// cross-check and becomes the meter, `docs/EXPOSURE-MODEL.md` §8.
+    var isOnlyMeter: Bool = false
     let onStore: (Double) -> Bool
     let onClear: () -> Void
 
@@ -94,6 +98,12 @@ struct LiveMeterView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            if isOnlyMeter {
+                Text("This body has no meter. This is the reading.")
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundStyle(LightTheme.accent)
+            }
+
             Text("No photo is taken. The camera is opened only to read its meter.")
                 .font(.system(size: 12, design: .rounded))
                 .foregroundStyle(LightTheme.secondaryText)
@@ -105,7 +115,7 @@ struct LiveMeterView: View {
             } else if let measured = meter.measuredEV100 {
                 HStack(spacing: 20) {
                     reading("Model", ExposurePhrasing.exposureValue(modelledEV100, sigmaEV: sigmaEV))
-                    reading("Measured", "EV " + String(format: "%.1f", measured))
+                    reading(isOnlyMeter ? "Metered" : "Measured", "EV " + String(format: "%.1f", measured))
                 }
 
                 Text("Difference \(ExposurePhrasing.signedStops(measured - modelledEV100))")
@@ -136,7 +146,7 @@ struct LiveMeterView: View {
                     .foregroundStyle(LightTheme.secondaryText)
             }
         }
-        .panel("Live meter")
+        .panel(isOnlyMeter ? "Meter" : "Live meter")
         .task {
             meter.start()
         }
