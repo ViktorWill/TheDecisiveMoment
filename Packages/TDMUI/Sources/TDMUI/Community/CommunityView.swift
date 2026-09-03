@@ -37,6 +37,7 @@ public struct CommunityView: View {
                     Button { startNewSession() } label: {
                         Label("Plan a walk", systemImage: "plus")
                     }
+                    .disabled(model.profile == nil)
                     .accessibilityLabel("Plan a walk")
                 }
             }
@@ -108,6 +109,7 @@ public struct CommunityView: View {
             } actions: {
                 Button("Plan a walk") { startNewSession() }
                     .buttonStyle(.borderedProminent)
+                    .disabled(model.profile == nil)
             }
             .listRowBackground(Color.clear)
         }
@@ -165,6 +167,8 @@ public struct CommunityView: View {
         }
     }
 
+    /// A draft needs the profile the backend hands back on load, so the button
+    /// is disabled until that has arrived rather than swallowing the tap.
     private func startNewSession() {
         editing = model.newSession()
     }
