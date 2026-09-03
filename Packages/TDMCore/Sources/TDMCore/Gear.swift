@@ -142,6 +142,20 @@ public enum ExposureStrategy: String, Sendable, Codable, CaseIterable, Hashable 
     case freezeMotion
     case subjectIsolation
     case availableLight
+    /// Pick the aperture and let the body choose a stepless shutter. Only an M7
+    /// has this, so it is offered only where ``CameraBody/supportsAperturePriority``
+    /// says so — see ``availableStrategies(on:)``.
+    case aperturePriority
+
+    /// Whether a body can actually be set this way.
+    public func isAvailable(on body: CameraBody) -> Bool {
+        self != .aperturePriority || body.supportsAperturePriority
+    }
+
+    /// The strategies worth offering for a body, in the order the UI shows them.
+    public static func availableStrategies(on body: CameraBody) -> [ExposureStrategy] {
+        allCases.filter { $0.isAvailable(on: body) }
+    }
 }
 
 /// `ExposureStrategy` under a name that does not collide.
@@ -158,12 +172,32 @@ public struct CameraBody: Sendable, Hashable, Codable, Identifiable {
     public var name: String
     /// The real shutter ladder, in seconds: `1/250`, never `250`.
     public var shutterSpeeds: [TimeInterval]
+    /// Speeds the body has only with its electronic shutter switched on — the
+    /// M11's 1/8000 and 1/16000, and nothing on any other M.
+    ///
+    /// Kept apart from ``shutterSpeeds`` because it is a mode the photographer
+    /// has to remember to select, and because f/2 in bright sun is reachable on
+    /// exactly this ladder and on no other, `docs/EXPOSURE-MODEL.md` §7b.
+    public var electronicShutterSpeeds: [TimeInterval]
+    /// What is left when the battery is flat. An M7 keeps 1/60 and 1/125
+    /// mechanically; a fully mechanical M keeps everything, and an M with a dead
+    /// battery and no mechanical speeds keeps nothing — both are the empty case
+    /// here, since there is no fallback to switch to.
+    public var mechanicalFallbackShutterSpeeds: [TimeInterval]
     public var iso: ISOMode
-    /// Circle of confusion for the format, millimetres. 0.030 mm full frame.
+    /// The frame this body draws, which is where its circle of confusion comes
+    /// from. Full frame everywhere except the M8.
+    public var format: SensorFormat
+    /// Circle of confusion for the format, millimetres. Defaults to the
+    /// format's own figure — 0.030 mm full frame, 0.0225 mm APS-H — and is
+    /// settable for the stricter 0.025 mm standard.
     public var circleOfConfusionMillimetres: Double
-    /// Whether the body meters at all — an M4 does not, and the app is the
+    /// Whether the body meters at all — an M-A does not, and the app is the
     /// meter in that case.
     public var hasMeter: Bool
+    /// Whether the body will pick the shutter itself. True on an M7 and nothing
+    /// else in the roster.
+    public var supportsAperturePriority: Bool
     /// What is loaded, when the roll is not one of the catalogue stocks. The
     /// roll itself — stock, medium and rating — travels in ``iso``; this is the
     /// free-text name for a roll the catalogue has not got.
@@ -173,22 +207,94 @@ public struct CameraBody: Sendable, Hashable, Codable, Identifiable {
         id: UUID = UUID(),
         name: String,
         shutterSpeeds: [TimeInterval],
+        electronicShutterSpeeds: [TimeInterval] = [],
+        mechanicalFallbackShutterSpeeds: [TimeInterval] = [],
         iso: ISOMode,
-        circleOfConfusionMillimetres: Double = 0.030,
+        format: SensorFormat = .fullFrame,
+        circleOfConfusionMillimetres: Double? = nil,
         hasMeter: Bool = true,
+        supportsAperturePriority: Bool = false,
         loadedFilm: String? = nil
     ) {
         self.id = id
         self.name = name
         self.shutterSpeeds = shutterSpeeds
+        self.electronicShutterSpeeds = electronicShutterSpeeds
+        self.mechanicalFallbackShutterSpeeds = mechanicalFallbackShutterSpeeds
         self.iso = iso
+        self.format = format
         self.circleOfConfusionMillimetres = circleOfConfusionMillimetres
+            ?? format.circleOfConfusionMillimetres
         self.hasMeter = hasMeter
+        self.supportsAperturePriority = supportsAperturePriority
         self.loadedFilm = loadedFilm
+    }
+
+    // Written by hand so a profile stored before the roster grew still decodes:
+    // a body with no format is full frame, a body with no electronic ladder has
+    // no electronic shutter, and a body that says nothing about aperture
+    // priority has not got it.
+    private enum CodingKeys: String, CodingKey {
+        case id, name, shutterSpeeds, electronicShutterSpeeds, mechanicalFallbackShutterSpeeds
+        case iso, format, circleOfConfusionMillimetres, hasMeter, supportsAperturePriority, loadedFilm
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let format = try container.decodeIfPresent(SensorFormat.self, forKey: .format) ?? .fullFrame
+        self.init(
+            id: try container.decode(UUID.self, forKey: .id),
+            name: try container.decode(String.self, forKey: .name),
+            shutterSpeeds: try container.decode([TimeInterval].self, forKey: .shutterSpeeds),
+            electronicShutterSpeeds: try container.decodeIfPresent(
+                [TimeInterval].self, forKey: .electronicShutterSpeeds
+            ) ?? [],
+            mechanicalFallbackShutterSpeeds: try container.decodeIfPresent(
+                [TimeInterval].self, forKey: .mechanicalFallbackShutterSpeeds
+            ) ?? [],
+            iso: try container.decode(ISOMode.self, forKey: .iso),
+            format: format,
+            circleOfConfusionMillimetres: try container.decodeIfPresent(
+                Double.self, forKey: .circleOfConfusionMillimetres
+            ),
+            hasMeter: try container.decodeIfPresent(Bool.self, forKey: .hasMeter) ?? true,
+            supportsAperturePriority: try container.decodeIfPresent(
+                Bool.self, forKey: .supportsAperturePriority
+            ) ?? false,
+            loadedFilm: try container.decodeIfPresent(String.self, forKey: .loadedFilm)
+        )
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encode(shutterSpeeds, forKey: .shutterSpeeds)
+        if !electronicShutterSpeeds.isEmpty {
+            try container.encode(electronicShutterSpeeds, forKey: .electronicShutterSpeeds)
+        }
+        if !mechanicalFallbackShutterSpeeds.isEmpty {
+            try container.encode(mechanicalFallbackShutterSpeeds, forKey: .mechanicalFallbackShutterSpeeds)
+        }
+        try container.encode(iso, forKey: .iso)
+        try container.encode(format, forKey: .format)
+        try container.encode(circleOfConfusionMillimetres, forKey: .circleOfConfusionMillimetres)
+        try container.encode(hasMeter, forKey: .hasMeter)
+        if supportsAperturePriority {
+            try container.encode(supportsAperturePriority, forKey: .supportsAperturePriority)
+        }
+        try container.encodeIfPresent(loadedFilm, forKey: .loadedFilm)
     }
 
     /// Ascending, which is the order every ladder-walking algorithm assumes.
     public var sortedShutterSpeeds: [TimeInterval] { shutterSpeeds.sorted() }
+
+    /// The dial plus whatever the electronic shutter adds, ascending.
+    public var allShutterSpeeds: [TimeInterval] {
+        Set(shutterSpeeds + electronicShutterSpeeds).sorted()
+    }
+
+    public var hasElectronicShutter: Bool { !electronicShutterSpeeds.isEmpty }
 
     /// What the light lands on: the loaded roll's medium, or digital raw.
     public var medium: Medium { iso.medium }
@@ -208,10 +314,15 @@ public struct CameraBody: Sendable, Hashable, Codable, Identifiable {
     /// The fastest speed on the dial, seconds. `1/1000` on an M6.
     public var fastestShutter: TimeInterval? { shutterSpeeds.filter { $0 > 0 }.min() }
 
+    /// The fastest speed the body has in any mode, seconds — 1/16000 on an M11.
+    public var fastestShutterInAnyMode: TimeInterval? { allShutterSpeeds.filter { $0 > 0 }.min() }
+
     public var isValid: Bool {
         !name.isEmpty
             && !shutterSpeeds.isEmpty
             && shutterSpeeds.allSatisfy { $0 > 0 && $0.isFinite }
+            && electronicShutterSpeeds.allSatisfy { $0 > 0 && $0.isFinite }
+            && mechanicalFallbackShutterSpeeds.allSatisfy { $0 > 0 && $0.isFinite }
             && !iso.availableValues.isEmpty
             && circleOfConfusionMillimetres > 0
     }

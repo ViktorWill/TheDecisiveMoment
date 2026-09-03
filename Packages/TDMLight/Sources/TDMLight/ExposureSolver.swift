@@ -27,6 +27,18 @@ public enum ExposureStrategy: Sendable, Equatable {
     case subjectIsolation
     /// Lowest ISO that keeps the shutter at the handheld floor.
     case availableLight
+    /// Pick the aperture; the body picks a stepless shutter.
+    ///
+    /// Only an M7 in this roster can be set this way. The answer is an aperture
+    /// and a compensation dial setting rather than a shutter speed, because the
+    /// ±1/3 stop quantisation of a doubling dial simply does not apply — the
+    /// body can land on the aim exactly.
+    case aperturePriority
+
+    /// Whether a body can actually be set this way.
+    public func isAvailable(on body: CameraBodyProfile) -> Bool {
+        self != .aperturePriority || body.supportsAperturePriority
+    }
 }
 
 /// How steadily the camera can be held, which sets the slowest usable shutter.
@@ -58,6 +70,10 @@ public struct ExposureRequest: Sendable, Equatable {
     /// When set, the zone is reported at the engraved mark nearest this
     /// distance; otherwise the solver picks the mark that reaches infinity.
     public var subjectDistanceMetres: Double?
+    /// The aperture the photographer has turned the ring to under aperture
+    /// priority. `nil` lets the solver pick one, and it picks for depth.
+    /// Ignored by every other strategy, where the aperture is an output.
+    public var chosenAperture: Double?
     /// How precisely the ladders can hit the aim at all: whole aperture stops
     /// and a doubling shutter dial cannot do better than ±1/3 stop. The medium
     /// narrows this further where it has less latitude — see
@@ -71,6 +87,7 @@ public struct ExposureRequest: Sendable, Equatable {
         strategy: ExposureStrategy,
         handheldFloor: TimeInterval? = nil,
         subjectDistanceMetres: Double? = nil,
+        chosenAperture: Double? = nil,
         toleranceEV: Double = 1.0 / 3
     ) {
         self.ev100 = ev100
@@ -80,6 +97,7 @@ public struct ExposureRequest: Sendable, Equatable {
         self.handheldFloor = handheldFloor
             ?? HandheldSteadiness.standard.floor(focalLengthMillimetres: lens.focalLengthMillimetres)
         self.subjectDistanceMetres = subjectDistanceMetres
+        self.chosenAperture = chosenAperture
         self.toleranceEV = toleranceEV
     }
 
@@ -111,6 +129,13 @@ public struct ExposureRecommendation: Sendable, Equatable {
     public let aimErrorEV: Double
     /// The zone this setting gives at the recommended engraved mark.
     public let zone: FocusRange?
+    /// Set when the body chose the shutter itself: the compensation dial
+    /// setting, in stops, that the app is actually asking for.
+    ///
+    /// When this is present ``shutter`` is what the body will land on rather
+    /// than a speed to set — it is stepless, so it is a prediction, not an
+    /// instruction, and the UI phrases it that way.
+    public let compensationEV: Double?
 
     public init(
         aperture: Double,
@@ -118,7 +143,8 @@ public struct ExposureRecommendation: Sendable, Equatable {
         iso: Int,
         errorEV: Double,
         aimErrorEV: Double? = nil,
-        zone: FocusRange?
+        zone: FocusRange?,
+        compensationEV: Double? = nil
     ) {
         self.aperture = aperture
         self.shutter = shutter
@@ -126,7 +152,11 @@ public struct ExposureRecommendation: Sendable, Equatable {
         self.errorEV = errorEV
         self.aimErrorEV = aimErrorEV ?? errorEV
         self.zone = zone
+        self.compensationEV = compensationEV
     }
+
+    /// Whether the shutter is the body's own, chosen steplessly.
+    public var isAutomatic: Bool { compensationEV != nil }
 }
 
 /// A solved recommendation plus the near misses worth offering.
@@ -165,6 +195,9 @@ public enum ExposureSolverError: Error, Equatable, Sendable {
     case noSettingWithinTolerance(targetEV: Double, toleranceEV: Double)
     /// Settings exist, but the strategy's hard constraints rule all of them out.
     case strategyConstraintsUnsatisfiable(ExposureStrategy)
+    /// The strategy is not something this body can be set to — aperture
+    /// priority on anything but an M7.
+    case strategyUnavailableOnBody(ExposureStrategy)
     /// The gear profile has no shutter speeds, apertures or ISO to work with.
     case emptyGearProfile
 }
@@ -227,6 +260,19 @@ public enum ExposureSolver {
             )
         }
 
+        guard request.strategy.isAvailable(on: request.body) else {
+            return .noSolution(
+                ExposureShortfall(
+                    stops: 0,
+                    aimStops: 0,
+                    sense: .needsMoreLight,
+                    closest: nil,
+                    levers: [],
+                    reason: .strategyUnavailableOnBody(request.strategy)
+                )
+            )
+        }
+
         let candidates = enumerate(request, isoValues: isoValues)
         let tolerance = request.tolerance
         let withinTolerance = candidates.filter { tolerance.accepts(aimErrorEV: $0.aimErrorEV) }
@@ -240,7 +286,6 @@ public enum ExposureSolver {
                 shortfall(for: request, candidates: candidates, reason: reason, offeringLevers: offeringLevers)
             )
         }
-
         let ranked = allowed.sorted { lhs, rhs in
             let l = score(lhs, request)
             let r = score(rhs, request)
@@ -266,6 +311,9 @@ public enum ExposureSolver {
     // MARK: - Enumeration
 
     private static func enumerate(_ request: ExposureRequest, isoValues: [Int]) -> [Candidate] {
+        if request.strategy == .aperturePriority {
+            return enumerateAperturePriority(request, isoValues: isoValues)
+        }
         var candidates: [Candidate] = []
         for iso in isoValues {
             let metered = exposureValue(ev100: request.ev100, iso: iso)
@@ -288,6 +336,70 @@ public enum ExposureSolver {
         return candidates
     }
 
+    /// Aperture priority: the ring is the only thing the photographer sets.
+    ///
+    /// The body's shutter is stepless, so it lands on the metered value exactly
+    /// and the ±1/3 stop quantisation of a doubling dial does not apply. What
+    /// the app supplies instead is the **compensation dial** setting that moves
+    /// the body's aim onto the medium's, §7a — so the answer is an aperture and
+    /// a compensation, and the shutter below is a prediction of what the body
+    /// will choose rather than something to set.
+    ///
+    /// Beyond the ends of the AE range the shutter is clamped, exactly as the
+    /// camera clamps it, and the resulting error is what makes the outcome a
+    /// shortfall rather than a setting.
+    private static func enumerateAperturePriority(
+        _ request: ExposureRequest,
+        isoValues: [Int]
+    ) -> [Candidate] {
+        guard let fastest = request.body.fastestShutter,
+              let slowest = request.body.slowestShutter
+        else { return [] }
+
+        let compensation = compensationSetting(for: request)
+        let apertures = request.lens.apertures.filter { aperture in
+            guard aperture > 0 else { return false }
+            guard let chosen = request.chosenAperture else { return true }
+            return abs(aperture - chosen) < 1e-9
+        }
+
+        var candidates: [Candidate] = []
+        for iso in isoValues {
+            let metered = exposureValue(ev100: request.ev100, iso: iso)
+            let aim = exposureValue(ev100: request.targetEV100, iso: iso)
+            for aperture in apertures {
+                let wanted = aperture * aperture / pow(2, metered - compensation)
+                let shutter = min(max(wanted, fastest), slowest)
+                let value = exposureValue(aperture: aperture, shutter: shutter)
+                candidates.append(
+                    Candidate(
+                        aperture: aperture,
+                        shutter: shutter,
+                        iso: iso,
+                        errorEV: value - metered,
+                        aimErrorEV: value - aim,
+                        compensationEV: compensation
+                    )
+                )
+            }
+        }
+        return candidates
+    }
+
+    /// The compensation dial setting, in stops: the medium's bias, snapped to
+    /// the third-of-a-stop clicks the dial actually has and held inside its
+    /// ±2 EV range.
+    static func compensationSetting(for request: ExposureRequest) -> Double {
+        let clicks = (request.medium.biasEV / compensationClickEV).rounded()
+        let stops = clicks * compensationClickEV
+        return min(max(stops, -compensationRangeEV), compensationRangeEV)
+    }
+
+    /// An exposure-compensation dial clicks in thirds of a stop.
+    public static let compensationClickEV = 1.0 / 3
+    /// And runs to ±2 stops.
+    public static let compensationRangeEV = 2.0
+
     private static func recommendation(
         _ candidate: Candidate,
         request: ExposureRequest,
@@ -306,7 +418,8 @@ public enum ExposureSolver {
                     markMetres: $0,
                     aperture: candidate.aperture
                 )
-            }
+            },
+            compensationEV: candidate.compensationEV
         )
     }
 
@@ -518,6 +631,8 @@ public enum ExposureSolver {
         let errorEV: Double
         /// Against the medium's aim, `EV_scene − bias`.
         let aimErrorEV: Double
+        /// The compensation dial setting, when the body chose the shutter.
+        var compensationEV: Double? = nil
     }
 
     /// Mild penalty outside f/5.6–f/11, where the lens is sharpest. Never a hard
@@ -532,6 +647,10 @@ public enum ExposureSolver {
         case let .freezeMotion(motion):
             let limit = min(request.handheldFloor, motion.slowestShutter)
             return candidate.shutter <= limit + 1e-12
+        case .aperturePriority:
+            // The body will choose whatever it likes; the only thing that rules
+            // a candidate out is a shutter the photographer cannot hold.
+            return candidate.shutter <= request.handheldFloor + 1e-12
         case .subjectIsolation, .availableLight:
             // No hard constraint; the ranking below prefers a safe shutter.
             return true
@@ -550,7 +669,7 @@ public enum ExposureSolver {
         }
 
         switch request.strategy {
-        case .zoneFocus, .freezeMotion:
+        case .zoneFocus, .freezeMotion, .aperturePriority:
             // Maximise depth: the smallest aperture that still meters. The ISO
             // term outweighs the aperture term so the solver does not buy depth
             // by pushing a digital sensor up the ISO ladder.

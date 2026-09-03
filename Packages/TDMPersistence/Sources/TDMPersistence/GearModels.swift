@@ -25,16 +25,34 @@ public final class StoredCameraBody {
     /// The highest ISO the photographer wants a file at. `nil` means the whole
     /// sensor range is fair game, `docs/EXPOSURE-MODEL.md` §7d.
     public var isoCeiling: Int?
+    /// Speeds the body has only with the electronic shutter on. Empty on every
+    /// M but the M11.
+    public var electronicShutterSpeeds: [TimeInterval] = []
+    /// Speeds that survive a flat battery: the whole dial on a mechanical M,
+    /// 1/60 and 1/125 on an M7, nothing on a digital body.
+    public var mechanicalFallbackShutterSpeeds: [TimeInterval] = []
+    /// The frame, millimetres. Defaults to full frame, which is what every
+    /// body stored before the M8 joined the roster was.
+    public var formatName: String = SensorFormat.fullFrame.name
+    public var formatWidthMillimetres: Double = SensorFormat.fullFrame.widthMillimetres
+    public var formatHeightMillimetres: Double = SensorFormat.fullFrame.heightMillimetres
     public var circleOfConfusionMillimetres: Double = 0.030
     public var hasMeter: Bool = true
+    public var supportsAperturePriority: Bool = false
     public var loadedFilm: String?
 
     public init(_ body: CameraBody) {
         identifier = body.id
         name = body.name
         shutterSpeeds = body.sortedShutterSpeeds
+        electronicShutterSpeeds = body.electronicShutterSpeeds.sorted()
+        mechanicalFallbackShutterSpeeds = body.mechanicalFallbackShutterSpeeds.sorted()
+        formatName = body.format.name
+        formatWidthMillimetres = body.format.widthMillimetres
+        formatHeightMillimetres = body.format.heightMillimetres
         circleOfConfusionMillimetres = body.circleOfConfusionMillimetres
         hasMeter = body.hasMeter
+        supportsAperturePriority = body.supportsAperturePriority
         loadedFilm = body.loadedFilm
         apply(body.iso)
     }
@@ -77,9 +95,17 @@ public final class StoredCameraBody {
             id: identifier,
             name: name,
             shutterSpeeds: shutterSpeeds,
+            electronicShutterSpeeds: electronicShutterSpeeds,
+            mechanicalFallbackShutterSpeeds: mechanicalFallbackShutterSpeeds,
             iso: iso,
+            format: SensorFormat(
+                name: formatName,
+                widthMillimetres: formatWidthMillimetres,
+                heightMillimetres: formatHeightMillimetres
+            ),
             circleOfConfusionMillimetres: circleOfConfusionMillimetres,
             hasMeter: hasMeter,
+            supportsAperturePriority: supportsAperturePriority,
             loadedFilm: loadedFilm
         )
     }

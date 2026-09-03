@@ -29,6 +29,9 @@ public struct AdviceRequest: Sendable, Equatable {
     /// A distance the user has asked for, in metres. The solver snaps it to an
     /// engraved mark; when it is `nil` the solver goes for maximum depth.
     public var subjectDistanceMetres: Double?
+    /// The aperture the ring is turned to under aperture priority, `nil` to let
+    /// the solver choose one.
+    public var chosenAperture: Double?
 
     public init(
         date: Date,
@@ -46,7 +49,8 @@ public struct AdviceRequest: Sendable, Equatable {
         strategy: ExposureStrategy = .zoneFocus,
         steadiness: HandheldSteadiness = .standard,
         handheldFloorSeconds: TimeInterval? = nil,
-        subjectDistanceMetres: Double? = nil
+        subjectDistanceMetres: Double? = nil,
+        chosenAperture: Double? = nil
     ) {
         self.date = date
         self.latitudeDegrees = latitudeDegrees
@@ -64,6 +68,7 @@ public struct AdviceRequest: Sendable, Equatable {
         self.steadiness = steadiness
         self.handheldFloorSeconds = handheldFloorSeconds
         self.subjectDistanceMetres = subjectDistanceMetres
+        self.chosenAperture = chosenAperture
     }
 }
 
@@ -147,7 +152,8 @@ public enum LightAdvisor {
             handheldFloor: request.handheldFloorSeconds ?? request.steadiness.floor(
                 focalLengthMillimetres: request.lens.focalLengthMillimetres
             ),
-            subjectDistanceMetres: request.subjectDistanceMetres
+            subjectDistanceMetres: request.subjectDistanceMetres,
+            chosenAperture: request.chosenAperture
         )
 
         return Advice(
