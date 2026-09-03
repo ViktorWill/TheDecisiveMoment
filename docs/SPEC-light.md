@@ -26,7 +26,7 @@ only the top three lines, the feature has done its job.
 |---|---|---|
 | Time | System clock | A scrubber to look ahead — *"what will it be at 18:30?"* |
 | Location | CoreLocation | Automatic; overridable by picking a spot from the Map |
-| Weather | WeatherKit | Automatic, cached ~15 min, refresh by pull |
+| Weather | WeatherKit, or the photographer | Automatic, cached ~15 min, refresh by pull; five-segment sky control where there is no WeatherKit, and as an override where there is |
 | Scene | User | Five-segment control, pre-filled from a selected spot's `openness` |
 | Subject lighting | User | Front / side / back — drives §4a. Defaults to front |
 | Gear | User | A picker over saved profiles; changes rarely |
@@ -204,10 +204,16 @@ standing outside looking at the sky. So take it from them:
 
 Five segments, same shape and styling as Scene, where the weather readout goes.
 
-- **Free build**: the only source, always visible.
+- **Free build** — the `Free` configuration and the *The Decisive Moment (Free)* scheme, which
+  define `TDM_NO_WEATHERKIT`, carry no WeatherKit entitlement and do not compile
+  `WeatherKitProvider` at all: the control is the only source, always visible, and
+  `ManualWeatherProvider` is the app's only weather provider.
 - **Paid build**: WeatherKit leads, and the cloud figure in the conditions line is tappable to
-  override it. Worth keeping permanently — forecasts are wrong, and an observation is fresher than a
-  cached one.
+  override it, with *"Use the forecast"* to hand it back. Worth keeping permanently — forecasts are
+  wrong, and an observation is fresher than a cached one.
+
+A reported cover is labelled as one — `50% cloud (reported)` — so the conditions line never passes
+off an observation as a forecast or the other way round.
 
 Uncertainty stays at 0.5 EV for a manual reading taken now: it is an observation, not a stale
 forecast, and claiming otherwise in either direction would be dishonest.

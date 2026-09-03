@@ -93,9 +93,16 @@ are therefore testable on Linux: `SunFilter` (*lit now*), `SpotClusterer` (clust
 300-annotation budget), `SpotProse` (a score said in words), `LocalPin` and the GeoJSON export.
 
 **`TDMWeather`** — `WeatherProvider` protocol with `current(at:)` and `hourly(at:through:)`.
-Implementations: `WeatherKitProvider`, and `StubWeatherProvider` for tests and previews. The
+Implementations: `WeatherKitProvider`; `ManualWeatherProvider`, which takes the sky from the
+photographer and makes no network call at all; and `StubWeatherProvider` for tests and previews. The
 protocol exposes only what the light model consumes — cloud cover, condition, precipitation
-intensity, visibility — so a second provider could be added later without touching callers.
+intensity, visibility — which is what made the manual provider a small addition rather than a
+rewrite.
+
+The `Free` build configuration defines `TDM_NO_WEATHERKIT`: `WeatherKitProvider` is not compiled,
+the WeatherKit framework is not linked, and `ManualWeatherProvider` is the only provider. That is
+what lets a free Apple ID sign the app — `docs/SPEC-light.md`, "Sky, when there is no WeatherKit",
+and `Scripts/assert-no-weatherkit.sh`, which proves it against the built binary.
 
 Caching (~15 minutes) and the clear-sky fallback live in `WeatherService`: a failure is never fatal,
 and the reading says so, so the caller can widen the stated uncertainty.
@@ -155,7 +162,7 @@ refusing to answer — a rough number in the field beats a spinner.
 | `TDMLight` | Numeric test vectors in [EXPOSURE-MODEL.md](EXPOSURE-MODEL.md), verified against independent references (winter-solstice solar elevation, Sunny 16, published hyperfocal tables). Runs on Linux. |
 | `TDMCore` / `TDMSpots` | Round-trip the example bundle in [DATA-BUNDLES.md](DATA-BUNDLES.md) as a committed fixture. Schema drift fails CI. Merge and scoring tested on synthetic clusters. |
 | `spotforge` | Network sources behind a protocol; pipeline tested against recorded fixture responses, not live APIs. |
-| `TDMWeather` | `StubWeatherProvider` only. The WeatherKit wrapper is thin enough to verify by inspection. |
+| `TDMWeather` | `StubWeatherProvider` and `ManualWeatherProvider` — the five sky segments are asserted against the EXPOSURE-MODEL §4b rows. The WeatherKit wrapper is thin enough to verify by inspection; that it is *absent* from the Free build is asserted against the binary in CI. |
 | `TDMUI` | SwiftUI previews across light/dark and Dynamic Type. No snapshot tests — churn cost exceeds their value at this size. The spoken forms of the readout are tested in `TDMLight`, where they are strings rather than views. |
 
 CI runs `swift test` on Linux for the three pure packages. A macOS job builds the app target.
@@ -163,7 +170,7 @@ CI runs `swift test` on Linux for the three pure packages. A macOS job builds th
 ## Privacy
 
 Location never leaves the device. The only outbound calls are the WeatherKit request (Apple, coarse
-coordinate) and the bundle download (a static file, identical for every user, revealing only which
+coordinate; not present at all in the Free build) and the bundle download (a static file, identical for every user, revealing only which
 city was fetched). No accounts, no analytics, no third-party SDKs in v1. Shooting plans, pins, gear
 and calibration offsets are rows in the app's own store and are never uploaded.
 

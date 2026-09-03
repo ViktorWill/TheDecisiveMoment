@@ -45,6 +45,10 @@ targets:
     sources:
       - path: App/Sources
       - path: App/Resources
+      # Not compiled: it is what CODE_SIGN_ENTITLEMENTS points at in the Free
+      # configuration, and it is worth being able to open in the navigator.
+      - path: App/TheDecisiveMoment-Free.entitlements
+        buildPhase: none
     dependencies:
       - package: TDMUI
     settings:
