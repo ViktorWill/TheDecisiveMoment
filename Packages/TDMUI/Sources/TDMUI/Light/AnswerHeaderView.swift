@@ -57,6 +57,9 @@ struct AnswerHeaderView: View {
                         .font(LightTheme.captionFont)
                         .foregroundStyle(LightTheme.tertiaryText)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityLabel(
+                            "The body will pick about \(ExposurePhrasing.spokenShutter(recommendation.shutter))"
+                        )
                 }
 
                 if let roll, let footnote = SettingReadoutView.rollFootnote(roll) {
@@ -74,9 +77,16 @@ struct AnswerHeaderView: View {
                             far: zone.farMetres
                         )
                     )
-                    .font(LightTheme.zoneFont)
+                    .scaledFont(size: 20, weight: .medium, design: .rounded, maximumScale: 1.6)
                     .foregroundStyle(LightTheme.secondaryText)
                     .multilineTextAlignment(.center)
+                    .accessibilityLabel(
+                        ExposurePhrasing.spokenZoneSentence(
+                            markMetres: mark,
+                            near: zone.nearMetres,
+                            far: zone.farMetres
+                        )
+                    )
                 }
 
                 if let framingNote {
@@ -98,9 +108,10 @@ struct AnswerHeaderView: View {
             }
 
             Text(conditionsLine)
-                .font(LightTheme.conditionsFont)
+                .scaledFont(size: 15, design: .rounded, monospacedDigit: true, maximumScale: 1.6)
                 .foregroundStyle(LightTheme.secondaryText)
                 .multilineTextAlignment(.center)
+                .accessibilityLabel(spokenConditionsLine)
 
             if advice.estimate.usedClearSkyFallback {
                 Label("No weather · clear sky assumed, uncertainty widened", systemImage: "wifi.slash")
@@ -121,6 +132,19 @@ struct AnswerHeaderView: View {
             isStale: isStaleWeather
         )
         return "\(ev) · \(conditions)"
+    }
+
+    /// The same line, said rather than engraved: `±` and `°` are symbols a
+    /// screen reader either skips or mispronounces.
+    private var spokenConditionsLine: String {
+        let estimate = advice.estimate
+        let ev = ExposurePhrasing.spokenExposureValue(estimate.ev100, sigmaEV: estimate.sigmaEV)
+        let conditions = ExposurePhrasing.spokenConditions(
+            sunElevationDegrees: advice.sun.elevationDegrees,
+            cloudCover: estimate.usedClearSkyFallback ? nil : cloudCover,
+            isStale: isStaleWeather
+        )
+        return "\(ev), \(conditions)"
     }
 }
 
@@ -155,6 +179,14 @@ private struct SilhouetteView: View {
                 )
                 .font(LightTheme.conditionsFont)
                 .foregroundStyle(LightTheme.secondaryText)
+                .accessibilityLabel(
+                    "Background: " + ExposurePhrasing.spokenSetting(
+                        aperture: background.aperture,
+                        shutter: background.shutter,
+                        iso: background.iso,
+                        sigmaEV: sigmaEV
+                    )
+                )
             }
         }
     }

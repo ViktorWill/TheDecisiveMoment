@@ -21,15 +21,27 @@ struct SettingReadoutView: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 26) {
-            column("Aperture", ExposurePhrasing.aperture(recommendation.aperture))
+            column(
+                "Aperture",
+                ExposurePhrasing.aperture(recommendation.aperture),
+                spoken: ExposurePhrasing.spokenAperture(recommendation.aperture)
+            )
 
             if let compensation = recommendation.compensationEV {
                 // Aperture priority: there is no shutter to set. The body picks
                 // one, steplessly, and what the photographer sets instead is the
                 // compensation dial.
-                column("Compensation", ExposurePhrasing.compensation(compensation))
+                column(
+                    "Compensation",
+                    ExposurePhrasing.compensation(compensation),
+                    spoken: ExposurePhrasing.spokenCompensation(compensation)
+                )
             } else {
-                column("Shutter", ExposurePhrasing.shutter(recommendation.shutter, sigmaEV: sigmaEV))
+                column(
+                    "Shutter",
+                    ExposurePhrasing.shutter(recommendation.shutter, sigmaEV: sigmaEV),
+                    spoken: ExposurePhrasing.spokenShutter(recommendation.shutter, sigmaEV: sigmaEV)
+                )
             }
 
             if let roll {
@@ -38,7 +50,7 @@ struct SettingReadoutView: View {
                 VStack(alignment: .leading, spacing: 5) {
                     label("Loaded", tint: LightTheme.tertiaryText)
                     Text(ExposurePhrasing.loadedRoll(roll))
-                        .font(.system(size: 15, weight: .medium, design: .rounded).monospacedDigit())
+                        .scaledFont(size: 15, weight: .medium, design: .rounded, monospacedDigit: true, maximumScale: 1.6)
                         .foregroundStyle(LightTheme.secondaryText.opacity(0.7))
                         .lineLimit(2)
                         .minimumScaleFactor(0.7)
@@ -49,7 +61,7 @@ struct SettingReadoutView: View {
                 VStack(alignment: .leading, spacing: 5) {
                     label("Raise ISO to", tint: LightTheme.accent)
                     Text("\(recommendation.iso)")
-                        .font(LightTheme.readoutFont)
+                        .scaledFont(size: LightTheme.readoutSize, weight: .medium, design: .rounded, monospacedDigit: true, maximumScale: 1.4)
                         .foregroundStyle(LightTheme.accent)
                 }
                 .accessibilityElement(children: .combine)
@@ -60,23 +72,28 @@ struct SettingReadoutView: View {
         .accessibilityElement(children: .contain)
     }
 
-    private func column(_ title: String, _ value: String) -> some View {
+    /// - Parameter spoken: The same figure as a person would say it. `f/8`
+    ///   read aloud is "f slash 8", and a shutter speed is worse; the engraved
+    ///   form stays on screen and the sentence goes to VoiceOver.
+    private func column(_ title: String, _ value: String, spoken: String) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             label(title, tint: LightTheme.tertiaryText)
             Text(value)
-                .font(LightTheme.readoutFont)
+                .scaledFont(size: LightTheme.readoutSize, weight: .medium, design: .rounded, monospacedDigit: true, maximumScale: 1.4)
                 .foregroundStyle(LightTheme.primaryText)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(title) \(value)")
+        .accessibilityLabel("\(title) \(spoken)")
     }
 
     private func label(_ title: String, tint: Color) -> some View {
+        // `kerning` is a `Text` modifier, so it has to come before the font
+        // one, which returns a `View`.
         Text(title.uppercased())
-            .font(.system(size: 9, weight: .semibold, design: .rounded))
             .kerning(1.08)
+            .scaledFont(size: 9, weight: .semibold, design: .rounded, maximumScale: 1.8)
             .foregroundStyle(tint)
     }
 

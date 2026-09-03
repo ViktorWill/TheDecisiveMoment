@@ -14,6 +14,9 @@ public enum Visibility: String, Sendable, Codable, CaseIterable, Hashable {
     case city
 }
 
+/// An unambiguous name for session visibility outside TDMCore.
+public typealias SessionVisibility = Visibility
+
 /// Someone who shoots. Local-only in v1.
 public struct Photographer: Sendable, Hashable, Codable, Identifiable {
     public var id: UUID
@@ -41,6 +44,10 @@ public struct Photographer: Sendable, Hashable, Codable, Identifiable {
     public var isValid: Bool {
         !displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
+
+    /// What a profile is called before anyone has been asked. v1 has no
+    /// account, so the local photographer is seeded rather than signed in.
+    public static let defaultDisplayName = "You"
 }
 
 /// A plan to go out and shoot.

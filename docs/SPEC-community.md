@@ -44,27 +44,54 @@ struct Photographer: Identifiable, Codable, Sendable {
 
 In v1 you can create, edit and delete sessions; they are stored locally, visible only to you, and
 usable as a personal shooting plan. `visibility` is present but every session is effectively
-`.private`.
+`.private`: the tab shows it and does not offer it, because a picker whose other two options do
+nothing would be a promise the app cannot keep.
 
 The tab explains what it is going to become. It does not pretend to have people in it, and it does
 not show a fake feed.
+
+A plan can be anchored to a spot, which fills in the meeting point and the title from the map. The
+anchor is a plain `spotId`, not a reference: a bundle refresh replaces every spot row of a city, and
+a plan has to outlive that. An anchored spot that is no longer stored simply loses its name in the
+list.
+
+Every session needs a `cityId`, and a device that has downloaded nothing has no city to offer. Those
+plans are filed under `elsewhere`, which is a real id with no bundle behind it — refusing to let
+someone write a plan down until they have downloaded a map would be an invented obstacle.
+
+There is no account, so the local photographer is a single seeded row named *You*, editable from the
+tab. Its `id` is the `hostId` of every session on the device.
 
 ## The protocol
 
 ```swift
 protocol CommunityBackend: Sendable {
     func sessions(in cityId: String, from: Date) async throws -> [ShootSession]
+    func sessions(from: Date) async throws -> [ShootSession]
     func create(_ session: ShootSession) async throws -> ShootSession
     func update(_ session: ShootSession) async throws -> ShootSession
     func cancel(id: ShootSession.ID) async throws
     func join(sessionId: ShootSession.ID) async throws
     func leave(sessionId: ShootSession.ID) async throws
     func profile() async throws -> Photographer
+    func save(_ profile: Photographer) async throws -> Photographer
 }
 ```
 
-v1 ships `LocalCommunityBackend` (SwiftData). Phase 3 adds `SupabaseCommunityBackend`. The views bind
-to the protocol, so the swap does not touch the UI.
+Two methods are not city-scoped and were not in the first draft of this list. `sessions(from:)`
+exists because a personal plan spans however many cities the photographer travels to, and asking
+them to pick a city before they can see their own list would be an invented step; a server browses
+one city at a time, which is what the other method is for. `save(_ profile:)` exists because v1 has
+no account to take a display name from.
+
+Errors are a `CommunityError` enum — session not found, invalid session, invalid profile, session
+full, already attending, storage failed — so the UI can say what happened rather than print a type
+name.
+
+v1 ships `LocalCommunityBackend` (SwiftData), and `InMemoryCommunityBackend` in `TDMCore` for
+previews, tests and a device whose store will not open: losing a plan when the app quits is bad,
+refusing to draw the tab is worse. Phase 3 adds `SupabaseCommunityBackend`. The views bind to the
+protocol, so the swap does not touch the UI.
 
 ## Phase 3 — the backend
 

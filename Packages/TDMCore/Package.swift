@@ -1,9 +1,9 @@
 // swift-tools-version: 6.0
 import PackageDescription
 
-// Deliberately no `platforms:` — this package builds and tests on Linux.
 let package = Package(
     name: "TDMCore",
+    platforms: [.iOS(.v13)],
     products: [
         .library(name: "TDMCore", targets: ["TDMCore"])
     ],
