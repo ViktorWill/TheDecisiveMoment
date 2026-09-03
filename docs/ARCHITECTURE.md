@@ -80,8 +80,11 @@ reading.
 beyond validation and derived properties.
 
 **`TDMLight`** — solar position, the illuminance → EV model, the exposure solver, depth-of-field and
-zone-focus maths, distance-scale snapping. Fully specified with test vectors in
-[EXPOSURE-MODEL.md](EXPOSURE-MODEL.md). This is where the app's actual value lives.
+zone-focus maths, distance-scale snapping. It also owns the composition of that chain
+(`LightAdvisor`) and the phrasing of its numbers (`ExposurePhrasing`), because the honesty rules of
+[SPEC-light.md](SPEC-light.md) are about precision, and precision is a property of the model rather
+than of a view. Fully specified with test vectors in [EXPOSURE-MODEL.md](EXPOSURE-MODEL.md). This is
+where the app's actual value lives.
 
 **`TDMSpots`** — bundle decoding and integrity checking, the merge/dedupe/scoring rules, search and
 filtering, and the `SpotStore` protocol the persistence layer implements. Ranking is here rather
@@ -92,8 +95,13 @@ Implementations: `WeatherKitProvider`, and `StubWeatherProvider` for tests and p
 protocol exposes only what the light model consumes — cloud cover, condition, precipitation
 intensity, visibility — so a second provider could be added later without touching callers.
 
+Caching (~15 minutes) and the clear-sky fallback live in `WeatherService`: a failure is never fatal,
+and the reading says so, so the caller can widen the stated uncertainty.
+
 **`TDMPersistence`** — SwiftData models for cached bundles, user pins, gear profiles and
-calibration offsets. Owns the bundle download/verify/import flow.
+calibration offsets. Owns the bundle download/verify/import flow. The shipped gear catalogue
+(`GearCatalogue`, seeded on first launch) is plain value types with no SwiftData in sight, so the
+engraved marks can be tested on Linux.
 
 **`TDMUI`** — views and the design system. Dark-first: this app gets used at dusk and at night, and
 a white screen at blue hour ruins your night vision and your exposure judgement.

@@ -19,6 +19,13 @@ public final class LightViewModel {
 
     // MARK: Inputs
 
+    /// The bearing of the street at a spot handed over by the Map tab, degrees
+    /// clockwise from north. `nil` when the user is not standing at a spot, and
+    /// then the sun panel says nothing about façades rather than guessing.
+    public var streetBearingDegrees: Double? {
+        didSet { if streetBearingDegrees != oldValue { recompute() } }
+    }
+
     /// Pre-filled from a selected spot's openness when the Map hands one over.
     public var scene: ScenePreset = .openSky {
         didSet { if scene != oldValue { recompute() } }
@@ -120,6 +127,14 @@ public final class LightViewModel {
 
     /// The mark the answer is reported for. Always one the lens has engraved.
     public var focusMarkMetres: Double? { advice?.focusMarkMetres }
+
+    /// The mark the barrel is drawn at: what the user dragged to, or the
+    /// solver's own choice. Both come from the lens's engravings.
+    public var selectedMarkMetres: Double? { chosenMarkMetres ?? focusMarkMetres }
+
+    /// The selected gear, in the shape the solver and the barrel drawing want.
+    public var lensProfile: LensProfile? { profile.map { LensProfile($0.lens) } }
+    public var cameraBodyProfile: CameraBodyProfile? { profile.map { CameraBodyProfile($0.body) } }
 
     /// The weather the answer on screen was actually built from — the forecast
     /// row when the scrubber has moved, the current observation otherwise.

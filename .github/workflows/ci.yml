@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        package: [TDMCore, TDMLight, TDMSpots]
+        package: [TDMCore, TDMLight, TDMSpots, TDMWeather, TDMPersistence]
     steps:
       - uses: actions/checkout@v4
       - name: swift test

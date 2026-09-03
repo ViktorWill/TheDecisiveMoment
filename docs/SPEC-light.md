@@ -52,6 +52,41 @@ Seed lenses at 21, 24, 28, 35, 50, 75 and 90 mm, with the marks for each. Gettin
 more than it sounds — the whole output is "set the barrel to *this engraved mark*", and a mark the
 lens does not have makes the advice unusable.
 
+### The seed catalogue
+
+These are the tables `TDMPersistence.GearCatalogue` writes on first launch. They are the source of
+truth: if a mark here is wrong, fix it here and in the catalogue together.
+
+Apertures click in **half stops** on modern M glass, printed with the traditional rounded numbers the
+ring is engraved with — f/6.7 rather than f/6.727, which is up to 0.1 stop off an exact half stop and
+is deliberately so.
+
+| Body | Shutter | ISO | Notes |
+|---|---|---|---|
+| Leica M6 | 1 s – 1/1000 | fixed, the loaded roll (default 400) | mechanical; `loadedFilm` names the stock |
+| Leica M10 | 8 s – 1/4000 | 100 – 50000 | |
+| Leica M11 | 60 s – 1/4000 | 64 – 50000 | mechanical shutter only; the 1/16000 electronic mode is not offered, because it is a mode the photographer has to remember to switch into |
+
+The slow end of the dial is engraved 15, 30 and 60 s — not 16, 32 and 64. A doubling series would
+invent speeds the camera has not got.
+
+| Lens | Apertures | Engraved marks (m) |
+|---|---|---|
+| Super-Elmar-M 21 mm f/3.4 | 3.4 – 16 | 0.7, 0.8, 1, 1.2, 1.5, 2, 3, 5, ∞ |
+| Elmarit-M 24 mm f/2.8 | 2.8 – 16 | 0.7, 0.8, 1, 1.2, 1.5, 2, 3, 5, ∞ |
+| Elmarit-M 28 mm f/2.8 | 2.8 – 16 | 0.7, 0.8, 1, 1.2, 1.5, 2, 3, 5, 10, ∞ |
+| Summicron-M 35 mm f/2 | 2 – 16 | 0.7, 0.8, 1, 1.2, 1.5, 2, 3, 5, 10, ∞ |
+| Summicron-M 50 mm f/2 | 2 – 16 | 0.7, 0.8, 1, 1.2, 1.5, 2, 3, 5, 10, ∞ |
+| APO-Summicron-M 75 mm f/2 | 2 – 16 | 0.7, 0.8, 1, 1.2, 1.5, 2, 3, 5, 10, ∞ |
+| Elmarit-M 90 mm f/2.8 | 2.8 – 16 | 1, 1.2, 1.5, 2, 3, 5, 10, ∞ |
+
+Two of these differences are the point of the table rather than an oversight: the 90 mm has **no
+0.7 m mark**, because it does not focus that close; and the 21 and 24 mm scales run out at **5 m**
+and then go to ∞, because at those focal lengths there is nothing to engrave in between.
+
+Seed profiles pair a body with the lens most likely to be on it: M6 · 35 mm, M10 · 35 mm, M11 ·
+50 mm. The first is selected.
+
 Film mode changes the interaction meaningfully: ISO is locked for the whole roll, so the solver has
 one fewer degree of freedom and the app should show the roll speed as a fixed fact rather than a
 picker. Add a *"loaded film"* field so this is set once when the roll goes in.
