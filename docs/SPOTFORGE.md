@@ -454,6 +454,7 @@ against the wrong directory.
 | `--fixtures <dir>` | Build from recorded responses and touch no network. |
 | `--report` | Print the per-source summary. |
 | `--strict` | Exit non-zero when a source returned nothing or failed, or the bundle missed its size budget. |
+| `--size-budget <n>` | Compressed ceiling per city, overriding the 8 MB default. Plain bytes, or a `KB`/`MB` suffix. |
 | `--no-photos` | Skip the representative-image pass. |
 
 `validate` re-reads `index.json`, decompresses every bundle, re-decodes it with the same

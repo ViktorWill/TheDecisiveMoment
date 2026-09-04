@@ -4,7 +4,10 @@ import TDMSpots
 
 /// Knobs the pipeline exposes. Defaults are the documented ones.
 public struct PipelineOptions: Sendable {
-    /// `docs/DATA-BUNDLES.md`, "Size budget": under 500 KB compressed.
+    /// `docs/DATA-BUNDLES.md`, "Size budget". A ceiling that catches a
+    /// pathological city, not a target to shrink towards: trimming to fit is
+    /// how a real spot gets silently dropped, so the budget should bind almost
+    /// never. At ~76 B/spot gzipped, all five boroughs of New York are ~1.5 MB.
     public var sizeBudgetBytes: Int
     /// How many of the top spots get representative Commons images. Each one is
     /// a request, so this is small on purpose.
@@ -15,7 +18,7 @@ public struct PipelineOptions: Sendable {
     public var mergeRules: MergeRules
 
     public init(
-        sizeBudgetBytes: Int = 500 * 1024,
+        sizeBudgetBytes: Int = 8 * 1024 * 1024,
         photoSpotLimit: Int = 40,
         photosPerSpot: Int = 2,
         fetchesPhotos: Bool = true,

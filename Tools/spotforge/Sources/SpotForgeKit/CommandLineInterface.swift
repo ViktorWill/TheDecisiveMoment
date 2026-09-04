@@ -22,6 +22,8 @@ public enum CommandLineInterface {
       --report           Print the per-source summary.
       --strict           Exit non-zero when a source returned nothing or the
                          bundle missed its size budget.
+      --size-budget <n>  Compressed ceiling per city. Plain bytes, or a KB/MB
+                         suffix: 8MB, 1536KB, 8388608 are all accepted.
       --no-photos        Skip the representative-image pass.
 
     spotforge runs at build time only. The app never calls a spot data source.
@@ -71,6 +73,12 @@ public enum CommandLineInterface {
             case "--report": request.printsReport = true
             case "--strict": request.strict = true
             case "--no-photos": request.fetchesPhotos = false
+            case "--size-budget":
+                let text = try value(for: "--size-budget")
+                guard let bytes = byteCount(text) else {
+                    throw ArgumentError.invalidValue(option: "--size-budget", value: text)
+                }
+                request.sizeBudgetBytes = bytes
             default: throw ArgumentError.unknownOption(argument)
             }
         }
@@ -79,6 +87,24 @@ public enum CommandLineInterface {
         if !all && cities.isEmpty { throw ArgumentError.noScope }
         request.scope = all ? .allCities : .cities(cities)
         return request
+    }
+
+    /// A byte count written the way a person would: a budget at this scale is
+    /// unreadable in bytes, and `8MB` and `8388608` should mean the same thing.
+    /// Nil for anything that is not a positive count, so a typo is refused
+    /// rather than silently becoming a budget of zero.
+    static func byteCount(_ text: String) -> Int? {
+        let trimmed = text.trimmingCharacters(in: .whitespaces).uppercased()
+        // MB before KB before B: every suffix here ends in "B".
+        for (suffix, multiplier) in [("MB", 1024 * 1024), ("KB", 1024), ("B", 1)]
+        where trimmed.hasSuffix(suffix) {
+            let number = trimmed.dropLast(suffix.count).trimmingCharacters(in: .whitespaces)
+            guard let value = Int(number), value > 0 else { return nil }
+            let (bytes, overflowed) = value.multipliedReportingOverflow(by: multiplier)
+            return overflowed ? nil : bytes
+        }
+        guard let value = Int(trimmed), value > 0 else { return nil }
+        return value
     }
 }
 
@@ -90,6 +116,7 @@ public enum ArgumentError: Error, Equatable, CustomStringConvertible {
     case unknownOption(String)
     case noScope
     case conflictingScope
+    case invalidValue(option: String, value: String)
 
     public var description: String {
         switch self {
@@ -107,6 +134,8 @@ public enum ArgumentError: Error, Equatable, CustomStringConvertible {
             "Nothing to build: pass --city <id> (repeatable) or --all."
         case .conflictingScope:
             "--city and --all are mutually exclusive."
+        case let .invalidValue(option, value):
+            "\(option) does not accept `\(value)`. Expected a positive byte count, optionally suffixed KB or MB."
         }
     }
 }
