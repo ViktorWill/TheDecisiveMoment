@@ -2,6 +2,24 @@
   "cities" : [
     {
       "bbox" : {
+        "maxLat" : 48.185,
+        "maxLon" : 11.63,
+        "minLat" : 48.1,
+        "minLon" : 11.49
+      },
+      "bundleVersion" : 1,
+      "bytes" : 129631,
+      "cityId" : "de-munich",
+      "country" : "DE",
+      "lat" : 48.1425,
+      "lon" : 11.56,
+      "name" : "Munich",
+      "sha256" : "ef53816f69aa9ce7657b1aa805c31944958486ca29c647edd089e6181e912f0f",
+      "spotCount" : 1714,
+      "updatedAt" : "2026-09-04T20:22:44Z"
+    },
+    {
+      "bbox" : {
         "maxLat" : 40.9176,
         "maxLon" : -73.7004,
         "minLat" : 40.4774,
@@ -19,6 +37,6 @@
       "updatedAt" : "2026-09-04T09:53:27Z"
     }
   ],
-  "generatedAt" : "2026-09-04T09:53:27Z",
+  "generatedAt" : "2026-09-04T20:22:44Z",
   "schemaVersion" : 1
 }
