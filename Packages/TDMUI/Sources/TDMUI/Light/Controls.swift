@@ -47,6 +47,8 @@ struct ChipPicker<Value: Hashable>: View {
             }
             .padding(.vertical, 2)
         }
-        .scrollClipDisabled()
+        // No shadow or glow on a chip that clipping would cut into — and
+        // without that, disabling the scroll view's own clip just lets
+        // unscrolled content bleed past the panel() it sits in.
     }
 }

@@ -13,6 +13,7 @@ public struct LightView: View {
     @State private var viewModel: LightViewModel
     @State private var showsMeter = false
     @State private var showsBodyPicker = false
+    @State private var showsLensPicker = false
     /// The sky control, opened off the cloud figure in a build that has a
     /// forecast to override. A build without one has it on screen always.
     @State private var showsSkyControl = false
@@ -172,6 +173,22 @@ public struct LightView: View {
                         }
                         .buttonStyle(.plain)
 
+                        Button {
+                            showsLensPicker = true
+                        } label: {
+                            HStack {
+                                Text(viewModel.profile?.lens.name ?? "Pick a lens")
+                                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                    .foregroundStyle(LightTheme.primaryText)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(LightTheme.tertiaryText)
+                            }
+                            .panel("Lens")
+                        }
+                        .buttonStyle(.plain)
+
                         if showsMeter, !viewModel.isLiveMeterPrimary {
                             LiveMeterView(
                                 modelledEV100: advice.estimate.ev100,
@@ -238,6 +255,19 @@ public struct LightView: View {
                     onSelect: { body in
                         viewModel.setBody(body)
                         showsBodyPicker = false
+                    }
+                )
+            }
+            .preferredColorScheme(.dark)
+        }
+        .sheet(isPresented: $showsLensPicker) {
+            NavigationStack {
+                LensPickerView(
+                    lenses: viewModel.lenses,
+                    selected: viewModel.profile?.lens,
+                    onSelect: { lens in
+                        viewModel.setLens(lens)
+                        showsLensPicker = false
                     }
                 )
             }
