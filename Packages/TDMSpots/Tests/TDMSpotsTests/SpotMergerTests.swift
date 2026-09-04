@@ -229,7 +229,7 @@ struct SpotMergerTests {
     }
 
     /// `SpotMerger.merge` buckets candidates into a grid rather than comparing
-    /// every candidate against every other (issue #17). This checks the grid
+    /// every candidate against every other (PR #16). This checks the grid
     /// against a brute-force all-pairs reference over a few hundred scattered
     /// candidates — enough to exercise cell-boundary neighbours in both
     /// dimensions — so the fast path cannot quietly drop a merge the slow path

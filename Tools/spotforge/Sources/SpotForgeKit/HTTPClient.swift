@@ -195,7 +195,7 @@ public struct RecordedTransport: Transport {
 /// Overpass and WDQS are volunteer-run and their policies are explicit: one
 /// request in flight at a time. Commons' `geosearch` is a different service
 /// with no such restriction, so it gets its own, more permissive policy —
-/// `docs/SPOTFORGE.md` §9 and issue #17. Every namespace still gets a
+/// `docs/SPOTFORGE.md` §9 and PR #16. Every namespace still gets a
 /// `User-Agent` that says who you are and how to reach you, and a cache so a
 /// re-run of a failed build does not re-ask.
 public actor RequestRunner {

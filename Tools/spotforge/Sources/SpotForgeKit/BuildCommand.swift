@@ -59,7 +59,7 @@ public struct BuildCommand: Sendable {
         public var hasWarnings: Bool { reports.contains { !$0.warnings.isEmpty } }
     }
 
-    /// Unconditional progress, one line per notable event — issue #17: a
+    /// Unconditional progress, one line per notable event — PR #16: a
     /// multi-hour run and a genuine hang look identical without this. Writes
     /// to stderr by default so `--report`'s summary on stdout stays clean.
     public func run(
@@ -91,7 +91,7 @@ public struct BuildCommand: Sendable {
                 minimumInterval: request.fixturesDirectory == nil ? 1 : 0,
                 // Overpass and WDQS stay serial at the default policy; Commons
                 // is a different service with no such restriction, so it gets
-                // its own overlap (issue #17).
+                // its own overlap (PR #16).
                 namespacePolicies: request.fixturesDirectory == nil
                     ? ["commons": RequestRunner.politeCommonsPolicy]
                     : ["commons": RequestRunner.HostPolicy(concurrency: 3, minimumInterval: 0)]

@@ -73,7 +73,7 @@ public enum SpotMerger {
 
         // A naive all-pairs sweep is O(n²), which is fine for a fixture set
         // and ruinous for a real city — hundreds of thousands of OSM features
-        // pegs a core for hours (issue #17). `ProximityGrid` buckets every
+        // pegs a core for hours (PR #16). `ProximityGrid` buckets every
         // candidate at the *larger* of the two radii the rule uses, so the
         // tighter `intersectionDistanceMetres` case is still caught, and each
         // candidate is only compared against the 3×3 neighbourhood of cells

@@ -164,7 +164,7 @@ struct PipelineTests {
         #expect(report.summary.contains("curated"))
     }
 
-    /// Issue #17: nothing printed between "Build complete" and the final
+    /// PR #16: nothing printed between "Build complete" and the final
     /// report, so a multi-hour run and a genuine hang were indistinguishable.
     /// This checks that every stage the issue names actually announces itself.
     @Test("Every stage announces itself, and the report times each one")

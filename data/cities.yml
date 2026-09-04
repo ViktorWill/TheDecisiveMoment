@@ -5,7 +5,7 @@
 # a city as one undifferentiated blob.
 #
 # ---------------------------------------------------------------------------
-# All five boroughs — restored after issue #17.
+# All five boroughs — restored after PR #16.
 #
 # This was temporarily scoped to Manhattan alone: the first real run showed
 # that SpotMerger.merge was O(n²) with no spatial index, and that the shared
