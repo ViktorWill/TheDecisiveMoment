@@ -98,6 +98,11 @@ public struct OverpassSource: SpotSource {
         "\(bbox.minLat),\(bbox.minLon),\(bbox.maxLat),\(bbox.maxLon)"
     }
 
+    /// The `highway` values a covered or tunnelled way must carry to qualify —
+    /// places people actually walk, not a vehicle underpass or service road
+    /// swept in by a bare `["highway"]` presence check.
+    static let walkableHighwayPattern = "^(pedestrian|footway|steps|path)$"
+
     /// The §2 query. Two `out` statements over one stored result set: Overpass
     /// allows only one geometry mode per `out`, so `center` gives the map its
     /// representative coordinate and a second, id-only `geom` pass gives the
@@ -116,8 +121,8 @@ public struct OverpassSource: SpotSource {
           node["place"="square"](\(box));
           way ["man_made"="bridge"](\(box));
           way ["highway"="steps"]["name"](\(box));
-          way ["tunnel"="yes"]["highway"~"^(pedestrian|footway|steps|path)$"](\(box));
-          way ["covered"="yes"]["highway"~"^(pedestrian|footway|steps|path)$"](\(box));
+          way ["tunnel"="yes"]["highway"~"\(walkableHighwayPattern)"](\(box));
+          way ["covered"="yes"]["highway"~"\(walkableHighwayPattern)"](\(box));
           node["tourism"="viewpoint"](\(box));
           node["railway"="station"](\(box));
           node["public_transport"="station"](\(box));
