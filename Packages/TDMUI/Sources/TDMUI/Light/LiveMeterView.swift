@@ -15,19 +15,29 @@ import AVFoundation
 @MainActor
 @Observable
 final class LightMeter {
+    #if canImport(AVFoundation) && !targetEnvironment(simulator)
+    /// Carries `session` into `Task.detached` below.
+    ///
+    /// `AVCaptureSession.startRunning()`/`stopRunning()` are documented as
+    /// safe to call off the main thread — that is the whole reason they are
+    /// pushed onto `Task.detached`, since they can block for a noticeable
+    /// time. But `AVCaptureSession` predates `Sendable`, and a plain
+    /// `nonisolated(unsafe)` on the stored property is not enough on its own:
+    /// Swift 6's closure-capture check still flags it as reachable from
+    /// main-actor-isolated code, because the property itself remains
+    /// `self.session`. Boxing the one value this closure needs, in a type the
+    /// compiler unconditionally trusts as `Sendable`, is what actually
+    /// satisfies `Task.detached`'s `@Sendable` closure requirement.
+    private struct SessionBox: @unchecked Sendable {
+        let session: AVCaptureSession
+    }
+    #endif
     private(set) var measuredEV100: Double?
     private(set) var isRunning = false
     private(set) var isUnavailable = false
 
     #if canImport(AVFoundation) && !targetEnvironment(simulator)
-    // `AVCaptureSession.startRunning()`/`stopRunning()` are documented as safe
-    // to call off the main thread — that is the whole reason they are pushed
-    // onto `Task.detached` below, since they can block for a noticeable time.
-    // `AVCaptureSession` predates `Sendable`, though, so the compiler cannot
-    // see that contract; `nonisolated(unsafe)` records the documented
-    // guarantee that makes this safe, the same idiom `MapFilterStore` and
-    // `SpotMarksStore` already use for `UserDefaults`.
-    @ObservationIgnored private nonisolated(unsafe) let session = AVCaptureSession()
+    @ObservationIgnored private let session = AVCaptureSession()
     @ObservationIgnored private var device: AVCaptureDevice?
     @ObservationIgnored private var sampling: Task<Void, Never>?
     #endif
@@ -51,8 +61,8 @@ final class LightMeter {
         session.commitConfiguration()
 
         isRunning = true
-        let session = session
-        Task.detached { session.startRunning() }
+        let box = SessionBox(session: session)
+        Task.detached { box.session.startRunning() }
         sampling = Task { [weak self] in
             while !Task.isCancelled {
                 self?.sample()
@@ -69,8 +79,8 @@ final class LightMeter {
         sampling?.cancel()
         sampling = nil
         isRunning = false
-        let session = session
-        Task.detached { session.stopRunning() }
+        let box = SessionBox(session: session)
+        Task.detached { box.session.stopRunning() }
         #endif
     }
 
