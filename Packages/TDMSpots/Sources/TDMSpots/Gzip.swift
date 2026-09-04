@@ -27,9 +27,16 @@ public enum GzipError: Error, Equatable, Sendable {
 }
 
 public enum Gzip {
-    /// Generous next to the 500 KB-per-city size budget, small enough that a
-    /// hostile file cannot exhaust a phone.
-    public static let defaultDecompressedSizeLimit = 16 * 1024 * 1024
+    /// `docs/DATA-BUNDLES.md`, "Size budget": spotforge's compressed ceiling is
+    /// 8 MB per city. This spot JSON has measured at ~12.3x compression (New
+    /// York: 6,292,570 B decompressed from 511,975 B gzipped), so a city that
+    /// actually fills the budget could legitimately decompress to ~98 MB. This
+    /// limit needs to clear that with real margin for a denser city, while
+    /// staying well short of a phone's memory — it is not a mirror of the
+    /// compressed budget, since the two are in different modules and a
+    /// malicious file is under no obligation to respect either one; it is the
+    /// most this app will ever inflate one gzip member to, full stop.
+    public static let defaultDecompressedSizeLimit = 128 * 1024 * 1024
 
     public static func decompress(_ data: Data, maximumDecompressedBytes: Int = defaultDecompressedSizeLimit) throws -> Data {
         let bytes = [UInt8](data)
