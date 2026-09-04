@@ -31,6 +31,11 @@ public struct MapView: View {
     /// because the sheet is persistent" — even at its tallest, real headroom is
     /// left so the city chip and sun toggle stay reachable.
     private static let largeHeightInset: CGFloat = 96
+    /// A floor under `geometry.safeAreaInsets.bottom` for the sheet's own
+    /// bottom clearance — the classic docked tab bar's content height, before
+    /// the home indicator. `sheetContainer` pads by whichever of this or the
+    /// real inset is larger.
+    private static let minimumTabBarHeight: CGFloat = 49
 
     public init(
         store: any SpotStore,
@@ -71,7 +76,10 @@ public struct MapView: View {
                 }
                 .background(MapTheme.ground)
 
-                sheetContainer(availableHeight: geometry.size.height)
+                sheetContainer(
+                    availableHeight: geometry.size.height,
+                    tabBarInset: geometry.safeAreaInsets.bottom
+                )
             }
         }
         .task { await model.start() }
@@ -93,9 +101,16 @@ public struct MapView: View {
 
     // MARK: The persistent sheet
 
-    private func sheetContainer(availableHeight: CGFloat) -> some View {
+    /// `tabBarInset` is `geometry.safeAreaInsets.bottom` measured before this
+    /// view's own content has a chance to ignore any safe area — a floating,
+    /// translucent tab bar (iOS 18+) does not necessarily reserve its full
+    /// visual height as a safe-area inset the way a docked one always did, so
+    /// this is padded rather than trusted outright: better a few points of
+    /// unused gap above the bar than a list row rendering behind it.
+    private func sheetContainer(availableHeight: CGFloat, tabBarInset: CGFloat) -> some View {
         let heights = detentHeights(availableHeight: availableHeight)
         let liveHeight = (sheetHeight - dragTranslation).clamped(to: heights.collapsed...heights.large)
+        let clearance = max(tabBarInset, Self.minimumTabBarHeight) + 12
 
         return VStack(spacing: 0) {
             dragHandle(heights: heights)
@@ -109,6 +124,7 @@ public struct MapView: View {
         .frame(height: liveHeight)
         .background(MapTheme.sheet)
         .clipShape(.rect(topLeadingRadius: 16, topTrailingRadius: 16))
+        .padding(.bottom, clearance)
     }
 
     /// Only the handle responds to the drag — the sheet's own content is a
