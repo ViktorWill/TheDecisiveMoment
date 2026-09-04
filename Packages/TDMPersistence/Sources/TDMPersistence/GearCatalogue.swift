@@ -195,7 +195,9 @@ public enum GearCatalogue {
     ///
     /// Marks as engraved on the barrel; `∞` is engraved on every one of them and
     /// travels as `.infinity`.
-    public static var lenses: [Lens] { [superElmar21, elmarit24, elmarit28, summicron35, summicron50, apoSummicron75, elmarit90] }
+    public static var lenses: [Lens] {
+        [superElmar21, elmarit24, elmarit28, summilux35, summicron35, summicron50, apoSummicron75, elmarit90]
+    }
 
     /// Super-Elmar-M 21 mm f/3.4 ASPH.
     public static let superElmar21 = Lens(
@@ -220,6 +222,25 @@ public enum GearCatalogue {
         name: "Elmarit-M 28mm f/2.8",
         focalLengthMillimetres: 28,
         apertures: apertures(from: 2.8, to: 16),
+        distanceMarksMetres: [0.7, 0.8, 1.0, 1.2, 1.5, 2.0, 3.0, 5.0, 10.0, .infinity],
+        minimumFocusMetres: 0.7
+    )
+
+    /// Summilux-M 35 mm f/1.4 ASPH (FLE, 2010–) — the current-production floating-
+    /// element version, not the earlier non-ASPH or pre-FLE ASPH lenses Leica
+    /// also sold under this name.
+    ///
+    /// Aperture range and 0.7 m minimum focus are Leica's published spec.
+    /// Distance marks are **not verified against the physical barrel** — they
+    /// follow this catalogue's existing 0.7–10 m ASPH pattern, already used by
+    /// `summicron35` and `summicron50` below, on the reasoning that M primes of
+    /// the same generation and minimum focus share the same engraved scale.
+    /// That reasoning holds unless this specific lens differs; check it
+    /// against the actual barrel before trusting the zone-focus advice.
+    public static let summilux35 = Lens(
+        name: "Summilux-M 35mm f/1.4 ASPH",
+        focalLengthMillimetres: 35,
+        apertures: apertures(from: 1.4, to: 16),
         distanceMarksMetres: [0.7, 0.8, 1.0, 1.2, 1.5, 2.0, 3.0, 5.0, 10.0, .infinity],
         minimumFocusMetres: 0.7
     )

@@ -126,6 +126,7 @@ invent speeds the camera has not got.
 | Super-Elmar-M 21 mm f/3.4 | 3.4 – 16 | 0.7, 0.8, 1, 1.2, 1.5, 2, 3, 5, ∞ |
 | Elmarit-M 24 mm f/2.8 | 2.8 – 16 | 0.7, 0.8, 1, 1.2, 1.5, 2, 3, 5, ∞ |
 | Elmarit-M 28 mm f/2.8 | 2.8 – 16 | 0.7, 0.8, 1, 1.2, 1.5, 2, 3, 5, 10, ∞ |
+| Summilux-M 35 mm f/1.4 ASPH (FLE) | 1.4 – 16 | 0.7, 0.8, 1, 1.2, 1.5, 2, 3, 5, 10, ∞ † |
 | Summicron-M 35 mm f/2 | 2 – 16 | 0.7, 0.8, 1, 1.2, 1.5, 2, 3, 5, 10, ∞ |
 | Summicron-M 50 mm f/2 | 2 – 16 | 0.7, 0.8, 1, 1.2, 1.5, 2, 3, 5, 10, ∞ |
 | APO-Summicron-M 75 mm f/2 | 2 – 16 | 0.7, 0.8, 1, 1.2, 1.5, 2, 3, 5, 10, ∞ |
@@ -134,6 +135,11 @@ invent speeds the camera has not got.
 Two of these differences are the point of the table rather than an oversight: the 90 mm has **no
 0.7 m mark**, because it does not focus that close; and the 21 and 24 mm scales run out at **5 m**
 and then go to ∞, because at those focal lengths there is nothing to engrave in between.
+
+**† The Summilux-M 35mm ASPH's marks are not verified against the physical barrel.** They follow
+this table's existing 0.7–10 m pattern on the reasoning that M primes of the same generation and
+minimum focus share the same engraved scale — check against the actual lens before trusting it, and
+correct this row (and `GearCatalogue.summilux35`) if it differs.
 
 Seed profiles pair a body with the lens most likely to be on it: M6 · 35 mm, M10 · 35 mm, M11 ·
 50 mm. The first is selected.

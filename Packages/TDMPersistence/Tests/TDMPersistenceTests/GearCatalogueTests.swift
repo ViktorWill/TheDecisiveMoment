@@ -101,10 +101,18 @@ struct GearCatalogueTests {
         #expect(!slow.contains(64))
     }
 
-    @Test("Seven lenses, 21 to 90 mm")
-    func seedsSevenLenses() {
-        #expect(GearCatalogue.lenses.map(\.focalLengthMillimetres) == [21, 24, 28, 35, 50, 75, 90])
+    @Test("Eight lenses, 21 to 90 mm — two of them 35 mm")
+    func seedsEightLenses() {
+        #expect(GearCatalogue.lenses.map(\.focalLengthMillimetres) == [21, 24, 28, 35, 35, 50, 75, 90])
         #expect(GearCatalogue.lenses.allSatisfy { $0.isValid })
+    }
+
+    @Test("The Summilux and Summicron 35s differ only in speed, not in scale")
+    func theTwo35sShareAScale() {
+        #expect(GearCatalogue.summilux35.sortedApertures.first == 1.4)
+        #expect(GearCatalogue.summilux35.sortedApertures.last == 16.0)
+        #expect(GearCatalogue.summilux35.sortedDistanceMarks == GearCatalogue.summicron35.sortedDistanceMarks)
+        #expect(GearCatalogue.summilux35.minimumFocusMetres == 0.7)
     }
 
     @Test("Every lens has an infinity mark and ascending finite marks")
