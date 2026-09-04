@@ -43,7 +43,7 @@ public struct BuildReport: Sendable {
 
     /// Records how long a stage took, measured from `since` to now. Called
     /// once per stage so the final report can say where the time actually
-    /// went — issue #17: an hour-long merge and a genuine hang looked
+    /// went — PR #16: an hour-long merge and a genuine hang looked
     /// identical without this.
     public mutating func recordStage(_ stage: String, since started: Date) {
         stageDurations.append(StageDuration(stage: stage, seconds: Date().timeIntervalSince(started)))

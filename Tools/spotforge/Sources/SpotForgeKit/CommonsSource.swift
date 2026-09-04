@@ -61,7 +61,7 @@ public actor CommonsSource: SpotSource {
     /// Same sweep, with progress lines a caller can print: the point count up
     /// front, and a running counter — including cache hits, since a re-run
     /// after an interrupt replays the cache and writes nothing, and a still
-    /// counter is then correct rather than a hang (issue #17).
+    /// counter is then correct rather than a hang (PR #16).
     public func fetch(bbox: BoundingBox, label: String, progress: (@Sendable (String) -> Void)?) async throws -> [RawSpot] {
         var grid = self.grid ?? PhotoDensityGrid(cellMetres: cellMetres, referenceLatitude: bbox.center.latitude)
         let points = grid.samplePoints(in: bbox, spacingMetres: Self.sampleSpacingMetres)

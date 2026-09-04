@@ -42,7 +42,7 @@ public struct Pipeline: Sendable {
     public let commons: CommonsSource?
     public let runner: RequestRunner?
     public var options: PipelineOptions
-    /// Unconditional progress lines, to stderr by default — issue #17: a
+    /// Unconditional progress lines, to stderr by default — PR #16: a
     /// multi-hour run and a genuine hang were indistinguishable without this.
     public var progress: @Sendable (String) -> Void
 
