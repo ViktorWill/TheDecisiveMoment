@@ -84,15 +84,15 @@ it from the app. Prefer `https://overpass.kumi.systems/api/interpreter` as a fal
 (
   node["highway"="pedestrian"]({{bbox}});
   way ["highway"="pedestrian"]({{bbox}});
-  way ["highway"="footway"]["footway"="crossing"]({{bbox}});
+  way ["highway"="footway"]["footway"="crossing"]["crossing"="traffic_signals"]({{bbox}});
   node["amenity"="marketplace"]({{bbox}});
   way ["amenity"="marketplace"]({{bbox}});
   way ["place"="square"]({{bbox}});
   node["place"="square"]({{bbox}});
   way ["man_made"="bridge"]({{bbox}});
-  way ["highway"="steps"]({{bbox}});
-  way ["tunnel"="yes"]["highway"]({{bbox}});
-  way ["covered"="yes"]["highway"]({{bbox}});
+  way ["highway"="steps"]["name"]({{bbox}});
+  way ["tunnel"="yes"]["highway"~"^(pedestrian|footway|steps|path)$"]({{bbox}});
+  way ["covered"="yes"]["highway"~"^(pedestrian|footway|steps|path)$"]({{bbox}});
   node["tourism"="viewpoint"]({{bbox}});
   node["railway"="station"]({{bbox}});
   node["public_transport"="station"]({{bbox}});
@@ -108,6 +108,17 @@ it from the app. Prefer `https://overpass.kumi.systems/api/interpreter` as a fal
 as `.spots` and printed twice: once for the centre and the tags, once for the node geometry the
 street bearing is derived from. Records are rejoined by `type` and `id`; a way that appears only in
 the first pass simply has no bearing.
+
+Four clauses are qualified beyond the bare tag, because a well-mapped city returns every instance of
+the tag otherwise — a single Manhattan run once returned 177k candidates, almost all of them
+near-duplicate crossing legs and stair segments that collapsed together at merge time:
+
+- **Crossings** require `crossing=traffic_signals`. A signalised crossing is where people gather and
+  wait — the photographic property of interest — not every marked crossing leg at every intersection.
+- **Steps** require a `name`. An unnamed short flight between two levels of a plaza is not a place
+  anyone would stand and photograph; a named staircase usually is.
+- **Tunnel/covered ways** require `highway` to be one of `pedestrian`, `footway`, `steps` or `path`,
+  not merely present. A bare `["highway"]` also matches service roads and vehicle underpasses.
 
 The building heights the `canyon` reading needs are a second query, because a building is not a spot
 and must not end up in the candidate set:
@@ -129,7 +140,8 @@ out center tags;
 | `amenity=marketplace` | `market` |
 | `highway=pedestrian` (linear) | `street` |
 | `man_made=bridge`, `bridge=yes` | `bridge` |
-| `highway=steps` | `stairs` |
+| `highway=steps` (named) | `stairs` |
+| `highway=footway`, `footway=crossing`, `crossing=traffic_signals` | `intersection` |
 | `tunnel=yes` | `underpass` |
 | `covered=yes`, `building=arcade` | `arcade` |
 | `railway=station`, `public_transport=station` | `transit` |
@@ -137,6 +149,7 @@ out center tags;
 | `leisure=park` | `park` |
 | `tourism=viewpoint` | `viewpoint` |
 | otherwise | `other` |
+
 
 ### Derived fields from OSM
 
