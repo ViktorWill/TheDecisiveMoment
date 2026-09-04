@@ -16,6 +16,19 @@ struct OverpassSourceTests {
         #expect(query.contains("[out:json]"))
     }
 
+    @Test("The broad clauses are qualified so a well-mapped city does not return every instance")
+    func queryIsNarrowed() {
+        let query = OverpassSource.featureQuery(bbox: Fixtures.bbox)
+        // Crossings: only where people gather and wait, not every marked leg.
+        #expect(query.contains(#"way ["highway"="footway"]["footway"="crossing"]["crossing"="traffic_signals"]"#))
+        // Steps: named only, not every stoop and subway stair.
+        #expect(query.contains(#"way ["highway"="steps"]["name"]"#))
+        // Tunnel/covered: a value whitelist, not a bare presence check that
+        // also matches service roads and vehicle underpasses.
+        #expect(query.contains(#"way ["tunnel"="yes"]["highway"~"^(pedestrian|footway|steps|path)$"]"#))
+        #expect(query.contains(#"way ["covered"="yes"]["highway"~"^(pedestrian|footway|steps|path)$"]"#))
+    }
+
     @Test("Recorded features map to the documented kinds, bearings and openness")
     func mapsRecordedFeatures() async throws {
         let source = OverpassSource(runner: try Fixtures.runner())
@@ -194,3 +207,4 @@ struct PhotoDensityGridTests {
         }
     }
 }
+
