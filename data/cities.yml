@@ -27,3 +27,18 @@
     - { name: Queens,        bbox: { minLat: 40.5400, minLon: -73.9630, maxLat: 40.8010, maxLon: -73.7004 } }
     - { name: The Bronx,     bbox: { minLat: 40.7855, minLon: -73.9340, maxLat: 40.9176, maxLon: -73.7654 } }
     - { name: Staten Island, bbox: { minLat: 40.4774, minLon: -74.2591, maxLat: 40.6514, maxLon: -74.0345 } }
+
+# Munich core: Altstadt out to roughly the Mittlerer Ring, no districts —
+# a walkable single city, not five boroughs, and comfortably inside one
+# Overpass query even before #19's tightened clauses. The box is a
+# best-effort estimate from a map, not measured: it aims to clear Hauptbahnhof
+# in the west to Haidhausen in the east, and Sendlinger Tor in the south to
+# Münchner Freiheit / the start of the Englischer Garten in the north. Worth
+# a glance on an actual map before the first build — widening it costs
+# nothing but a slower query, missing a neighbourhood costs a walk with no
+# spots in it.
+- id: de-munich
+  name: Munich
+  country: DE
+  center: { lat: 48.1374, lon: 11.5755 }
+  bbox: { minLat: 48.1000, minLon: 11.4900, maxLat: 48.1850, maxLon: 11.6300 }
