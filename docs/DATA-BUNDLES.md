@@ -170,9 +170,33 @@ Non-negotiable, and cheap to get right:
 
 ## Size budget
 
-Target under 500 KB compressed per city (roughly 800–1200 spots). If a city exceeds it, tighten the
-score floor rather than truncating arbitrarily, and record the floor in the bundle so it is visible
-why a known spot is missing.
+**8 MB compressed per city**, and it is a ceiling rather than a target. Trimming to fit is how a
+real spot gets silently dropped, so the budget should almost never bind — it exists to catch a
+pathological city, not to shrink a healthy one.
+
+The first five-borough New York build measured **76.5 bytes per spot gzipped** (511,975 B for 6,689
+spots; the JSON compresses about 12:1). That is the number to reason with. All 19,150 spots New York
+merges to are roughly 1.5 MB, so 8 MB leaves room for a denser city without the trim ever engaging.
+
+The budget started at 500 KB, which was far too tight: it discarded 12,461 of 19,150 New York spots —
+65% of the city — and it discarded them by *score*, which meant the quality of the ranking silently
+decided what existed. A download the user asked for, whose size is shown before it starts, can
+afford a few megabytes; a map missing two thirds of its city cannot.
+
+If a city does exceed the budget, the pipeline tightens the score floor rather than truncating
+arbitrarily, and records the floor in the bundle so it is visible why a known spot is missing.
+
+Override it per run with `spotforge build --size-budget 8MB` (plain bytes, or a `KB`/`MB` suffix)
+when trying a different ceiling against a warm cache.
+
+### What the budget does not bound
+
+Bundles are committed to this repository and served from GitHub Pages, so per-city size multiplies
+by the number of cities *and* by every regeneration kept in git history. Gzipped bundles are opaque
+binaries that git cannot delta compress, so each refresh stores a full copy. At 8 MB a city, a
+hundred cities refreshed monthly would outgrow the repository quickly. That is a distribution
+problem rather than a client one, and it wants its own decision — an orphan branch for bundles,
+release assets, or a real CDN — before the city list grows far.
 
 The pipeline measures the bundle it is about to write — photo entries and `scoreFloor` included —
 and then checks the bytes it actually wrote against the budget. A bundle over budget is a build

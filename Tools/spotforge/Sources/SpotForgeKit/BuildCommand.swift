@@ -20,6 +20,10 @@ public struct BuildRequest: Sendable {
     /// Turn a source that returned nothing into a failed build. What CI wants.
     public var strict: Bool
     public var fetchesPhotos: Bool
+    /// The compressed ceiling for one city — `PipelineOptions.sizeBudgetBytes`.
+    /// Exposed on the command line so a budget can be tried against a warm
+    /// cache in seconds instead of recompiling.
+    public var sizeBudgetBytes: Int
 
     public init(
         scope: Scope,
@@ -30,7 +34,8 @@ public struct BuildRequest: Sendable {
         fixturesDirectory: String? = nil,
         printsReport: Bool = false,
         strict: Bool = false,
-        fetchesPhotos: Bool = true
+        fetchesPhotos: Bool = true,
+        sizeBudgetBytes: Int = PipelineOptions().sizeBudgetBytes
     ) {
         self.scope = scope
         self.outputDirectory = outputDirectory
@@ -41,6 +46,7 @@ public struct BuildRequest: Sendable {
         self.printsReport = printsReport
         self.strict = strict
         self.fetchesPhotos = fetchesPhotos
+        self.sizeBudgetBytes = sizeBudgetBytes
     }
 }
 
@@ -107,7 +113,10 @@ public struct BuildCommand: Sendable {
                 ],
                 commons: commons,
                 runner: runner,
-                options: PipelineOptions(fetchesPhotos: request.fetchesPhotos),
+                options: PipelineOptions(
+                    sizeBudgetBytes: request.sizeBudgetBytes,
+                    fetchesPhotos: request.fetchesPhotos
+                ),
                 progress: progress
             )
 

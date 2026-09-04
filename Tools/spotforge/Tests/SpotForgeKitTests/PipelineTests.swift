@@ -98,7 +98,7 @@ struct PipelineTests {
         #expect(output.report.scoreFloor != nil)
     }
 
-    /// Issue #52: the photo pass ran *after* the trim, so the trim measured a
+    /// Issue #17: the photo pass ran *after* the trim, so the trim measured a
     /// city without photo payloads and the bundle written to disk was over
     /// budget. The check is against the bytes the writer actually produced.
     @Test("A bundle built with photos is within its size budget as written")
@@ -107,7 +107,7 @@ struct PipelineTests {
         defer { try? FileManager.default.removeItem(at: directory) }
 
         // Small enough that the photo payloads are the difference between
-        // fitting and not: with the 500 KB default the fixture city fits either
+        // fitting and not: at the default budget the fixture city fits either
         // way and the ordering bug would be invisible. With the photo pass
         // after the trim this wrote 1852 B against a 1600 B budget.
         var options = PipelineOptions(photoSpotLimit: 5, photosPerSpot: 2, fetchesPhotos: true)

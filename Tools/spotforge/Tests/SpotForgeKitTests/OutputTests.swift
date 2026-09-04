@@ -211,6 +211,45 @@ struct CommandLineTests {
         #expect(throws: ArgumentError.self) { try CommandLineInterface.parse(["build"]) }
         #expect(throws: ArgumentError.self) { try CommandLineInterface.parse(["build", "--all", "--nonsense"]) }
     }
+
+    @Test("--size-budget accepts bytes and KB/MB, and refuses anything else")
+    func parsesSizeBudget() throws {
+        func budget(_ text: String) throws -> Int {
+            guard case .build(let request) =
+                try CommandLineInterface.parse(["build", "--all", "--size-budget", text])
+            else {
+                Issue.record("Expected a build command")
+                return -1
+            }
+            return request.sizeBudgetBytes
+        }
+
+        let bytes = try budget("8388608")
+        let megabytes = try budget("8MB")
+        let lowercased = try budget("8mb")
+        let kilobytes = try budget("1536KB")
+        let explicitBytes = try budget("512B")
+        #expect(bytes == 8 * 1024 * 1024)
+        #expect(megabytes == 8 * 1024 * 1024)
+        #expect(lowercased == 8 * 1024 * 1024)
+        #expect(kilobytes == 1536 * 1024)
+        #expect(explicitBytes == 512)
+
+        // A typo must be refused rather than becoming a budget of zero, which
+        // would trim the city down to its curated entries and look deliberate.
+        for bad in ["0", "-1", "", "lots", "8GB", "8 M B", "8.5MB"] {
+            #expect(throws: ArgumentError.self) {
+                try CommandLineInterface.parse(["build", "--all", "--size-budget", bad])
+            }
+        }
+
+        // Absent, it falls back to the pipeline's own default.
+        guard case .build(let unset) = try CommandLineInterface.parse(["build", "--all"]) else {
+            Issue.record("Expected a build command")
+            return
+        }
+        #expect(unset.sizeBudgetBytes == PipelineOptions().sizeBudgetBytes)
+    }
 }
 
 @Suite("Request runner")
