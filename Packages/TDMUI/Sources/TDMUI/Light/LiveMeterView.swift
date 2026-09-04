@@ -20,7 +20,14 @@ final class LightMeter {
     private(set) var isUnavailable = false
 
     #if canImport(AVFoundation) && !targetEnvironment(simulator)
-    @ObservationIgnored private let session = AVCaptureSession()
+    // `AVCaptureSession.startRunning()`/`stopRunning()` are documented as safe
+    // to call off the main thread — that is the whole reason they are pushed
+    // onto `Task.detached` below, since they can block for a noticeable time.
+    // `AVCaptureSession` predates `Sendable`, though, so the compiler cannot
+    // see that contract; `nonisolated(unsafe)` records the documented
+    // guarantee that makes this safe, the same idiom `MapFilterStore` and
+    // `SpotMarksStore` already use for `UserDefaults`.
+    @ObservationIgnored private nonisolated(unsafe) let session = AVCaptureSession()
     @ObservationIgnored private var device: AVCaptureDevice?
     @ObservationIgnored private var sampling: Task<Void, Never>?
     #endif
