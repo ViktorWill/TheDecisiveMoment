@@ -189,6 +189,18 @@ arbitrarily, and records the floor in the bundle so it is visible why a known sp
 Override it per run with `spotforge build --size-budget 8MB` (plain bytes, or a `KB`/`MB` suffix)
 when trying a different ceiling against a warm cache.
 
+### The client has its own ceiling — keep it ahead of this one
+
+`Gzip.defaultDecompressedSizeLimit` in `TDMSpots` bounds how large a decompressed bundle the app will
+accept, independent of this budget: they live in different modules (spotforge's pipeline is not
+linked into the app), so nothing enforces that one covers the other, and a client-side ceiling exists
+at all only to bound a decompression bomb from a substituted file. When this budget was raised from
+500 KB to 8 MB, that ceiling was not — the first real five-borough bundle decompressed to ~16 MB
+against a 16 MB client limit, and downloading it failed with `decompressedSizeLimitExceeded`. If this
+budget changes again, check `Gzip.defaultDecompressedSizeLimit` against it, using the measured ~12:1
+compression ratio above: a city that actually fills the budget can legitimately decompress to
+roughly 12x this number.
+
 ### What the budget does not bound
 
 Bundles are committed to this repository and served from GitHub Pages, so per-city size multiplies
