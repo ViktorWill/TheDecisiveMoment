@@ -82,8 +82,30 @@ struct SpotDetailView: View {
 
     // MARK: Header
 
+    /// The navigation bar is hidden (`toolbar(.hidden, for: .navigationBar)`
+    /// above) to match `design/SpotDetail.dc.html`, which cost this view its
+    /// only way back to the list — there was no back chevron, and nothing
+    /// replaced it.
+    private var backButton: some View {
+        Button {
+            dismiss()
+        } label: {
+            Image(systemName: "chevron.left")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(MapTheme.primaryText)
+                .frame(width: 32, height: 32)
+                .background(MapTheme.control, in: Circle())
+                .overlay(Circle().stroke(MapTheme.hairline, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Back to the list")
+    }
+
     private var header: some View {
         VStack(alignment: .leading, spacing: 0) {
+            backButton
+                .padding(.top, 4)
+                .padding(.bottom, 12)
             HStack(alignment: .top, spacing: 12) {
                 Text(spot.name)
                     .font(MapTheme.titleFont)

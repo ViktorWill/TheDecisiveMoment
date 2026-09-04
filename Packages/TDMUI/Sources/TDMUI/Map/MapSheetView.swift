@@ -13,7 +13,9 @@ struct MapSheetView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                handle
+                // The drag handle lives in MapView now, above this view: the
+                // sheet itself is no longer a `.sheet()`, so nothing draws one
+                // for us, and a second handle here would double up on it.
                 searchRow
                 pills
                 if let note = model.annotationLimitNote {
@@ -42,14 +44,6 @@ struct MapSheetView: View {
                 )
             }
         }
-    }
-
-    private var handle: some View {
-        RoundedRectangle(cornerRadius: 2)
-            .fill(MapTheme.handle)
-            .frame(width: 36, height: 4)
-            .padding(.top, 9)
-            .padding(.bottom, 4)
     }
 
     private var searchRow: some View {

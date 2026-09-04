@@ -14,7 +14,8 @@ import TDMWeather
 public struct MapView: View {
     @State private var model: MapViewModel
     @State private var camera: MapCameraPosition = .userLocation(fallback: .automatic)
-    @State private var detent: PresentationDetent = MapView.collapsedDetent
+    @State private var sheetHeight: CGFloat = MapView.collapsedHeight
+    @GestureState private var dragTranslation: CGFloat = 0
     @State private var selectedSpot: Spot?
     @State private var pendingPin: PinDrop?
     @State private var isShowingCityPicker = false
@@ -23,9 +24,13 @@ public struct MapView: View {
     /// Hands a spot to the Light tab, which opens pre-filled for it.
     private let openLight: (SpotHandoff) -> Void
 
-    /// The collapsed detent: the handle, the search field and the pills, which
+    /// The collapsed height: the handle, the search field and the pills, which
     /// is what `design/Map.dc.html` shows above the list.
-    static let collapsedDetent = PresentationDetent.height(170)
+    static let collapsedHeight: CGFloat = 170
+    /// `docs/SPEC-map.md`, "Layout": the top floating controls "sit at the top
+    /// because the sheet is persistent" — even at its tallest, real headroom is
+    /// left so the city chip and sun toggle stay reachable.
+    private static let largeHeightInset: CGFloat = 96
 
     public init(
         store: any SpotStore,
@@ -47,41 +52,106 @@ public struct MapView: View {
         self.openLight = openLight
     }
 
+    /// `docs/SPEC-map.md`, "Layout": the browse sheet is persistent, not a
+    /// modal — it and the tab bar both own the bottom of the screen at once.
+    /// `.sheet(isPresented: .constant(true))` used to stand in for that, but a
+    /// real `.sheet` always presents in a layer above the *entire window*, tab
+    /// bar included, and fights the `TabView`'s own presentation lifecycle
+    /// across a tab switch — which is what left a stale spot-detail card
+    /// stuck on screen after handing a spot to the Light tab, and hid the tab
+    /// bar outright on first launch. This is an ordinary view in `MapView`'s
+    /// own tree instead, sized by hand, so it can never cover chrome it isn't
+    /// drawn over.
     public var body: some View {
-        ZStack(alignment: .top) {
-            mapSurface
-            overlay
+        GeometryReader { geometry in
+            ZStack(alignment: .bottom) {
+                ZStack(alignment: .top) {
+                    mapSurface
+                    overlay
+                }
+                .background(MapTheme.ground)
+
+                sheetContainer(availableHeight: geometry.size.height)
+            }
         }
-        .background(MapTheme.ground)
         .task { await model.start() }
-        .sheet(isPresented: .constant(true)) {
+        .sheet(item: $pendingPin) { drop in
+            PinEditorView(
+                coordinate: drop.coordinate,
+                streetBearingDegrees: model.pinBearingDegrees
+            ) { pin in
+                Task { await model.savePin(pin) }
+            }
+        }
+        .sheet(isPresented: $isShowingCityPicker) {
+            CityPickerView(model: model)
+        }
+        .sheet(isPresented: $isShowingSettings) {
+            MapSettingsView(model: model)
+        }
+    }
+
+    // MARK: The persistent sheet
+
+    private func sheetContainer(availableHeight: CGFloat) -> some View {
+        let heights = detentHeights(availableHeight: availableHeight)
+        let liveHeight = (sheetHeight - dragTranslation).clamped(to: heights.collapsed...heights.large)
+
+        return VStack(spacing: 0) {
+            dragHandle(heights: heights)
             MapSheetView(
                 model: model,
                 selectedSpot: $selectedSpot,
                 openLight: openLight,
                 openSettings: { isShowingSettings = true }
             )
-            .presentationDetents([Self.collapsedDetent, .medium, .large], selection: $detent)
-            .presentationBackground(MapTheme.sheet)
-            .presentationCornerRadius(16)
-            .presentationDragIndicator(.hidden)
-            .presentationBackgroundInteraction(.enabled(upThrough: .medium))
-            .interactiveDismissDisabled()
-            .sheet(item: $pendingPin) { drop in
-                PinEditorView(
-                    coordinate: drop.coordinate,
-                    streetBearingDegrees: model.pinBearingDegrees
-                ) { pin in
-                    Task { await model.savePin(pin) }
-                }
-            }
-            .sheet(isPresented: $isShowingCityPicker) {
-                CityPickerView(model: model)
-            }
-            .sheet(isPresented: $isShowingSettings) {
-                MapSettingsView(model: model)
-            }
         }
+        .frame(height: liveHeight)
+        .background(MapTheme.sheet)
+        .clipShape(.rect(topLeadingRadius: 16, topTrailingRadius: 16))
+    }
+
+    /// Only the handle responds to the drag — the sheet's own content is a
+    /// search field and a scrolling list, and a whole-sheet drag gesture would
+    /// fight both of them for the same touch.
+    private func dragHandle(heights: SheetHeights) -> some View {
+        RoundedRectangle(cornerRadius: 2)
+            .fill(MapTheme.handle)
+            .frame(width: 36, height: 4)
+            .padding(.vertical, 9)
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture()
+                    .updating($dragTranslation) { value, state, _ in
+                        state = value.translation.height
+                    }
+                    .onEnded { value in
+                        let dragged = (sheetHeight - value.translation.height)
+                            .clamped(to: heights.collapsed...heights.large)
+                        withAnimation(.easeOut(duration: 0.22)) {
+                            sheetHeight = heights.nearest(to: dragged)
+                        }
+                    }
+            )
+    }
+
+    private struct SheetHeights {
+        let collapsed: CGFloat
+        let medium: CGFloat
+        let large: CGFloat
+
+        func nearest(to height: CGFloat) -> CGFloat {
+            [collapsed, medium, large].min { abs($0 - height) < abs($1 - height) } ?? collapsed
+        }
+    }
+
+    private func detentHeights(availableHeight: CGFloat) -> SheetHeights {
+        SheetHeights(
+            collapsed: Self.collapsedHeight,
+            medium: availableHeight * 0.5,
+            large: max(availableHeight - Self.largeHeightInset, availableHeight * 0.5)
+        )
     }
 
     // MARK: The map
@@ -365,6 +435,15 @@ extension Coordinate {
 struct PinDrop: Identifiable {
     let id = UUID()
     let coordinate: Coordinate
+}
+
+extension Comparable {
+    /// The sheet's height while dragging is a live subtraction that can
+    /// overshoot either end before the drag has finished; clamp it to the
+    /// collapsed…large range on every frame rather than only at rest.
+    func clamped(to range: ClosedRange<Self>) -> Self {
+        min(max(self, range.lowerBound), range.upperBound)
+    }
 }
 
 extension BoundingBox {
