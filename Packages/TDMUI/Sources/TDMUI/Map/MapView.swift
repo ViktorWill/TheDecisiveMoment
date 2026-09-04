@@ -107,6 +107,15 @@ public struct MapView: View {
     /// visual height as a safe-area inset the way a docked one always did, so
     /// this is padded rather than trusted outright: better a few points of
     /// unused gap above the bar than a list row rendering behind it.
+    ///
+    /// The panel's *content* (the handle and everything in `MapSheetView`) is
+    /// sized to `liveHeight`, same as before — that is what the drag gesture's
+    /// snap points are measured against, and what stays clear of the tab bar.
+    /// The panel's *background* runs `clearance` further than that, all the
+    /// way to the true bottom of the screen: a black panel that stops short
+    /// and shows the map underneath it in the gap reads as unfinished, and the
+    /// translucent tab bar is meant to float over this panel the same way it
+    /// floats over the map, not sit past its edge.
     private func sheetContainer(availableHeight: CGFloat, tabBarInset: CGFloat) -> some View {
         let heights = detentHeights(availableHeight: availableHeight)
         let liveHeight = (sheetHeight - dragTranslation).clamped(to: heights.collapsed...heights.large)
@@ -121,10 +130,10 @@ public struct MapView: View {
                 openSettings: { isShowingSettings = true }
             )
         }
-        .frame(height: liveHeight)
+        .padding(.bottom, clearance)
+        .frame(height: liveHeight + clearance)
         .background(MapTheme.sheet)
         .clipShape(.rect(topLeadingRadius: 16, topTrailingRadius: 16))
-        .padding(.bottom, clearance)
     }
 
     /// Only the handle responds to the drag — the sheet's own content is a
