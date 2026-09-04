@@ -25,11 +25,14 @@ public actor SwiftDataSpotStore: SpotStore {
     }
 
     /// A container for the spot models. `inMemory` is for previews and tests.
+    ///
+    /// `"spots"`: this app also has a gear store and a community store, each
+    /// with their own container — see `ModelStoreLocation`.
     public static func makeContainer(inMemory: Bool = false) throws -> ModelContainer {
-        try ModelContainer(
-            for: Schema(models),
-            configurations: ModelConfiguration(isStoredInMemoryOnly: inMemory)
-        )
+        let configuration = inMemory
+            ? ModelConfiguration(isStoredInMemoryOnly: true)
+            : ModelConfiguration(url: try ModelStoreLocation.url(named: "spots"))
+        return try ModelContainer(for: Schema(models), configurations: configuration)
     }
 
     // MARK: - Index

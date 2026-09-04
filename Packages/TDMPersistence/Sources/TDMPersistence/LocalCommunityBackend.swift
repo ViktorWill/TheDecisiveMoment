@@ -22,11 +22,14 @@ public actor LocalCommunityBackend: CommunityBackend {
 
     /// A container for the community models. `inMemory` is for previews and
     /// tests.
+    ///
+    /// `"community"`: this app also has a spot store and a gear store, each
+    /// with their own container — see `ModelStoreLocation`.
     public static func makeContainer(inMemory: Bool = false) throws -> ModelContainer {
-        try ModelContainer(
-            for: Schema(models),
-            configurations: ModelConfiguration(isStoredInMemoryOnly: inMemory)
-        )
+        let configuration = inMemory
+            ? ModelConfiguration(isStoredInMemoryOnly: true)
+            : ModelConfiguration(url: try ModelStoreLocation.url(named: "community"))
+        return try ModelContainer(for: Schema(models), configurations: configuration)
     }
 
     // MARK: - Reading

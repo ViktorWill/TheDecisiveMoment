@@ -23,11 +23,14 @@ public final class GearStore {
     }
 
     /// A container for the gear models. `inMemory` is for previews and tests.
+    ///
+    /// `"gear"`: this app also has a spot store and a community store, each
+    /// with their own container — see `ModelStoreLocation`.
     public static func makeContainer(inMemory: Bool = false) throws -> ModelContainer {
-        try ModelContainer(
-            for: Schema(models),
-            configurations: ModelConfiguration(isStoredInMemoryOnly: inMemory)
-        )
+        let configuration = inMemory
+            ? ModelConfiguration(isStoredInMemoryOnly: true)
+            : ModelConfiguration(url: try ModelStoreLocation.url(named: "gear"))
+        return try ModelContainer(for: Schema(models), configurations: configuration)
     }
 
     // MARK: - Seeding
