@@ -98,8 +98,57 @@ struct PipelineTests {
         #expect(output.report.scoreFloor != nil)
     }
 
-    @Test("An empty source is loud in the report rather than silently missing")
-    func emptySourceWarns() async throws {
+    /// Issue #52: the photo pass ran *after* the trim, so the trim measured a
+    /// city without photo payloads and the bundle written to disk was over
+    /// budget. The check is against the bytes the writer actually produced.
+    @Test("A bundle built with photos is within its size budget as written")
+    func photosFitInsideTheSizeBudget() async throws {
+        let directory = try Fixtures.temporaryDirectory("budget")
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        // Small enough that the photo payloads are the difference between
+        // fitting and not: with the 500 KB default the fixture city fits either
+        // way and the ordering bug would be invisible. With the photo pass
+        // after the trim this wrote 1852 B against a 1600 B budget.
+        var options = PipelineOptions(photoSpotLimit: 5, photosPerSpot: 2, fetchesPhotos: true)
+        options.sizeBudgetBytes = 1_600
+        let output = await try makePipeline(options: options).run(bundleVersion: 1)
+
+        #expect(output.city.spots.contains { !$0.photos.isEmpty }, "no photos attached, so this proves nothing")
+
+        let written = try BundleWriter(outputDirectory: directory).write(output.city)
+        #expect(written.compressedBytes <= options.sizeBudgetBytes, "\(written.compressedBytes) B gz over \(options.sizeBudgetBytes) B")
+
+        var report = output.report
+        report.compressedBytes = written.compressedBytes
+        #expect(!report.isOverSizeBudget)
+        #expect(report.warnings.isEmpty)
+    }
+
+    @Test("A bundle over the size budget warns, naming the budget and the size")
+    func overBudgetWarns() async throws {
+        var report = BuildReport(cityId: "us-nyc")
+        report.spotCount = 7132
+        report.sizeBudgetBytes = 512_000
+        report.compressedBytes = 527_412
+
+        #expect(report.isOverSizeBudget)
+        let warning = try #require(report.warnings.first { $0.contains("budget") })
+        #expect(warning.contains("527412"))
+        #expect(warning.contains("512000"))
+        #expect(warning.contains("15412"))
+        #expect(report.summary.contains(warning))
+
+        // At budget is not over it, and a report that never measured a size
+        // cannot warn about one.
+        report.compressedBytes = 512_000
+        #expect(!report.isOverSizeBudget)
+        report.compressedBytes = 527_412
+        report.sizeBudgetBytes = 0
+        #expect(!report.isOverSizeBudget)
+    }
+
+    @Test("An empty source is loud in the report rather than silently missing")    func emptySourceWarns() async throws {
         let runner = try Fixtures.runner()
         let city = try CityCatalog.load(contentsOf: Fixtures.citiesPath).city(withId: "us-nyc")
         // No curated file for this city id, so that source returns nothing.

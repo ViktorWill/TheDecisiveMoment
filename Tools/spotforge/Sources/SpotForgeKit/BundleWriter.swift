@@ -2,7 +2,7 @@ import Foundation
 import TDMCore
 import TDMSpots
 
-/// Stage 6: gz + sha.
+/// Stage 7: gz + sha.
 ///
 /// The JSON is canonical — sorted keys, pretty printed, ISO 8601 instants — so
 /// a regenerated city is a reviewable diff and the published `sha256`, taken

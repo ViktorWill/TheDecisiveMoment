@@ -174,6 +174,10 @@ Target under 500 KB compressed per city (roughly 800–1200 spots). If a city ex
 score floor rather than truncating arbitrarily, and record the floor in the bundle so it is visible
 why a known spot is missing.
 
+The pipeline measures the bundle it is about to write — photo entries and `scoreFloor` included —
+and then checks the bytes it actually wrote against the budget. A bundle over budget is a build
+warning, and `spotforge build --strict` exits non-zero on it.
+
 ## Example fixture
 
 A complete two-spot bundle is committed at `Packages/TDMSpots/Tests/Fixtures/us-nyc-sample.json`,

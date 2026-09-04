@@ -29,7 +29,10 @@ public struct PipelineOptions: Sendable {
     }
 }
 
-/// fetch → normalise → merge → score → trim → write.
+/// fetch → normalise → merge → score → photos → trim → write.
+///
+/// Photos come before the trim so the size the trim measures is the size that
+/// gets written: `thumbURL`, `pageURL`, `author` and `license` are bytes too.
 ///
 /// The merge and the scoring are `TDMSpots.SpotMerger` and `TDMSpots.SpotScorer`
 /// — the same code the app links — rather than a second implementation that
@@ -124,42 +127,30 @@ public struct Pipeline: Sendable {
         let scored = SpotScorer.score(merged.map { scoringInput(for: $0, grid: grid, signals: signals) })
         report.recordStage("score", since: scoreStarted)
 
-        // 5 trim
-        progress("trim")
-        let trimStarted = Date()
-        let (kept, floor) = trim(scored)
-        report.droppedBySizeCap = scored.count - kept.count
-        report.scoreFloor = floor
-        report.recordStage("trim", since: trimStarted)
-
-        // 6 write — the caller does the writing; the pipeline hands over the
-        // city that will be written, photos and all.
-        if options.fetchesPhotos { progress("photos: up to \(min(kept.count, options.photoSpotLimit)) spots") }
+        // 5 photos — before the trim, not after it: photo payloads are bytes,
+        // and a trim that measures a city without them measures a city that is
+        // not the one written (issue #52). Selection is by score rank, already
+        // known after stage 4, so this costs no extra requests. Some photos are
+        // fetched for spots the trim then drops; that is the cheaper mistake.
+        if options.fetchesPhotos { progress("photos: up to \(min(scored.count, options.photoSpotLimit)) spots") }
         let photosStarted = Date()
-        var spots = kept
+        var photographed = scored
         if options.fetchesPhotos, let commons {
-            spots = await attachPhotos(to: spots, using: commons)
+            photographed = await attachPhotos(to: photographed, using: commons)
         }
-        report.spotCount = spots.count
         report.recordStage("photos", since: photosStarted)
 
-        var built = City(
-            cityId: city.id,
-            name: city.name,
-            country: city.country,
-            bundleVersion: bundleVersion,
-            generatedAt: generatedAt,
-            generator: SpotForge.generator,
-            bbox: city.bbox,
-            attribution: Attribution(
-                osm: "© OpenStreetMap contributors, ODbL 1.0",
-                wikidata: "Wikidata, CC0 1.0",
-                commons: "Wikimedia Commons — per-file licence in photo entries"
-            ),
-            scoreFloor: floor,
-            spots: spots.sorted { $0.id < $1.id }
-        )
-        built.spots = built.spots.filter(\.isValid)
+        // 6 trim
+        progress("trim")
+        let trimStarted = Date()
+        let (spots, floor) = trim(photographed, bundleVersion: bundleVersion, generatedAt: generatedAt)
+        report.droppedBySizeCap = photographed.count - spots.count
+        report.scoreFloor = floor
+        report.sizeBudgetBytes = options.sizeBudgetBytes
+        report.recordStage("trim", since: trimStarted)
+
+        let built = assemble(spots, floor: floor, bundleVersion: bundleVersion, generatedAt: generatedAt)
+        report.spotCount = built.spots.count
 
         if let runner {
             report.requestCount = await runner.requestCount
@@ -194,11 +185,14 @@ public struct Pipeline: Sendable {
         )
     }
 
-    /// Stage 5. Tighten the score floor rather than truncating arbitrarily, and
+    /// Stage 6. Tighten the score floor rather than truncating arbitrarily, and
     /// never drop a curated entry: a hand-written spot that scored low is still
     /// the spot someone chose to write about.
-    func trim(_ spots: [Spot]) -> (kept: [Spot], floor: Double?) {
-        guard measure(spots) > options.sizeBudgetBytes else { return (spots, nil) }
+    func trim(_ spots: [Spot], bundleVersion: Int, generatedAt: Date) -> (kept: [Spot], floor: Double?) {
+        func fits(_ candidates: [Spot], floor: Double?) -> Bool {
+            measure(candidates, floor: floor, bundleVersion: bundleVersion, generatedAt: generatedAt) <= options.sizeBudgetBytes
+        }
+        guard !fits(spots, floor: nil) else { return (spots, nil) }
 
         let ranked = spots.sorted { $0.score == $1.score ? $0.id < $1.id : $0.score > $1.score }
         let curated = ranked.filter(\.curated)
@@ -211,7 +205,8 @@ public struct Pipeline: Sendable {
         var high = generated.count
         while low < high {
             let middle = (low + high + 1) / 2
-            if measure(curated + generated.prefix(middle)) <= options.sizeBudgetBytes {
+            let probe = curated + generated.prefix(middle)
+            if fits(probe, floor: scoreFloor(kept: probe, generated: generated.prefix(middle))) {
                 low = middle
             } else {
                 high = middle - 1
@@ -220,23 +215,43 @@ public struct Pipeline: Sendable {
         generated = Array(generated.prefix(low))
 
         let kept = curated + generated
-        let floor = generated.last?.score ?? kept.map(\.score).min()
+        let floor = scoreFloor(kept: kept, generated: generated)
         return (kept, floor)
     }
 
-    /// Compressed size, measured exactly the way the bundle is written.
-    func measure(_ spots: [Spot]) -> Int {
-        let probe = City(
+    /// The floor the trimmed city records: the lowest generated score that
+    /// survived, or — when every generated spot went — the lowest score left.
+    private func scoreFloor(kept: [Spot], generated: some BidirectionalCollection<Spot>) -> Double? {
+        generated.last?.score ?? kept.map(\.score).min()
+    }
+
+    /// The city exactly as it will be written: one builder, so a probe and the
+    /// artefact cannot disagree about a single byte. Measuring something that
+    /// is not what gets written is how the budget was missed (issue #52).
+    func assemble(_ spots: [Spot], floor: Double?, bundleVersion: Int, generatedAt: Date) -> City {
+        var built = City(
             cityId: city.id,
             name: city.name,
             country: city.country,
-            bundleVersion: 1,
-            generatedAt: Date(timeIntervalSince1970: 0),
+            bundleVersion: bundleVersion,
+            generatedAt: generatedAt,
             generator: SpotForge.generator,
             bbox: city.bbox,
-            attribution: Attribution(),
-            spots: spots
+            attribution: Attribution(
+                osm: "© OpenStreetMap contributors, ODbL 1.0",
+                wikidata: "Wikidata, CC0 1.0",
+                commons: "Wikimedia Commons — per-file licence in photo entries"
+            ),
+            scoreFloor: floor,
+            spots: spots.sorted { $0.id < $1.id }
         )
+        built.spots = built.spots.filter(\.isValid)
+        return built
+    }
+
+    /// Compressed size of that city, compressed the way `BundleWriter` does.
+    func measure(_ spots: [Spot], floor: Double?, bundleVersion: Int, generatedAt: Date) -> Int {
+        let probe = assemble(spots, floor: floor, bundleVersion: bundleVersion, generatedAt: generatedAt)
         guard let json = try? BundleCoding.encoder().encode(probe) else { return .max }
         return GzipWriter.compress(json).count
     }
