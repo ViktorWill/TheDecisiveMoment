@@ -298,7 +298,9 @@ enum BodyPhrasing {
     }
 
     /// 50 000 rather than 50000: a five-figure ISO is unreadable otherwise.
-    private static func number(_ value: Int) -> String {
+    /// Not `private`: `ISOCeilingView` (`FilmControlsView.swift`) shares it
+    /// rather than duplicating the same spacing rule for the same numbers.
+    static func number(_ value: Int) -> String {
         guard value >= 10_000 else { return "\(value)" }
         return "\(value / 1_000) \(String(format: "%03d", value % 1_000))"
     }

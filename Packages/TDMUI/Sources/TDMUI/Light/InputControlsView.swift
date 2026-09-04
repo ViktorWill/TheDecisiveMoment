@@ -173,7 +173,9 @@ struct GearPickerView: View {
                 }
             }
         }
-        .scrollClipDisabled()
+        // Same reasoning as ChipPicker: nothing here needs the scroll view's
+        // own clipping disabled, and leaving it off was letting chips bleed
+        // past this panel()'s rounded edge before the row was scrolled.
         .panel("Gear")
     }
 }

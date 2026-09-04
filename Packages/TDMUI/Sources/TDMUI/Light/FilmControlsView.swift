@@ -6,17 +6,15 @@ import TDMLight
 ///
 /// The ceiling belongs to the photographer, not to the sensor: past it the file
 /// is not worth having, and the solver says it is short rather than exceeding
-/// it, `docs/EXPOSURE-MODEL.md` §7d. The slider steps through the body's real
-/// full-stop ladder, so it can never name an ISO the camera has not got.
+/// it, `docs/EXPOSURE-MODEL.md` §7d. A chip row rather than a slider — every
+/// other row on this screen is two taps, pick from the options
+/// (`InputControlsView`), and every value here already is one: `ladder` is the
+/// body's own real full-stop stops, not a continuous range with a step size.
 struct ISOCeilingView: View {
     /// The body's ISO ladder, ascending.
     let ladder: [Int]
     let ceiling: Int
     let onChange: (Int) -> Void
-
-    private var index: Double {
-        Double(ladder.firstIndex(of: ceiling) ?? max(ladder.count - 1, 0))
-    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 9) {
@@ -26,31 +24,18 @@ struct ISOCeilingView: View {
                     .kerning(1.2)
                     .foregroundStyle(LightTheme.tertiaryText)
                 Spacer()
-                Text("\(ceiling)")
+                Text(BodyPhrasing.number(ceiling))
                     .font(.system(size: 12, weight: .regular, design: .rounded).monospacedDigit())
                     .foregroundStyle(LightTheme.primaryText)
             }
 
             if ladder.count > 1 {
-                Slider(
-                    value: Binding(
-                        get: { index },
-                        set: { onChange(ladder[Int($0.rounded())]) }
-                    ),
-                    in: 0...Double(ladder.count - 1),
-                    step: 1
+                ChipPicker(
+                    values: ladder,
+                    title: BodyPhrasing.number,
+                    selection: Binding(get: { ceiling }, set: onChange)
                 )
-                .tint(LightTheme.accent)
                 .accessibilityLabel("ISO ceiling")
-                .accessibilityValue("\(ceiling)")
-
-                HStack {
-                    Text("\(ladder[0])")
-                    Spacer()
-                    Text("\(ladder[ladder.count - 1])")
-                }
-                .font(.system(size: 9, weight: .regular, design: .rounded).monospacedDigit())
-                .foregroundStyle(LightTheme.tertiaryText)
             }
 
             Text("Past this the file is not worth having. The solver will say it is short rather than exceed it.")

@@ -74,6 +74,8 @@ public final class LightViewModel {
     public private(set) var profiles: [GearProfile] = []
     /// Every body the user could put this lens on, `design/Bodies.dc.html`.
     public private(set) var bodies: [CameraBody] = []
+    /// Every lens the user could put on this body — the mirror of `bodies`.
+    public private(set) var lenses: [Lens] = []
     public private(set) var profile: GearProfile?
     public private(set) var advice: Advice?
     /// One answer per hour for the scrubber, starting at the current hour.
@@ -279,6 +281,12 @@ public final class LightViewModel {
     }
 
     private func store(_ updated: GearProfile) {
+        // A specific aperture ring chosen on the old lens is not necessarily on
+        // the new one's ladder — the aperture-priority solver should not be
+        // handed a click stop this lens cannot actually be set to.
+        if profile?.lens.id != updated.lens.id {
+            chosenAperture = nil
+        }
         profile = updated
         if let index = profiles.firstIndex(where: { $0.id == updated.id }) {
             profiles[index] = updated
@@ -413,6 +421,7 @@ public final class LightViewModel {
         guard let gearStore else {
             profiles = GearCatalogue.profiles
             bodies = GearCatalogue.bodies
+            lenses = GearCatalogue.lenses
             profile = profiles.first
             return
         }
@@ -420,12 +429,14 @@ public final class LightViewModel {
             try gearStore.seedIfEmpty()
             profiles = try gearStore.profiles()
             bodies = try gearStore.bodies()
+            lenses = try gearStore.lenses()
             profile = try gearStore.selectedProfile() ?? profiles.first
         } catch {
             // A broken store must not cost the photographer the screen: fall
             // back to the shipped catalogue, in memory, for this session.
             profiles = GearCatalogue.profiles
             bodies = GearCatalogue.bodies
+            lenses = GearCatalogue.lenses
             profile = profiles.first
         }
     }
@@ -452,6 +463,12 @@ public final class LightViewModel {
     }
 
     public func select(_ profile: GearProfile) {
+        // Same reasoning as `store(_:)`: a different profile can carry a
+        // different lens, and a chosen aperture that lens does not have must
+        // not survive the switch.
+        if self.profile?.lens.id != profile.lens.id {
+            chosenAperture = nil
+        }
         self.profile = profile
         try? gearStore?.select(profile)
         recompute()
@@ -466,6 +483,16 @@ public final class LightViewModel {
         if !updated.strategy.isAvailable(on: body) {
             updated.strategy = .zoneFocus
         }
+        store(updated)
+    }
+
+    /// Puts a different lens on the same body. The mirror of `setBody`: the
+    /// body, the strategy and the scene all stay put. Unlike a body swap, no
+    /// strategy can become unavailable — aperture priority is a property of
+    /// the body, not the lens.
+    public func setLens(_ lens: Lens) {
+        guard var updated = profile, updated.lens.id != lens.id else { return }
+        updated.lens = lens
         store(updated)
     }
 
