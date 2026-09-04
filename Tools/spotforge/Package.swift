@@ -6,7 +6,11 @@ import PackageDescription
 // exactly the part that has to be tested offline against recorded fixtures.
 let package = Package(
     name: "spotforge",
-    platforms: [.macOS(.v14)],
+    // macOS 15, not 14: `HTTPClient` and two test helpers use
+    // `Synchronization.Mutex`, which is macOS 15+. Declaring .v14 while using
+    // it compiled only because CI builds this package on Linux, where
+    // `platforms:` is ignored — it failed on the first real macOS build.
+    platforms: [.macOS(.v15)],
     products: [
         .executable(name: "spotforge", targets: ["spotforge"])
     ],
