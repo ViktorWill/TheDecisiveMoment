@@ -1,10 +1,19 @@
 import Foundation
 import Observation
+import os
 import TDMCore
 import TDMLight
 import TDMPersistence
 import TDMSpots
 import TDMWeather
+
+/// Every store failure below is logged here before being collapsed to a fixed
+/// user-facing string — the collapse is deliberate (`docs/SPEC-map.md`,
+/// "Offline behaviour": a photographer does not need `SwiftDataError` on a
+/// street), but discarding the underlying error along with it left a real
+/// failure indistinguishable from any other. `com.viktorwill.thedecisivemoment`
+/// matches `PRODUCT_BUNDLE_IDENTIFIER` in `project.yml`.
+private let mapStoreLog = Logger(subsystem: "com.viktorwill.thedecisivemoment", category: "MapStore")
 
 /// The Map tab's state: where the user is, which city that is, what is in the
 /// visible rectangle, and what the filters have left of it.
@@ -222,6 +231,7 @@ public final class MapViewModel {
             await adoptStoredCity()
             hasLoadedOnce = true
         } catch {
+            mapStoreLog.error("loadStored failed: \(error, privacy: .public)")
             refreshError = "Stored spots could not be read."
         }
     }
@@ -330,6 +340,7 @@ public final class MapViewModel {
                     .prefix(100)
             )
         } catch {
+            mapStoreLog.error("refresh failed: \(error, privacy: .public)")
             refreshError = "Stored spots could not be read."
         }
     }
@@ -352,8 +363,10 @@ public final class MapViewModel {
             }
             await refresh()
         } catch let error as BundleRefreshError {
+            mapStoreLog.error("download(\(entry.cityId, privacy: .public)) failed: \(error, privacy: .public)")
             refreshError = error.description
         } catch {
+            mapStoreLog.error("download(\(entry.cityId, privacy: .public)) failed: \(error, privacy: .public)")
             refreshError = "\(entry.name) could not be updated."
         }
     }
@@ -395,6 +408,7 @@ public final class MapViewModel {
             pins = try await store.pins()
             await refresh()
         } catch {
+            mapStoreLog.error("savePin failed: \(error, privacy: .public)")
             refreshError = "That pin could not be saved."
         }
     }
@@ -405,6 +419,7 @@ public final class MapViewModel {
             pins = try await store.pins()
             await refresh()
         } catch {
+            mapStoreLog.error("deletePin failed: \(error, privacy: .public)")
             refreshError = "That pin could not be removed."
         }
     }
