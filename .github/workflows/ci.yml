@@ -37,6 +37,20 @@ jobs:
       - name: swift test
         run: swift test --package-path Tools/spotforge
 
+  spotforge-macos:
+    name: swift build (spotforge, macOS)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      # spotforge is a macOS CLI, but every other job builds it on Linux,
+      # where `platforms:` is ignored and no availability is enforced. Two
+      # macOS-only build failures have already reached a real Mac unseen —
+      # JSONEncoder.withoutEscapingSlashes (see Packages/TDMSpots) and
+      # Synchronization.Mutex. A build is enough to catch that class; the
+      # tests themselves run on Linux above.
+      - name: swift build
+        run: swift build --package-path Tools/spotforge
+
   app:
     name: xcodegen + build app
     runs-on: macos-15

@@ -35,7 +35,7 @@ jobs:
         # new bundle at all. `-c release` matters here specifically: the merge
         # pass and the Commons sweep both run over the full five-borough
         # candidate set, and a debug build is not fast enough to fit the
-        # Actions 6-hour job cap (issue #17).
+        # Actions 6-hour job cap (PR #16).
         run: |
           if [ -n "${{ github.event.inputs.city }}" ]; then
             scope="--city ${{ github.event.inputs.city }}"
