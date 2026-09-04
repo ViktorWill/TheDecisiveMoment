@@ -7,18 +7,18 @@
         "minLat" : 40.4774,
         "minLon" : -74.2591
       },
-      "bundleVersion" : 1,
-      "bytes" : 527412,
+      "bundleVersion" : 2,
+      "bytes" : 1318921,
       "cityId" : "us-nyc",
       "country" : "US",
       "lat" : 40.697500000000005,
       "lon" : -73.97975,
       "name" : "New York City",
-      "sha256" : "626710905930bf51a2750e74d373d67921e85e3e5b5a5a0404040e552f0447b6",
-      "spotCount" : 7132,
-      "updatedAt" : "2026-09-03T18:39:58Z"
+      "sha256" : "b444ff288d0c9fee05c98e1a2805faa89ede5c13605c00e46caaa8706fe3bcd6",
+      "spotCount" : 19151,
+      "updatedAt" : "2026-09-04T09:53:27Z"
     }
   ],
-  "generatedAt" : "2026-09-03T18:39:58Z",
+  "generatedAt" : "2026-09-04T09:53:27Z",
   "schemaVersion" : 1
 }
