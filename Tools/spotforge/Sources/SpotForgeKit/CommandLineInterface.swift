@@ -20,7 +20,8 @@ public enum CommandLineInterface {
       --cache <dir>      Response cache. Default: .cache.
       --fixtures <dir>   Build from recorded responses; touches no network.
       --report           Print the per-source summary.
-      --strict           Exit non-zero when a source returned nothing.
+      --strict           Exit non-zero when a source returned nothing or the
+                         bundle missed its size budget.
       --no-photos        Skip the representative-image pass.
 
     spotforge runs at build time only. The app never calls a spot data source.

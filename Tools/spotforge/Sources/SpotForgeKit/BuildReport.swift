@@ -33,6 +33,9 @@ public struct BuildReport: Sendable {
     public var spotCount = 0
     public var jsonBytes = 0
     public var compressedBytes = 0
+    /// The budget ``compressedBytes`` is judged against, carried here so the
+    /// warning can name both numbers — `PipelineOptions.sizeBudgetBytes`.
+    public var sizeBudgetBytes = 0
     public var requestCount = 0
     public var cacheHitCount = 0
     public var stageDurations: [StageDuration] = []
@@ -72,7 +75,17 @@ public struct BuildReport: Sendable {
         if spotCount == 0 {
             warnings.append("the bundle has no spots at all.")
         }
+        if isOverSizeBudget {
+            warnings.append("the bundle is \(compressedBytes) B gz, over the \(sizeBudgetBytes) B budget by \(compressedBytes - sizeBudgetBytes) B.")
+        }
         return warnings
+    }
+
+    /// Whether the bundle actually written missed its budget. Zero means the
+    /// size was never measured — a report built without a write — rather than
+    /// a budget of nothing, so it cannot warn.
+    public var isOverSizeBudget: Bool {
+        sizeBudgetBytes > 0 && compressedBytes > sizeBudgetBytes
     }
 
     public var summary: String {

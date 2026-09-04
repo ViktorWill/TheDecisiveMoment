@@ -32,11 +32,24 @@ It links `TDMCore`, so it writes the same `Spot` type the app decodes. The schem
 ## Stages
 
 ```
-  ┌─────────┐   ┌─────────┐   ┌────────┐   ┌───────┐   ┌───────┐   ┌────────┐
-  │ 1 fetch │──►│ 2 norm. │──►│ 3 merge│──►│4 score│──►│5 trim │──►│6 write │
-  └─────────┘   └─────────┘   └────────┘   └───────┘   └───────┘   └────────┘
-   per source    → Spot        dedupe       0…1 norm.   size cap    gz + sha
+  ┌─────────┐   ┌─────────┐   ┌────────┐   ┌───────┐   ┌────────┐   ┌───────┐   ┌────────┐
+  │ 1 fetch │──►│ 2 norm. │──►│ 3 merge│──►│4 score│──►│5 photos│──►│6 trim │──►│7 write │
+  └─────────┘   └─────────┘   └────────┘   └───────┘   └────────┘   └───────┘   └────────┘
+   per source    → Spot        dedupe       0…1 norm.   top spots    size cap    gz + sha
 ```
+
+The photo pass comes **before** the trim, not after it. Photo entries are bytes — `thumbURL`,
+`pageURL`, `author`, `license` — so a trim that measured a city without them measured a city that
+was never written, and the bundle went over budget unnoticed. The trim's probe is now built by the
+same code that builds the artefact, down to the `scoreFloor`, the attribution block and the
+`generatedAt` instant, so the size it binary-searches on is the size on disk. Photos are selected by
+score rank, which is known after stage 4, so the reorder costs no extra requests; it does mean a few
+photos are fetched for spots the trim then drops.
+
+The size of the bundle actually written is checked against the budget after the write, and a bundle
+over budget is a warning like any other — so `--strict` fails the build. That can still happen
+legitimately: curated entries are never dropped, so a budget smaller than the curated canon is
+unreachable and says so rather than silently passing.
 
 Each source sits behind a `SpotSource` protocol with a single `fetch(bbox:) async throws -> [RawSpot]`.
 Tests use recorded fixtures, never the live network — the pipeline must be testable offline and must
@@ -427,7 +440,7 @@ against the wrong directory.
 | `--cache <dir>` | Response cache, keyed by query hash. Default `.cache`. |
 | `--fixtures <dir>` | Build from recorded responses and touch no network. |
 | `--report` | Print the per-source summary. |
-| `--strict` | Exit non-zero when a source returned nothing or failed. |
+| `--strict` | Exit non-zero when a source returned nothing or failed, or the bundle missed its size budget. |
 | `--no-photos` | Skip the representative-image pass. |
 
 `validate` re-reads `index.json`, decompresses every bundle, re-decodes it with the same

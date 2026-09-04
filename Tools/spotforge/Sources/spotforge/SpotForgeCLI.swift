@@ -12,7 +12,7 @@ struct SpotForgeCLI {
                 request.prepareCacheDirectory()
                 let outcome = try await BuildCommand(request: request).run()
                 if request.strict, outcome.hasWarnings {
-                    fail("a source returned nothing or failed; see the warnings above.", code: 1)
+                    fail("a source returned nothing or failed, or the bundle missed its size budget; see the warnings above.", code: 1)
                 }
             case .validate(let directory):
                 let result = BundleValidator(directory: URL(fileURLWithPath: directory)).validate()
