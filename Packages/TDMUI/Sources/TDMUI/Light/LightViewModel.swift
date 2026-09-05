@@ -5,6 +5,14 @@ import TDMLight
 import TDMPersistence
 import TDMWeather
 
+/// Automatic asks the solver for a setting; manual reports what a
+/// photographer-chosen one does, and never refuses it. Digital only — film
+/// has no solver to switch off in the first place.
+public enum ExposureMode: Sendable, Equatable {
+    case automatic
+    case manual
+}
+
 /// The Light screen's state: inputs the user touches, and the answers that fall
 /// out of them.
 ///
@@ -55,6 +63,59 @@ public final class LightViewModel {
     /// shutter itself. `nil` everywhere else, where the app picks both.
     public var chosenAperture: Double? {
         didSet { if chosenAperture != oldValue { recompute() } }
+    }
+
+    // MARK: Manual mode
+    //
+    // Digital only — film is manual by nature, there is no solver to switch
+    // off. None of these feed `recompute()`: manual mode never asks the
+    // solver for anything, it reads the scene estimate `recompute()` already
+    // keeps current and reports what a chosen aperture/shutter/ISO does with
+    // it. `motion` above is shared with the freeze-motion strategy rather
+    // than duplicated — "what is the subject doing" is one input, not two.
+
+    public var mode: ExposureMode = .automatic
+    /// `nil` until the photographer has picked one; manual mode starts from
+    /// nothing rather than guessing a ring position for them.
+    public var manualAperture: Double?
+    public var manualShutter: TimeInterval?
+    public var manualISO: Int?
+
+    /// What the chosen aperture/shutter/ISO represents as a scene brightness —
+    /// `ExposureSolver.measuredEV100`, the same formula the live meter reads a
+    /// real exposure through, applied here to a hypothetical one instead.
+    public var manualMeasuredEV100: Double? {
+        guard let manualAperture, let manualShutter, let manualISO, manualShutter > 0 else { return nil }
+        return ExposureSolver.measuredEV100(aperture: manualAperture, shutter: manualShutter, iso: manualISO)
+    }
+
+    /// Stops from the scene's own light — positive is under-exposed, negative
+    /// is over, `Medium`'s convention. Compared against the raw scene EV100,
+    /// not medium-biased `targetEV100`: manual mode is a gross-error check,
+    /// and the sub-stop difference the bias makes does not change whether
+    /// something is *highly* wrong.
+    public var manualErrorStops: Double? {
+        guard let manualMeasuredEV100, let ev100 = advice?.estimate.ev100 else { return nil }
+        return manualMeasuredEV100 - ev100
+    }
+
+    /// A short, non-blocking warning — manual mode reports risk, never
+    /// refuses a combination. `nil` reads as "nothing to flag", not "correct
+    /// exposure": the message is deliberately about the direction of the
+    /// miss, not a false claim of precision.
+    public var manualExposureWarning: String? {
+        guard let manualErrorStops else { return nil }
+        guard !Medium.digital.latitude.accepts(errorStops: manualErrorStops) else { return nil }
+        return manualErrorStops > 0
+            ? "This will likely be under-exposed."
+            : "This will likely be over-exposed."
+    }
+
+    /// `nil` until a shutter is chosen. `true` means the dialled shutter is at
+    /// or above `motion`'s own floor for the current subject.
+    public var manualFreezesMotion: Bool? {
+        guard let manualShutter else { return nil }
+        return manualShutter <= motion.slowestShutter
     }
     /// The sky the photographer reported, `docs/SPEC-light.md` "Sky, when there
     /// is no WeatherKit". `nil` means the forecast is in charge.

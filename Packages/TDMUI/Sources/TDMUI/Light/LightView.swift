@@ -46,28 +46,22 @@ public struct LightView: View {
             ScrollView {
                 VStack(spacing: 16) {
                     if let advice = viewModel.advice {
-                        AnswerHeaderView(
-                            advice: advice,
-                            recommendation: viewModel.recommendation,
-                            roll: viewModel.loadedRoll,
-                            handheldFloorSeconds: viewModel.handheldFloorSeconds,
-                            onApplyLever: viewModel.apply,
-                            cloudCover: viewModel.sky?.cloudCover ?? viewModel.activeWeatherReading?.cloudCover,
-                            isStaleWeather: viewModel.isStaleWeather,
-                            isReportedWeather: viewModel.sky != nil,
-                            // Free build: the control is already on screen, so
-                            // the figure has nothing to open.
-                            onTapCloud: viewModel.requiresManualSky
-                                ? nil
-                                : { showsSkyControl = true },
-                            isScrubbing: viewModel.isScrubbing,
-                            scrubbedTo: viewModel.date,
-                            cameraBody: viewModel.cameraBodyProfile,
-                            framingNote: viewModel.framingNote
-                        )
+                        // Film is manual by nature — there is no solver to
+                        // switch off, so the switch itself only means
+                        // anything on a digital body.
+                        if !viewModel.isAnalog {
+                            ChipPicker(
+                                values: [ExposureMode.automatic, .manual],
+                                title: InputControlsView.name(of:),
+                                selection: $viewModel.mode
+                            )
+                        }
 
                         // A body with no meter promotes the phone's: it is not
-                        // a cross-check on an M-A, it is the reading, §8.
+                        // a cross-check on an M-A, it is the reading, §8. Shown
+                        // in both modes — the cross-check does not stop
+                        // mattering because the photographer is choosing
+                        // settings by hand instead of asking the solver.
                         if viewModel.isLiveMeterPrimary {
                             LiveMeterView(
                                 modelledEV100: advice.estimate.ev100,
@@ -79,30 +73,57 @@ public struct LightView: View {
                             )
                         }
 
-                        if let lens = viewModel.lensProfile,
-                           let cameraBody = viewModel.cameraBodyProfile,
-                           let mark = viewModel.selectedMarkMetres,
-                           let aperture = viewModel.recommendation?.aperture {
-                            ZoneScaleView(
-                                lens: lens,
-                                cameraBody: cameraBody,
-                                aperture: aperture,
-                                markMetres: Binding(
-                                    get: { mark },
-                                    set: { viewModel.chosenMarkMetres = $0 }
-                                ),
-                                recommendedMarkMetres: advice.focusMarkMetres
-                            )
-                            .panel("Zone focus")
+                        if viewModel.mode == .manual, let lens = viewModel.profile?.lens,
+                           let cameraBody = viewModel.profile?.body {
+                            ManualExposureView(viewModel: viewModel, lens: lens, cameraBody: cameraBody)
                         }
 
-                        if !viewModel.alternatives.isEmpty {
-                            AlternativesRowView(
-                                alternatives: viewModel.alternatives,
+                        if viewModel.mode == .automatic {
+                            AnswerHeaderView(
+                                advice: advice,
+                                recommendation: viewModel.recommendation,
                                 roll: viewModel.loadedRoll,
-                                onPromote: viewModel.promote
+                                handheldFloorSeconds: viewModel.handheldFloorSeconds,
+                                onApplyLever: viewModel.apply,
+                                cloudCover: viewModel.sky?.cloudCover ?? viewModel.activeWeatherReading?.cloudCover,
+                                isStaleWeather: viewModel.isStaleWeather,
+                                isReportedWeather: viewModel.sky != nil,
+                                // Free build: the control is already on screen, so
+                                // the figure has nothing to open.
+                                onTapCloud: viewModel.requiresManualSky
+                                    ? nil
+                                    : { showsSkyControl = true },
+                                isScrubbing: viewModel.isScrubbing,
+                                scrubbedTo: viewModel.date,
+                                cameraBody: viewModel.cameraBodyProfile,
+                                framingNote: viewModel.framingNote
                             )
-                            .panel(viewModel.isAnalog ? "Alternatives" : "Trade depth for a cleaner file")
+
+                            if let lens = viewModel.lensProfile,
+                               let cameraBody = viewModel.cameraBodyProfile,
+                               let mark = viewModel.selectedMarkMetres,
+                               let aperture = viewModel.recommendation?.aperture {
+                                ZoneScaleView(
+                                    lens: lens,
+                                    cameraBody: cameraBody,
+                                    aperture: aperture,
+                                    markMetres: Binding(
+                                        get: { mark },
+                                        set: { viewModel.chosenMarkMetres = $0 }
+                                    ),
+                                    recommendedMarkMetres: advice.focusMarkMetres
+                                )
+                                .panel("Zone focus")
+                            }
+
+                            if !viewModel.alternatives.isEmpty {
+                                AlternativesRowView(
+                                    alternatives: viewModel.alternatives,
+                                    roll: viewModel.loadedRoll,
+                                    onPromote: viewModel.promote
+                                )
+                                .panel(viewModel.isAnalog ? "Alternatives" : "Trade depth for a cleaner file")
+                            }
                         }
 
                         if let ceiling = viewModel.isoCeiling, viewModel.isoLadder.count > 1 {

@@ -1,18 +1,24 @@
 import Foundation
 import TDMCore
 
-/// How fast the subject is moving, for the freeze-motion strategy.
+/// How fast the subject is moving, for the freeze-motion strategy and for
+/// manual mode's frozen/not-frozen read on whatever shutter is dialed in.
 public enum SubjectMotion: String, Sendable, CaseIterable {
     /// Walking pace across the frame: 1/250 or faster.
     case walking
     /// Running, or close to the camera: 1/500 or faster.
     case running
+    /// A passing vehicle at a typical street distance: 1/1000 or faster —
+    /// crossing the frame far faster than a person can, even though it is not
+    /// closer.
+    case driving
 
     /// Slowest shutter that still freezes it, seconds.
     public var slowestShutter: TimeInterval {
         switch self {
         case .walking: 1.0 / 250
         case .running: 1.0 / 500
+        case .driving: 1.0 / 1_000
         }
     }
 }

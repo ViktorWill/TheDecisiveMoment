@@ -26,34 +26,40 @@ struct InputControlsView: View {
                 }
             }
 
-            labelled("Strategy") {
-                // Only the strategies this body can be set to: aperture
-                // priority is an M7 and nothing else.
-                ChipPicker(values: viewModel.availableStrategies, title: Self.name(of:), selection: Binding(
-                        get: { viewModel.profile?.strategy ?? .zoneFocus },
-                        set: { viewModel.setStrategy($0) }
-                    ))
-            }
-
-            if viewModel.profile?.strategy == .aperturePriority, let lens = viewModel.profile?.lens {
-                labelled("Aperture") {
-                    // The photographer sets the ring; the body picks the
-                    // shutter. `nil` lets the solver choose the ring too.
-                    let rings: [Double?] = [nil] + lens.sortedApertures.map { $0 as Double? }
-                    ChipPicker(
-                        values: rings,
-                        title: { ring in ring.map(ExposurePhrasing.aperture) ?? "Any" },
-                        selection: Binding(
-                            get: { viewModel.chosenAperture },
-                            set: { viewModel.chosenAperture = $0 }
-                        )
-                    )
+            // Strategy, the auto-mode aperture ring and the freeze-motion
+            // subject are all questions the solver answers; manual mode has
+            // no solver to ask; ManualExposureView.swift has its own Aperture
+            // and Subject rows instead.
+            if viewModel.mode == .automatic {
+                labelled("Strategy") {
+                    // Only the strategies this body can be set to: aperture
+                    // priority is an M7 and nothing else.
+                    ChipPicker(values: viewModel.availableStrategies, title: Self.name(of:), selection: Binding(
+                            get: { viewModel.profile?.strategy ?? .zoneFocus },
+                            set: { viewModel.setStrategy($0) }
+                        ))
                 }
-            }
 
-            if viewModel.profile?.strategy == .freezeMotion {
-                labelled("Motion") {
-                    ChipPicker(values: SubjectMotion.allCases, title: Self.name(of:), selection: $viewModel.motion)
+                if viewModel.profile?.strategy == .aperturePriority, let lens = viewModel.profile?.lens {
+                    labelled("Aperture") {
+                        // The photographer sets the ring; the body picks the
+                        // shutter. `nil` lets the solver choose the ring too.
+                        let rings: [Double?] = [nil] + lens.sortedApertures.map { $0 as Double? }
+                        ChipPicker(
+                            values: rings,
+                            title: { ring in ring.map(ExposurePhrasing.aperture) ?? "Any" },
+                            selection: Binding(
+                                get: { viewModel.chosenAperture },
+                                set: { viewModel.chosenAperture = $0 }
+                            )
+                        )
+                    }
+                }
+
+                if viewModel.profile?.strategy == .freezeMotion {
+                    labelled("Motion") {
+                        ChipPicker(values: SubjectMotion.allCases, title: Self.name(of:), selection: $viewModel.motion)
+                    }
                 }
             }
 
@@ -127,6 +133,14 @@ struct InputControlsView: View {
         switch motion {
         case .walking: "Walking"
         case .running: "Running"
+        case .driving: "Driving"
+        }
+    }
+
+    static func name(of mode: ExposureMode) -> String {
+        switch mode {
+        case .automatic: "Automatic"
+        case .manual: "Manual"
         }
     }
 
