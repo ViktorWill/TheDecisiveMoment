@@ -3,15 +3,37 @@ import TDMLight
 
 #if canImport(AVFoundation) && !targetEnvironment(simulator)
 import AVFoundation
+
+/// Exists only to be an active output on the capture session — see
+/// `LightMeter`'s note on why one is needed. AVFoundation's delegate callback
+/// runs on whatever queue it is registered against, never the main actor, so
+/// this is a plain, unisolated `NSObject`, not a `LightMeter` member: nothing
+/// here ever needs to touch `LightMeter`'s state.
+private final class DiscardingFrameSink: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
+    func captureOutput(
+        _ output: AVCaptureOutput,
+        didOutput sampleBuffer: CMSampleBuffer,
+        from connection: AVCaptureConnection
+    ) {
+        // Deliberately empty. The buffer is neither read nor retained; it is
+        // released the moment this method returns.
+    }
+}
 #endif
 
 /// Reads the camera's own exposure to sanity-check the model, `docs/SPEC-light.md`.
 ///
-/// **Nothing is captured.** The session carries no photo, movie or video-data
-/// output: it is started only so that the device applies auto-exposure and
-/// publishes `iso`, `exposureDuration` and `lensAperture`, which are numbers, not
-/// pixels. No buffer is delivered to the app, so none can be retained — which is
-/// what makes the Info.plist usage string true.
+/// **Nothing is captured.** A first field test showed why a session with no
+/// output at all does not work: `AVCaptureDevice`'s auto-exposure only
+/// converges to the live scene while something is actively pulling frames
+/// through the pipeline, and with zero outputs there is no such consumer —
+/// `iso`/`exposureDuration` stayed near whatever the camera read the instant
+/// it opened, regardless of what it was later pointed at. `DiscardingFrameSink`
+/// below is that consumer: a buffer is handed to it, and it is not read, not
+/// inspected, not stored, and not forwarded anywhere — its callback body is
+/// empty. `iso`, `exposureDuration` and `lensAperture` are numbers, not
+/// pixels, and remain the only things this class ever actually looks at,
+/// which is what makes the Info.plist usage string true.
 @MainActor
 @Observable
 final class LightMeter {
@@ -40,6 +62,8 @@ final class LightMeter {
     @ObservationIgnored private let session = AVCaptureSession()
     @ObservationIgnored private var device: AVCaptureDevice?
     @ObservationIgnored private var sampling: Task<Void, Never>?
+    @ObservationIgnored private let frameSink = DiscardingFrameSink()
+    @ObservationIgnored private let frameSinkQueue = DispatchQueue(label: "com.viktorwill.thedecisivemoment.livemeter.discard")
     #endif
 
     func start() {
@@ -57,7 +81,15 @@ final class LightMeter {
         session.beginConfiguration()
         session.sessionPreset = .low
         session.addInput(input)
-        // Deliberately no output of any kind: see the note above.
+        // An output whose only job is to exist: see the class-level note on
+        // why auto-exposure needs one, and DiscardingFrameSink for what it
+        // does with what it is handed, which is nothing.
+        let output = AVCaptureVideoDataOutput()
+        output.alwaysDiscardsLateVideoFrames = true
+        output.setSampleBufferDelegate(frameSink, queue: frameSinkQueue)
+        if session.canAddOutput(output) {
+            session.addOutput(output)
+        }
         session.commitConfiguration()
 
         isRunning = true
